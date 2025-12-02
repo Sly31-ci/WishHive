@@ -9,7 +9,7 @@ import {
   FlatList,
 } from 'react-native';
 import { router } from 'expo-router';
-import { Plus, TrendingUp, Gift, Sparkles } from 'lucide-react-native';
+import { Plus, TrendingUp, Gift, Sparkles, Search, Bell, Trophy } from 'lucide-react-native';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/lib/supabase';
 import { Card } from '@/components/Card';
@@ -67,13 +67,23 @@ export default function HomeScreen() {
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <View>
-          <Text style={styles.greeting}>Hello, {profile?.username}!</Text>
-          <Text style={styles.subtitle}>What wishes will you make today?</Text>
-        </View>
-        <View style={styles.pointsBadge}>
-          <Sparkles size={16} color={COLORS.accent} />
-          <Text style={styles.pointsText}>{profile?.points || 0}</Text>
+        <View style={styles.headerTop}>
+          <View>
+            <Text style={styles.greeting}>Hello, {profile?.username}!</Text>
+            <Text style={styles.subtitle}>What wishes will you make today?</Text>
+          </View>
+          <View style={styles.headerActions}>
+            <TouchableOpacity onPress={() => router.push('/search')}>
+              <Search size={24} color={COLORS.dark} />
+            </TouchableOpacity>
+            <TouchableOpacity onPress={() => router.push('/notifications')}>
+              <Bell size={24} color={COLORS.dark} />
+            </TouchableOpacity>
+            <View style={styles.pointsBadge}>
+              <Sparkles size={16} color={COLORS.accent} />
+              <Text style={styles.pointsText}>{profile?.points || 0}</Text>
+            </View>
+          </View>
         </View>
       </View>
 
@@ -99,6 +109,16 @@ export default function HomeScreen() {
                 <Gift size={24} color={COLORS.white} />
               </View>
               <Text style={styles.actionText}>Browse Gifts</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.actionButton}
+              onPress={() => router.push('/leaderboard')}
+            >
+              <View style={[styles.actionIcon, styles.actionIconTertiary]}>
+                <Trophy size={24} color={COLORS.white} />
+              </View>
+              <Text style={styles.actionText}>Leaderboard</Text>
             </TouchableOpacity>
           </View>
         </Card>

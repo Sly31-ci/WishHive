@@ -20,7 +20,10 @@ function RootLayoutContent() {
     // In DEV_MODE, skip authentication and go directly to tabs
     if (DEV_MODE) {
       console.log('✅ DEV_MODE active - redirecting to tabs');
-      router.replace('/(tabs)');
+      // Use setTimeout to ensure component is mounted before navigation
+      setTimeout(() => {
+        router.replace('/(tabs)');
+      }, 100);
       return;
     }
 

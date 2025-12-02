@@ -160,9 +160,20 @@ export default function ProfileScreen() {
         </Card>
 
         <Card style={styles.section}>
-          <TouchableOpacity style={styles.menuItem}>
+          <TouchableOpacity
+            style={styles.menuItem}
+            onPress={() => router.push('/settings')}
+          >
             <Settings size={20} color={COLORS.dark} />
             <Text style={styles.menuText}>Settings</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={styles.menuItem}
+            onPress={() => router.push('/orders')}
+          >
+            <Package size={20} color={COLORS.dark} />
+            <Text style={styles.menuText}>My Orders</Text>
           </TouchableOpacity>
 
           <TouchableOpacity style={styles.menuItem} onPress={handleSignOut}>
