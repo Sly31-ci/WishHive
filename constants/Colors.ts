@@ -10,6 +10,7 @@ export const Colors = {
     // Neutral colors
     dark: '#0F1724',
     light: '#F7FAFC',
+    gray: '#64748B',
 
     // Text colors
     text: '#0F1724',

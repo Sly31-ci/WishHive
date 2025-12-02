@@ -67,24 +67,24 @@ export default function HomeScreen() {
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <View style={styles.headerTop}>
-          <View>
-            <Text style={styles.greeting}>Hello, {profile?.username}!</Text>
-            <Text style={styles.subtitle}>What wishes will you make today?</Text>
-          </View>
-          <View style={styles.headerActions}>
-            <TouchableOpacity onPress={() => router.push('/search')}>
-              <Search size={24} color={COLORS.dark} />
-            </TouchableOpacity>
-            <TouchableOpacity onPress={() => router.push('/notifications')}>
-              <Bell size={24} color={COLORS.dark} />
-            </TouchableOpacity>
-            <View style={styles.pointsBadge}>
-              <Sparkles size={16} color={COLORS.accent} />
-              <Text style={styles.pointsText}>{profile?.points || 0}</Text>
-            </View>
+
+        <View>
+          <Text style={styles.greeting}>Hello, {profile?.username}!</Text>
+          <Text style={styles.subtitle}>What wishes will you make today?</Text>
+        </View>
+        <View style={styles.headerActions}>
+          <TouchableOpacity onPress={() => router.push('/search')}>
+            <Search size={24} color={COLORS.dark} />
+          </TouchableOpacity>
+          <TouchableOpacity onPress={() => router.push('/notifications')}>
+            <Bell size={24} color={COLORS.dark} />
+          </TouchableOpacity>
+          <View style={styles.pointsBadge}>
+            <Sparkles size={16} color={COLORS.accent} />
+            <Text style={styles.pointsText}>{profile?.points || 0}</Text>
           </View>
         </View>
+
       </View>
 
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
@@ -215,6 +215,11 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: COLORS.accent,
   },
+  headerActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: SPACING.md,
+  },
   content: {
     flex: 1,
     padding: SPACING.lg,
@@ -247,6 +252,9 @@ const styles = StyleSheet.create({
   },
   actionIconSecondary: {
     backgroundColor: COLORS.secondary,
+  },
+  actionIconTertiary: {
+    backgroundColor: COLORS.accent,
   },
   actionText: {
     fontSize: FONT_SIZES.sm,
