@@ -23,7 +23,17 @@ export default function SignupScreen() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
+  // Development mode - bypass authentication
+  const DEV_MODE = process.env.EXPO_PUBLIC_DEV_MODE === 'true';
+
   const handleSignup = async () => {
+    // In DEV_MODE, skip validation and go directly to tabs
+    if (DEV_MODE) {
+      console.log('🔧 DEV_MODE: Bypassing signup, redirecting to tabs');
+      router.replace('/(tabs)');
+      return;
+    }
+
     if (!username || !email || !password) {
       setError('Please fill in all fields');
       return;
