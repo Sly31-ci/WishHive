@@ -19,6 +19,7 @@ import {
     ShoppingCart,
     Store,
     Check,
+    Plus,
 } from 'lucide-react-native';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/lib/supabase';
@@ -34,6 +35,7 @@ const { width } = Dimensions.get('window');
 
 export default function ProductDetailScreen() {
     const { id } = useLocalSearchParams();
+    const productId = Array.isArray(id) ? id[0] : id;
     const { user } = useAuth();
     const { wishlists } = useWishlists();
     const [product, setProduct] = useState<Product | null>(null);
@@ -44,20 +46,25 @@ export default function ProductDetailScreen() {
     const [addingToWishlist, setAddingToWishlist] = useState(false);
 
     useEffect(() => {
-        if (id) {
+        if (productId) {
             loadProductDetails();
         }
-    }, [id]);
+    }, [productId]);
 
     const loadProductDetails = async () => {
         try {
-            const { data: productData, error: productError } = await supabase
+            const productId = Array.isArray(id) ? id[0] : id;
+            if (!productId) return;
+
+            const { data, error: productError } = await supabase
                 .from('products')
                 .select('*')
-                .eq('id', id)
+                .eq('id', productId)
                 .single();
 
             if (productError) throw productError;
+
+            const productData = data as Product;
             setProduct(productData);
 
             if (productData.seller_id) {
@@ -205,7 +212,7 @@ export default function ProductDetailScreen() {
                                 </View>
                                 <View>
                                     <Text style={styles.sellerLabel}>Sold by</Text>
-                                    <Text style={styles.sellerName}>{seller.store_name}</Text>
+                                    <Text style={styles.sellerName}>{seller.shop_name}</Text>
                                 </View>
                             </TouchableOpacity>
                         )}

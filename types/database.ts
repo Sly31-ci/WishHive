@@ -35,6 +35,7 @@ export interface Database {
           created_at?: string;
           updated_at?: string;
         };
+        Relationships: [];
       };
       wishlists: {
         Row: {
@@ -82,6 +83,15 @@ export interface Database {
           created_at?: string;
           updated_at?: string;
         };
+        Relationships: [
+          {
+            foreignKeyName: "wishlists_owner_id_fkey";
+            columns: ["owner_id"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          }
+        ];
       };
       products: {
         Row: {
@@ -129,6 +139,170 @@ export interface Database {
           is_active?: boolean;
           created_at?: string;
         };
+        Relationships: [
+          {
+            foreignKeyName: "products_seller_id_fkey";
+            columns: ["seller_id"];
+            isOneToOne: false;
+            referencedRelation: "sellers";
+            referencedColumns: ["id"];
+          }
+        ];
+      };
+      badges: {
+        Row: {
+          id: string;
+          name: string;
+          description: string | null;
+          tier: 'bronze' | 'silver' | 'gold' | 'platinum';
+          icon: string | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          name: string;
+          description?: string | null;
+          tier: 'bronze' | 'silver' | 'gold' | 'platinum';
+          icon?: string | null;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          name?: string;
+          description?: string | null;
+          tier?: 'bronze' | 'silver' | 'gold' | 'platinum';
+          icon?: string | null;
+          created_at?: string;
+        };
+        Relationships: [];
+      };
+      user_badges: {
+        Row: {
+          id: string;
+          user_id: string;
+          badge_id: string;
+          earned_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          badge_id: string;
+          earned_at?: string;
+        };
+        Update: {
+          id?: string;
+          user_id?: string;
+          badge_id?: string;
+          earned_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "user_badges_user_id_fkey";
+            columns: ["user_id"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "user_badges_badge_id_fkey";
+            columns: ["badge_id"];
+            isOneToOne: false;
+            referencedRelation: "badges";
+            referencedColumns: ["id"];
+          }
+        ];
+      };
+      sellers: {
+        Row: {
+          id: string;
+          user_id: string;
+          shop_name: string;
+          description: string | null;
+          logo_url: string | null;
+          kyc_status: 'pending' | 'approved' | 'rejected';
+          payout_info: any;
+          settings: any;
+          is_active: boolean;
+          created_at: string;
+          updated_at?: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          shop_name: string;
+          description?: string | null;
+          logo_url?: string | null;
+          kyc_status?: 'pending' | 'approved' | 'rejected';
+          payout_info?: any;
+          settings?: any;
+          is_active?: boolean;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          user_id?: string;
+          shop_name?: string;
+          description?: string | null;
+          logo_url?: string | null;
+          kyc_status?: 'pending' | 'approved' | 'rejected';
+          payout_info?: any;
+          settings?: any;
+          is_active?: boolean;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "sellers_user_id_fkey";
+            columns: ["user_id"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          }
+        ];
+      };
+      wishlist_items: {
+        Row: {
+          id: string;
+          wishlist_id: string;
+          product_id: string;
+          priority: 'low' | 'medium' | 'high';
+          notes: string | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          wishlist_id: string;
+          product_id: string;
+          priority?: 'low' | 'medium' | 'high';
+          notes?: string | null;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          wishlist_id?: string;
+          product_id?: string;
+          priority?: 'low' | 'medium' | 'high';
+          notes?: string | null;
+          created_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "wishlist_items_wishlist_id_fkey";
+            columns: ["wishlist_id"];
+            isOneToOne: false;
+            referencedRelation: "wishlists";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "wishlist_items_product_id_fkey";
+            columns: ["product_id"];
+            isOneToOne: false;
+            referencedRelation: "products";
+            referencedColumns: ["id"];
+          }
+        ];
       };
       // Add more table types as needed
     };

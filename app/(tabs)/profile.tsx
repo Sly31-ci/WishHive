@@ -16,6 +16,7 @@ import {
   TrendingUp,
   User as UserIcon,
   Crown,
+  Package,
 } from 'lucide-react-native';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/lib/supabase';
@@ -166,6 +167,14 @@ export default function ProfileScreen() {
           >
             <Settings size={20} color={COLORS.dark} />
             <Text style={styles.menuText}>Settings</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={styles.menuItem}
+            onPress={() => router.push('/seller-dashboard')}
+          >
+            <TrendingUp size={20} color={COLORS.dark} />
+            <Text style={styles.menuText}>Seller Dashboard</Text>
           </TouchableOpacity>
 
           <TouchableOpacity

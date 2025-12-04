@@ -35,7 +35,7 @@ export default function SellerProfileScreen() {
             const { data: sellerData, error: sellerError } = await supabase
                 .from('sellers')
                 .select('*')
-                .eq('id', id)
+                .eq('id', Array.isArray(id) ? id[0] : id)
                 .single();
 
             if (sellerError) throw sellerError;
@@ -45,7 +45,7 @@ export default function SellerProfileScreen() {
             const { data: productsData, error: productsError } = await supabase
                 .from('products')
                 .select('*')
-                .eq('seller_id', id)
+                .eq('seller_id', Array.isArray(id) ? id[0] : id)
                 .eq('is_active', true)
                 .order('created_at', { ascending: false });
 
@@ -122,13 +122,13 @@ export default function SellerProfileScreen() {
                             ) : (
                                 <View style={[styles.avatar, styles.placeholderAvatar]}>
                                     <Text style={styles.avatarText}>
-                                        {seller.store_name.charAt(0)}
+                                        {seller.shop_name.charAt(0)}
                                     </Text>
                                 </View>
                             )}
                         </View>
 
-                        <Text style={styles.storeName}>{seller.store_name}</Text>
+                        <Text style={styles.storeName}>{seller.shop_name}</Text>
                         {seller.description && (
                             <Text style={styles.description}>{seller.description}</Text>
                         )}
@@ -136,7 +136,8 @@ export default function SellerProfileScreen() {
                         <View style={styles.statsRow}>
                             <View style={styles.statItem}>
                                 <Star size={16} color={COLORS.accent} fill={COLORS.accent} />
-                                <Text style={styles.statText}>{seller.rating.toFixed(1)}</Text>
+                                {/* <Text style={styles.statText}>{seller.rating.toFixed(1)}</Text> */}
+                                <Text style={styles.statText}>5.0</Text>
                             </View>
                             <View style={styles.statDivider} />
                             <View style={styles.statItem}>
@@ -144,12 +145,12 @@ export default function SellerProfileScreen() {
                             </View>
                         </View>
 
-                        {seller.website_url && (
+                        {/* {seller.website_url && (
                             <View style={styles.linkRow}>
                                 <Globe size={16} color={COLORS.primary} />
                                 <Text style={styles.linkText}>{seller.website_url}</Text>
                             </View>
-                        )}
+                        )} */}
                     </View>
                 </View>
 

@@ -19,6 +19,7 @@ import {
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/lib/supabase';
 import { Button } from '@/components/Button';
+import { Input } from '@/components/Input';
 import { Card } from '@/components/Card';
 import { COLORS, SPACING, FONT_SIZES, BORDER_RADIUS } from '@/constants/theme';
 import { Database } from '@/types/database';
@@ -43,7 +44,7 @@ export default function SellerDashboardScreen() {
             const { data: sellerData, error: sellerError } = await supabase
                 .from('sellers')
                 .select('*')
-                .eq('owner_id', user?.id)
+                .eq('user_id', user?.id!)
                 .single();
 
             if (sellerError) {
@@ -72,10 +73,41 @@ export default function SellerDashboardScreen() {
         }
     };
 
-    const handleBecomeSeller = async () => {
-        // Navigate to seller registration
-        // For now, just show a placeholder
-        alert('Seller registration coming soon!');
+    const [shopName, setShopName] = useState('');
+    const [shopDescription, setShopDescription] = useState('');
+    const [registering, setRegistering] = useState(false);
+
+    const handleRegisterSeller = async () => {
+        if (!shopName.trim()) {
+            alert('Please enter a shop name');
+            return;
+        }
+
+        try {
+            setRegistering(true);
+            const { data, error } = await supabase
+                .from('sellers')
+                .insert({
+                    user_id: user?.id!,
+                    shop_name: shopName,
+                    description: shopDescription,
+                    kyc_status: 'approved', // Auto-approve for MVP
+                    is_active: true,
+                    logo_url: null
+                })
+                .select()
+                .single();
+
+            if (error) throw error;
+
+            setSeller(data);
+            alert('🎉 Congratulations! Your shop is now open!');
+        } catch (error: any) {
+            console.error('Error registering seller:', error);
+            alert('Error creating shop: ' + error.message);
+        } finally {
+            setRegistering(false);
+        }
     };
 
     if (loading) {
@@ -89,19 +121,49 @@ export default function SellerDashboardScreen() {
     if (!seller) {
         return (
             <View style={styles.container}>
-                <Stack.Screen options={{ title: 'Seller Dashboard' }} />
-                <View style={styles.centerContainer}>
-                    <Package size={64} color={COLORS.primary} />
-                    <Text style={styles.emptyTitle}>Become a Seller</Text>
-                    <Text style={styles.emptyText}>
-                        Start selling your products on WishHive today!
-                    </Text>
-                    <Button
-                        title="Register as Seller"
-                        onPress={handleBecomeSeller}
-                        style={styles.button}
-                    />
-                </View>
+                <Stack.Screen options={{ title: 'Become a Seller' }} />
+                <ScrollView contentContainerStyle={styles.registerContainer}>
+                    <View style={styles.registerHeader}>
+                        <Package size={64} color={COLORS.primary} />
+                        <Text style={styles.emptyTitle}>Open Your Shop</Text>
+                        <Text style={styles.emptyText}>
+                            Start selling your products on WishHive today!
+                        </Text>
+                    </View>
+
+                    <View style={styles.form}>
+                        <View style={styles.inputGroup}>
+                            <Text style={styles.label}>Shop Name</Text>
+                            <Card style={styles.inputCard}>
+                                <Input
+                                    placeholder="e.g. Syzon's Crafts"
+                                    value={shopName}
+                                    onChangeText={setShopName}
+                                />
+                            </Card>
+                        </View>
+
+                        <View style={styles.inputGroup}>
+                            <Text style={styles.label}>Description</Text>
+                            <Card style={styles.inputCard}>
+                                <Input
+                                    placeholder="Tell us about your shop..."
+                                    value={shopDescription}
+                                    onChangeText={setShopDescription}
+                                    multiline
+                                    numberOfLines={3}
+                                />
+                            </Card>
+                        </View>
+
+                        <Button
+                            title="Register Shop"
+                            onPress={handleRegisterSeller}
+                            loading={registering}
+                            style={styles.button}
+                        />
+                    </View>
+                </ScrollView>
             </View>
         );
     }
@@ -153,7 +215,7 @@ export default function SellerDashboardScreen() {
                             title="Add Product"
                             size="sm"
                             icon={<Plus size={16} color={COLORS.white} />}
-                            onPress={() => { }} // Navigate to add product
+                            onPress={() => router.push('/seller/add-product')}
                         />
                     </View>
 
@@ -167,7 +229,7 @@ export default function SellerDashboardScreen() {
                                             {product.currency} {product.price.toFixed(2)}
                                         </Text>
                                         <Text style={styles.productStock}>
-                                            Stock: {product.stock_quantity}
+                                            Stock: {product.stock_count}
                                         </Text>
                                     </View>
                                     <View style={styles.productStatus}>
@@ -301,5 +363,28 @@ const styles = StyleSheet.create({
     emptyCard: {
         alignItems: 'center',
         padding: SPACING.xl,
+    },
+    registerContainer: {
+        flexGrow: 1,
+        padding: SPACING.xl,
+    },
+    registerHeader: {
+        alignItems: 'center',
+        marginBottom: SPACING.xl,
+    },
+    form: {
+        gap: SPACING.lg,
+    },
+    inputGroup: {
+        gap: SPACING.xs,
+    },
+    label: {
+        fontSize: FONT_SIZES.sm,
+        fontWeight: '600',
+        color: COLORS.dark,
+        marginLeft: SPACING.xs,
+    },
+    inputCard: {
+        padding: SPACING.xs,
     },
 });
