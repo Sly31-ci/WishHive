@@ -5,19 +5,19 @@ export interface Product {
     id: string;
     seller_id: string;
     title: string;
-    description?: string;
+    description: string | null;
     price: number;
     currency: string;
-    images?: string[];
-    sku?: string;
-    variations?: any[];
-    external_url?: string;
+    images: any;
+    sku: string | null;
+    variations: any;
+    external_url: string | null;
     stock_count: number;
     is_active: boolean;
     created_at: string;
     seller?: {
         shop_name: string;
-        logo_url?: string;
+        logo_url: string | null;
     };
 }
 
@@ -79,11 +79,16 @@ export function useProducts(filters?: { search?: string; sellerId?: string }) {
         fetchProducts();
     }, [filters?.search, filters?.sellerId]);
 
+    const searchProducts = (query: string) => {
+        fetchProducts();
+    };
+
     return {
         products,
         loading,
         error,
         getProduct,
         refetch: fetchProducts,
+        searchProducts,
     };
 }

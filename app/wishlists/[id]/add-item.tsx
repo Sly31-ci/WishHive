@@ -19,6 +19,9 @@ import { Card } from '@/components/Card';
 import { COLORS, SPACING, FONT_SIZES, BORDER_RADIUS } from '@/constants/theme';
 import { Database } from '@/types/database';
 import { useProducts } from '@/hooks/useProducts';
+import { emitItemAdded } from '@/lib/events';
+import { getRandomSuccessMessage, getErrorMessage } from '@/lib/messages';
+import * as Haptics from 'expo-haptics';
 
 type Product = Database['public']['Tables']['products']['Row'];
 
@@ -44,19 +47,30 @@ export default function AddItemScreen() {
     const handleAddProduct = async (product: Product) => {
         try {
             setAdding(true);
-            const { error } = await supabase.from('wishlist_items').insert({
-                wishlist_id: id,
+            const wishlistId = Array.isArray(id) ? id[0] : id;
+            const { data, error } = await supabase.from('wishlist_items').insert({
+                wishlist_id: wishlistId as string,
                 product_id: product.id,
-                priority: 'medium',
-            });
+                priority: 3,
+            }).select().single();
 
             if (error) throw error;
 
-            Alert.alert('Success', 'Item added to wishlist', [
-                { text: 'OK', onPress: () => router.back() }
+            // Emit event for real-time update
+            emitItemAdded(wishlistId as string, data);
+
+            // Success haptic feedback
+            await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+
+            // Show fun success message
+            const successMsg = getRandomSuccessMessage('ITEM_ADDED');
+            Alert.alert(successMsg.title, successMsg.message, [
+                { text: 'Awesome!', onPress: () => router.back() }
             ]);
-        } catch (error) {
-            Alert.alert('Error', 'Failed to add item');
+        } catch (error: any) {
+            console.error('Add product error:', error);
+            await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+            Alert.alert('Oops!', getErrorMessage(error));
         } finally {
             setAdding(false);
         }
@@ -70,22 +84,33 @@ export default function AddItemScreen() {
 
         try {
             setAdding(true);
-            const { error } = await supabase.from('wishlist_items').insert({
-                wishlist_id: id,
-                title: customTitle.trim(),
-                url: customUrl.trim() || null,
-                price: customPrice ? parseFloat(customPrice) : null,
+            const wishlistId = Array.isArray(id) ? id[0] : id;
+            const { data, error } = await supabase.from('wishlist_items').insert({
+                wishlist_id: wishlistId as string,
+                custom_title: customTitle.trim(),
+                custom_url: customUrl.trim() || null,
+                custom_price: customPrice ? parseFloat(customPrice) : null,
                 note: customNote.trim() || null,
-                priority: 'medium',
-            });
+                priority: 3,
+            }).select().single();
 
             if (error) throw error;
 
-            Alert.alert('Success', 'Custom item added to wishlist', [
-                { text: 'OK', onPress: () => router.back() }
+            // Emit event for real-time update
+            emitItemAdded(wishlistId as string, data);
+
+            // Success haptic feedback
+            await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+
+            // Show fun success message
+            const successMsg = getRandomSuccessMessage('ITEM_ADDED');
+            Alert.alert(successMsg.title, successMsg.message, [
+                { text: 'Awesome!', onPress: () => router.back() }
             ]);
-        } catch (error) {
-            Alert.alert('Error', 'Failed to add item');
+        } catch (error: any) {
+            console.error('Add custom item error:', error);
+            await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+            Alert.alert('Oops!', getErrorMessage(error));
         } finally {
             setAdding(false);
         }

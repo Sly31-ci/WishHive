@@ -28,7 +28,8 @@ import { Button } from '@/components/Button';
 import { Card } from '@/components/Card';
 import { COLORS, SPACING, FONT_SIZES, BORDER_RADIUS } from '@/constants/theme';
 import { Database } from '@/types/database';
-import * as Haptics from '@/lib/haptics';
+import * as Haptics from 'expo-haptics';
+import { wishlistEvents, EVENTS } from '@/lib/events';
 
 type Wishlist = Database['public']['Tables']['wishlists']['Row'];
 type WishlistItem = Database['public']['Tables']['wishlist_items']['Row'] & {
@@ -47,6 +48,24 @@ export default function WishlistDetailScreen() {
         if (id) {
             loadWishlistDetails();
         }
+    }, [id]);
+
+    // Listen for item added events
+    useEffect(() => {
+        const handleItemAdded = (data: { wishlistId: string; item: any }) => {
+            if (data.wishlistId === id) {
+                // Reload items to show the new one
+                loadWishlistDetails();
+                // Haptic feedback
+                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+            }
+        };
+
+        wishlistEvents.on(EVENTS.ITEM_ADDED, handleItemAdded);
+
+        return () => {
+            wishlistEvents.off(EVENTS.ITEM_ADDED, handleItemAdded);
+        };
     }, [id]);
 
     const loadWishlistDetails = async () => {
@@ -109,7 +128,7 @@ export default function WishlistDetailScreen() {
                             .delete()
                             .eq('id', itemId);
                         if (error) throw error;
-                        Haptics.success();
+                        await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
                         loadWishlistDetails();
                     } catch (error) {
                         Alert.alert('Error', 'Failed to delete item');

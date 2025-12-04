@@ -7,6 +7,7 @@ import {
   KeyboardAvoidingView,
   Platform,
   TouchableOpacity,
+  Alert,
 } from 'react-native';
 import { router, Stack } from 'expo-router';
 import { ArrowLeft, Calendar } from 'lucide-react-native';
@@ -90,8 +91,15 @@ export default function CreateWishlistScreen() {
       if (error) throw error;
 
       if (data) {
-        router.back();
-        router.push(`/wishlist/${data.id}`);
+        Alert.alert('Success', 'Wishlist created successfully!', [
+          {
+            text: 'OK',
+            onPress: () => {
+              router.back();
+              router.push(`/wishlist/${data.id}`);
+            },
+          },
+        ]);
       }
     } catch (err: any) {
       setError(err.message || 'Failed to create wishlist');

@@ -266,25 +266,49 @@ export interface Database {
         Row: {
           id: string;
           wishlist_id: string;
-          product_id: string;
-          priority: 'low' | 'medium' | 'high';
-          notes: string | null;
+          product_id: string | null;
+          custom_title: string | null;
+          custom_price: number | null;
+          custom_url: string | null;
+          custom_images: any;
+          note: string | null;
+          priority: number;
+          quantity: number;
+          is_purchased: boolean;
+          purchased_by: string | null;
+          purchased_at: string | null;
           created_at: string;
         };
         Insert: {
           id?: string;
           wishlist_id: string;
-          product_id: string;
-          priority?: 'low' | 'medium' | 'high';
-          notes?: string | null;
+          product_id?: string | null;
+          custom_title?: string | null;
+          custom_price?: number | null;
+          custom_url?: string | null;
+          custom_images?: any;
+          note?: string | null;
+          priority?: number;
+          quantity?: number;
+          is_purchased?: boolean;
+          purchased_by?: string | null;
+          purchased_at?: string | null;
           created_at?: string;
         };
         Update: {
           id?: string;
           wishlist_id?: string;
-          product_id?: string;
-          priority?: 'low' | 'medium' | 'high';
-          notes?: string | null;
+          product_id?: string | null;
+          custom_title?: string | null;
+          custom_price?: number | null;
+          custom_url?: string | null;
+          custom_images?: any;
+          note?: string | null;
+          priority?: number;
+          quantity?: number;
+          is_purchased?: boolean;
+          purchased_by?: string | null;
+          purchased_at?: string | null;
           created_at?: string;
         };
         Relationships: [
