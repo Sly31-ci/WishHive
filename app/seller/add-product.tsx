@@ -54,7 +54,11 @@ export default function AddProductScreen() {
     const uploadImage = async (base64Data: string, fileExtension: string) => {
         try {
             setUploading(true);
+            console.log('📸 Starting image upload...');
+
             const fileName = `${user?.id}/${Date.now()}.${fileExtension}`;
+            console.log('📁 Uploading to:', fileName);
+
             const { data, error } = await supabase.storage
                 .from('product-images')
                 .upload(fileName, decode(base64Data), {
@@ -62,16 +66,37 @@ export default function AddProductScreen() {
                     upsert: false,
                 });
 
-            if (error) throw error;
+            if (error) {
+                console.error('❌ Upload error:', error);
+
+                // Check if it's a bucket not found error
+                if (error.message?.includes('Bucket not found') || error.message?.includes('bucket')) {
+                    throw new Error(
+                        'Le bucket de stockage n\'existe pas encore.\n\n' +
+                        'Veuillez créer le bucket "product-images" dans votre dashboard Supabase.\n\n' +
+                        'Consultez STORAGE_SETUP.md pour les instructions.'
+                    );
+                }
+
+                throw error;
+            }
+
+            console.log('✅ Image uploaded:', data);
 
             const { data: { publicUrl } } = supabase.storage
                 .from('product-images')
                 .getPublicUrl(fileName);
 
+            console.log('🔗 Public URL:', publicUrl);
             setImages([...images, publicUrl]);
+
+            Alert.alert('✅ Succès', 'Image ajoutée avec succès!');
         } catch (error: any) {
-            console.error('Error uploading image:', error);
-            Alert.alert('Upload Failed', 'Could not upload image. Please try again.');
+            console.error('❌ Error uploading image:', error);
+            Alert.alert(
+                '❌ Échec de l\'upload',
+                error.message || 'Impossible d\'uploader l\'image. Veuillez réessayer.'
+            );
         } finally {
             setUploading(false);
         }
@@ -85,47 +110,93 @@ export default function AddProductScreen() {
 
     const handleAddProduct = async () => {
         if (!title || !price || !stock) {
-            Alert.alert('Error', 'Please fill in all required fields');
+            Alert.alert('Erreur', 'Veuillez remplir tous les champs obligatoires');
             return;
         }
 
         try {
             setLoading(true);
+            console.log('🚀 Starting product creation...');
 
             // 1. Get seller ID
+            console.log('📝 Fetching seller profile for user:', user?.id);
             const { data: sellerData, error: sellerError } = await supabase
                 .from('sellers')
                 .select('id')
                 .eq('user_id', user?.id!)
                 .single();
 
-            if (sellerError || !sellerData) {
-                throw new Error('Seller profile not found');
+            if (sellerError) {
+                console.error('❌ Seller error:', sellerError);
+                throw new Error('Profil vendeur non trouvé. Veuillez vous inscrire comme vendeur d\'abord.');
             }
 
+            if (!sellerData) {
+                console.error('❌ No seller data found');
+                throw new Error('Profil vendeur non trouvé');
+            }
+
+            console.log('✅ Seller found:', sellerData.id);
+
             // 2. Create product
-            const { error: productError } = await supabase
+            console.log('📦 Creating product with data:', {
+                seller_id: sellerData.id,
+                title,
+                price: parseFloat(price),
+                stock_count: parseInt(stock),
+                images_count: images.length
+            });
+
+            const { data: productData, error: productError } = await supabase
                 .from('products')
                 .insert({
                     seller_id: sellerData.id,
                     title,
-                    description,
+                    description: description || null,
                     price: parseFloat(price),
                     stock_count: parseInt(stock),
                     currency: 'USD',
                     is_active: true,
-                    images: images,
+                    images: images.length > 0 ? images : [],
                     variations: {}
-                });
+                })
+                .select()
+                .single();
 
-            if (productError) throw productError;
+            if (productError) {
+                console.error('❌ Product creation error:', productError);
+                throw productError;
+            }
 
-            Alert.alert('Success', 'Product added successfully!', [
-                { text: 'OK', onPress: () => router.back() }
-            ]);
+            console.log('✅ Product created successfully:', productData);
+
+            // Clear form
+            setTitle('');
+            setDescription('');
+            setPrice('');
+            setStock('');
+            setImages([]);
+
+            Alert.alert(
+                '✅ Succès',
+                `Produit "${title}" créé avec succès!${images.length > 0 ? `\n${images.length} image(s) ajoutée(s)` : ''}`,
+                [
+                    {
+                        text: 'OK',
+                        onPress: () => {
+                            console.log('🔙 Navigating back to seller dashboard');
+                            router.back();
+                        }
+                    }
+                ]
+            );
         } catch (error: any) {
-            console.error('Error adding product:', error);
-            Alert.alert('Error', error.message || 'Failed to add product');
+            console.error('❌ Error adding product:', error);
+            Alert.alert(
+                'Erreur',
+                error.message || 'Échec de la création du produit. Veuillez réessayer.',
+                [{ text: 'OK' }]
+            );
         } finally {
             setLoading(false);
         }
