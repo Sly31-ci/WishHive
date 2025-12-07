@@ -33,7 +33,8 @@ import { wishlistEvents, EVENTS } from '@/lib/events';
 
 import { SwipeableItem } from '@/components/SwipeableItem';
 import { ConfirmDialog } from '@/components/ConfirmDialog';
-// NOTE: We removed the dependency on react-native-draggable-flatlist to avoid bundling errors.
+import DraggableFlatList, { RenderItemParams, ScaleDecorator } from 'react-native-draggable-flatlist';
+import { DraggableWishlistItem } from '@/components/DraggableWishlistItem';
 import { ReorganizeToolbar } from '@/components/ReorganizeToolbar';
 import { getPriorityLabel, getPriorityColor } from '@/constants/priorities';
 
