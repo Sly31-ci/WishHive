@@ -8,21 +8,27 @@ import {
   RefreshControl,
 } from 'react-native';
 import { router } from 'expo-router';
-import { Plus, Calendar, Eye } from 'lucide-react-native';
+import { Plus, Calendar, Eye, Trash2 } from 'lucide-react-native';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/lib/supabase';
-import { Card } from '@/components/Card';
 import { Button } from '@/components/Button';
+import { WishlistCard } from '@/components/WishlistCard';
+import { ConfirmDialog } from '@/components/ConfirmDialog';
+import * as Haptics from 'expo-haptics';
 import { COLORS, SPACING, FONT_SIZES, BORDER_RADIUS } from '@/constants/theme';
 import { Database } from '@/types/database';
+import { useTheme } from '@/contexts/ThemeContext';
 
 type Wishlist = Database['public']['Tables']['wishlists']['Row'];
 
 export default function WishlistsScreen() {
+  const { theme } = useTheme();
   const { user } = useAuth();
   const [wishlists, setWishlists] = useState<Wishlist[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [deleteDialogVisible, setDeleteDialogVisible] = useState(false);
+  const [wishlistToDelete, setWishlistToDelete] = useState<string | null>(null);
 
   useEffect(() => {
     loadWishlists();
@@ -53,47 +59,55 @@ export default function WishlistsScreen() {
     loadWishlists();
   };
 
+  const confirmDelete = (id: string) => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    setWishlistToDelete(id);
+    setDeleteDialogVisible(true);
+  };
+
+  const handleDeleteWishlist = async () => {
+    if (!wishlistToDelete) return;
+
+    try {
+      // 1. Delete all items in wishlist (cascade should handle this typically, but manual for safety/clarity)
+      const { error: itemsError } = await supabase
+        .from('wishlist_items')
+        .delete()
+        .eq('wishlist_id', wishlistToDelete);
+
+      if (itemsError) throw itemsError;
+
+      // 2. Delete the wishlist
+      const { error: wishlistError } = await supabase
+        .from('wishlists')
+        .delete()
+        .eq('id', wishlistToDelete);
+
+      if (wishlistError) throw wishlistError;
+
+      // 3. Success Feedback
+      await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+
+      // 4. Update local state
+      setWishlists(prev => prev.filter(w => w.id !== wishlistToDelete));
+
+    } catch (error) {
+      console.error('Error deleting wishlist:', error);
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+    } finally {
+      setDeleteDialogVisible(false);
+      setWishlistToDelete(null);
+    }
+  };
+
   const renderWishlistCard = ({ item }: { item: Wishlist }) => (
-    <TouchableOpacity
+    <WishlistCard
+      wishlist={item}
       onPress={() => router.push(`/wishlist/${item.id}`)}
-      activeOpacity={0.7}
-    >
-      <Card style={styles.wishlistCard}>
-        <View style={styles.cardHeader}>
-          <View style={styles.typeBadge}>
-            <Text style={styles.typeBadgeText}>{item.type}</Text>
-          </View>
-          <View style={styles.privacyBadge}>
-            <Text style={styles.privacyText}>{item.privacy}</Text>
-          </View>
-        </View>
-
-        <Text style={styles.wishlistTitle} numberOfLines={2}>
-          {item.title}
-        </Text>
-
-        {item.description && (
-          <Text style={styles.wishlistDescription} numberOfLines={2}>
-            {item.description}
-          </Text>
-        )}
-
-        <View style={styles.cardFooter}>
-          {item.due_date && (
-            <View style={styles.infoItem}>
-              <Calendar size={14} color={COLORS.gray[500]} />
-              <Text style={styles.infoText}>
-                {new Date(item.due_date).toLocaleDateString()}
-              </Text>
-            </View>
-          )}
-          <View style={styles.infoItem}>
-            <Eye size={14} color={COLORS.gray[500]} />
-            <Text style={styles.infoText}>{item.view_count} views</Text>
-          </View>
-        </View>
-      </Card>
-    </TouchableOpacity>
+      onLongPress={() => confirmDelete(item.id)}
+      onDelete={() => confirmDelete(item.id)}
+      showDelete={true}
+    />
   );
 
   if (loading) {
@@ -141,6 +155,18 @@ export default function WishlistsScreen() {
           }
         />
       )}
+
+      <ConfirmDialog
+        visible={deleteDialogVisible}
+        title="Supprimer cette wishlist ?"
+        message="Cette action est irréversible. Tous les items de cette wishlist seront définitivement supprimés. 😢"
+        confirmText="Oui, supprimer"
+        cancelText="Non, garder"
+        type="danger"
+        emoji="🗑️"
+        onConfirm={handleDeleteWishlist}
+        onCancel={() => setDeleteDialogVisible(false)}
+      />
     </View>
   );
 }
@@ -182,65 +208,6 @@ const styles = StyleSheet.create({
     padding: SPACING.lg,
     gap: SPACING.md,
   },
-  wishlistCard: {
-    marginBottom: SPACING.sm,
-  },
-  cardHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: SPACING.sm,
-  },
-  typeBadge: {
-    backgroundColor: COLORS.primary + '20',
-    paddingHorizontal: SPACING.sm,
-    paddingVertical: 4,
-    borderRadius: BORDER_RADIUS.sm,
-  },
-  typeBadgeText: {
-    fontSize: FONT_SIZES.xs,
-    fontWeight: '600',
-    color: COLORS.primary,
-    textTransform: 'capitalize',
-  },
-  privacyBadge: {
-    backgroundColor: COLORS.gray[200],
-    paddingHorizontal: SPACING.sm,
-    paddingVertical: 4,
-    borderRadius: BORDER_RADIUS.sm,
-  },
-  privacyText: {
-    fontSize: FONT_SIZES.xs,
-    fontWeight: '600',
-    color: COLORS.gray[600],
-    textTransform: 'capitalize',
-  },
-  wishlistTitle: {
-    fontSize: FONT_SIZES.lg,
-    fontWeight: '700',
-    color: COLORS.dark,
-    marginBottom: SPACING.xs,
-  },
-  wishlistDescription: {
-    fontSize: FONT_SIZES.sm,
-    color: COLORS.gray[600],
-    marginBottom: SPACING.sm,
-  },
-  cardFooter: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    paddingTop: SPACING.sm,
-    borderTopWidth: 1,
-    borderTopColor: COLORS.gray[200],
-  },
-  infoItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: SPACING.xs,
-  },
-  infoText: {
-    fontSize: FONT_SIZES.xs,
-    color: COLORS.gray[500],
-  },
   loadingText: {
     fontSize: FONT_SIZES.md,
     color: COLORS.gray[500],
@@ -265,5 +232,12 @@ const styles = StyleSheet.create({
   },
   emptyButton: {
     marginTop: SPACING.md,
+  },
+  deleteIconButton: {
+    position: 'absolute',
+    top: SPACING.md,
+    right: SPACING.md,
+    padding: SPACING.xs,
+    borderRadius: BORDER_RADIUS.full,
   },
 });

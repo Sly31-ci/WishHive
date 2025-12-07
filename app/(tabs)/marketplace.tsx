@@ -7,36 +7,77 @@ import {
   Image,
   TouchableOpacity,
   TextInput,
+  ScrollView,
 } from 'react-native';
 import { router } from 'expo-router';
 import { Search, Store } from 'lucide-react-native';
 import { supabase } from '@/lib/supabase';
-import { Card } from '@/components/Card';
+import { FilterChip } from '@/components/FilterChip';
+import { TrendingSection } from '@/components/TrendingSection';
+import { useTheme } from '@/contexts/ThemeContext';
 import { COLORS, SPACING, FONT_SIZES, BORDER_RADIUS } from '@/constants/theme';
 import { Database } from '@/types/database';
 
 type Product = Database['public']['Tables']['products']['Row'];
 
 export default function MarketplaceScreen() {
-  const [products, setProducts] = useState<Product[]>([]);
+  const { theme } = useTheme();
+  const [products, setProducts] = useState<Product[]>([]); // All products with stats
+  const [displayedProducts, setDisplayedProducts] = useState<Product[]>([]); // Filtered & Sorted
+  const [trendingProducts, setTrendingProducts] = useState<Product[]>([]);
+
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
+  const [sortBy, setSortBy] = useState<'popular' | 'newest' | 'price_asc' | 'price_desc' | 'trending'>('popular');
 
   useEffect(() => {
-    loadProducts();
+    loadProductsAndStats();
   }, []);
 
-  const loadProducts = async () => {
+  useEffect(() => {
+    filterAndSortProducts();
+  }, [products, sortBy, searchQuery]);
+
+  const loadProductsAndStats = async () => {
     try {
+      setLoading(true);
+      // Fetch products AND their wishlist items to calculate popularity manually
       const { data, error } = await supabase
         .from('products')
-        .select('*')
+        .select('*, wishlist_items(id, created_at)')
         .eq('is_active', true)
-        .order('created_at', { ascending: false })
-        .limit(50);
+        .limit(100);
 
       if (error) throw error;
-      setProducts(data || []);
+
+      // Calculate stats
+      const now = new Date();
+      const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+
+      const productsWithStats = (data || []).map((p: any) => {
+        const items = p.wishlist_items || [];
+        const times_added = items.length;
+        const recent_adds = items.filter((item: any) =>
+          new Date(item.created_at) > sevenDaysAgo
+        ).length;
+
+        return {
+          ...p,
+          times_added,
+          recent_adds,
+        };
+      });
+
+      setProducts(productsWithStats);
+
+      // Define trending: At least 1 recent add
+      const trending = productsWithStats
+        .filter((p: any) => p.recent_adds > 0)
+        .sort((a: any, b: any) => b.recent_adds - a.recent_adds)
+        .slice(0, 10);
+
+      setTrendingProducts(trending);
+
     } catch (error) {
       console.error('Error loading products:', error);
     } finally {
@@ -44,13 +85,38 @@ export default function MarketplaceScreen() {
     }
   };
 
+  const filterAndSortProducts = () => {
+    let filtered = products.filter((product) =>
+      product.title.toLowerCase().includes(searchQuery.toLowerCase())
+    );
+
+    filtered.sort((a: any, b: any) => {
+      switch (sortBy) {
+        case 'newest':
+          return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+        case 'price_asc':
+          return a.price - b.price;
+        case 'price_desc':
+          return b.price - a.price;
+        case 'trending':
+          return b.recent_adds - a.recent_adds;
+        case 'popular':
+        default:
+          return b.times_added - a.times_added;
+      }
+    });
+
+    setDisplayedProducts(filtered);
+  };
+
   const renderProduct = ({ item }: { item: Product }) => {
     const images = item.images as string[];
     const imageUrl = images && images.length > 0 ? images[0] : null;
+    const isPopular = sortBy === 'popular' && (item as any).times_added > 0;
 
     return (
       <TouchableOpacity
-        style={styles.productCard}
+        style={[styles.productCard, { backgroundColor: theme.card, borderColor: theme.border }]}
         onPress={() => router.push(`/product/${item.id}`)}
       >
         <View style={styles.imageContainer}>
@@ -61,64 +127,100 @@ export default function MarketplaceScreen() {
               <Store size={32} color={COLORS.gray[400]} />
             </View>
           )}
+          {isPopular && (
+            <View style={styles.popularityBadge}>
+              <Text style={styles.popularityText}>❤️ {(item as any).times_added}</Text>
+            </View>
+          )}
         </View>
-        <Text style={styles.productTitle} numberOfLines={2}>
+        <Text style={[styles.productTitle, { color: theme.text }]} numberOfLines={2}>
           {item.title}
         </Text>
-        <Text style={styles.productPrice}>
+        <Text style={[styles.productPrice, { color: theme.primary }]}>
           {item.currency} {item.price.toFixed(2)}
         </Text>
       </TouchableOpacity>
     );
   };
 
-  const filteredProducts = products.filter((product) =>
-    product.title.toLowerCase().includes(searchQuery.toLowerCase())
-  );
-
   return (
-    <View style={styles.container}>
-      <View style={styles.header}>
-        <Text style={styles.headerTitle}>Marketplace</Text>
+    <View style={[styles.container, { backgroundColor: theme.background }]}>
+      <View style={[styles.header, { backgroundColor: theme.card, borderBottomColor: theme.border }]}>
+        <Text style={[styles.headerTitle, { color: theme.text }]}>Marketplace</Text>
       </View>
 
-      <View style={styles.searchContainer}>
-        <View style={styles.searchBox}>
-          <Search size={20} color={COLORS.gray[400]} />
+      <View style={[styles.searchContainer, { backgroundColor: theme.card }]}>
+        <View style={[styles.searchBox, { backgroundColor: theme.input }]}>
+          <Search size={20} color={theme.textSecondary} />
           <TextInput
-            style={styles.searchInput}
+            style={[styles.searchInput, { color: theme.text }]}
             placeholder="Search products..."
             value={searchQuery}
             onChangeText={setSearchQuery}
-            placeholderTextColor={COLORS.gray[400]}
+            placeholderTextColor={theme.textSecondary}
           />
         </View>
       </View>
 
-      {loading ? (
-        <View style={styles.centerContainer}>
-          <Text style={styles.loadingText}>Loading products...</Text>
-        </View>
-      ) : filteredProducts.length === 0 ? (
-        <View style={styles.emptyContainer}>
-          <Store size={64} color={COLORS.gray[300]} />
-          <Text style={styles.emptyTitle}>No products found</Text>
-          <Text style={styles.emptyText}>
-            {searchQuery
-              ? 'Try a different search term'
-              : 'Check back soon for new products!'}
-          </Text>
-        </View>
-      ) : (
-        <FlatList
-          data={filteredProducts}
-          renderItem={renderProduct}
-          keyExtractor={(item) => item.id}
-          numColumns={2}
-          contentContainerStyle={styles.productGrid}
-          columnWrapperStyle={styles.productRow}
-        />
-      )}
+      <View style={[styles.sortContainer, { backgroundColor: theme.card }]}>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.sortContent}>
+          <FilterChip
+            label="Popular"
+            active={sortBy === 'popular'}
+            onPress={() => setSortBy('popular')}
+            icon="🔥"
+          />
+          <FilterChip
+            label="Newest"
+            active={sortBy === 'newest'}
+            onPress={() => setSortBy('newest')}
+            icon="✨"
+          />
+          <FilterChip
+            label="Price Up"
+            active={sortBy === 'price_asc'}
+            onPress={() => setSortBy('price_asc')}
+            icon="💰"
+          />
+          <FilterChip
+            label="Price Down"
+            active={sortBy === 'price_desc'}
+            onPress={() => setSortBy('price_desc')}
+            icon="💎"
+          />
+          <FilterChip
+            label="Trending"
+            active={sortBy === 'trending'}
+            onPress={() => setSortBy('trending')}
+            icon="📈"
+          />
+        </ScrollView>
+      </View>
+
+      <FlatList
+        data={displayedProducts}
+        renderItem={renderProduct}
+        keyExtractor={(item) => item.id}
+        numColumns={2}
+        contentContainerStyle={styles.productGrid}
+        columnWrapperStyle={styles.productRow}
+        ListHeaderComponent={
+          <TrendingSection products={trendingProducts} loading={loading} />
+        }
+        ListEmptyComponent={
+          !loading ? (
+            <View style={styles.emptyContainer}>
+              <Store size={64} color={theme.textSecondary} />
+              <Text style={[styles.emptyTitle, { color: theme.text }]}>No products found</Text>
+              <Text style={[styles.emptyText, { color: theme.textSecondary }]}>
+                {searchQuery
+                  ? 'Try a different search term'
+                  : 'Check back soon for new products!'}
+              </Text>
+            </View>
+          ) : null
+        }
+      />
     </View>
   );
 }
@@ -127,11 +229,6 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: COLORS.light,
-  },
-  centerContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
   },
   header: {
     padding: SPACING.lg,
@@ -162,6 +259,14 @@ const styles = StyleSheet.create({
     paddingVertical: SPACING.md,
     fontSize: FONT_SIZES.md,
     color: COLORS.dark,
+  },
+  sortContainer: {
+    backgroundColor: COLORS.white,
+    paddingBottom: SPACING.md,
+  },
+  sortContent: {
+    paddingHorizontal: SPACING.lg,
+    gap: SPACING.sm,
   },
   productGrid: {
     padding: SPACING.lg,
@@ -208,10 +313,6 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: COLORS.primary,
   },
-  loadingText: {
-    fontSize: FONT_SIZES.md,
-    color: COLORS.gray[500],
-  },
   emptyContainer: {
     flex: 1,
     justifyContent: 'center',
@@ -229,5 +330,24 @@ const styles = StyleSheet.create({
     fontSize: FONT_SIZES.md,
     color: COLORS.gray[600],
     textAlign: 'center',
+  },
+  popularityBadge: {
+    position: 'absolute',
+    top: 4,
+    right: 4,
+    backgroundColor: 'white',
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 8,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+    elevation: 2,
+  },
+  popularityText: {
+    fontSize: 10,
+    fontWeight: '700',
+    color: COLORS.error,
   },
 });

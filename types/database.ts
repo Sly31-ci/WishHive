@@ -57,6 +57,7 @@ export interface Database {
           id?: string;
           owner_id: string;
           title: string;
+          slug?: string;
           description?: string | null;
           type?: string;
           privacy?: 'public' | 'private' | 'code_only';
@@ -72,6 +73,7 @@ export interface Database {
           id?: string;
           owner_id?: string;
           title?: string;
+          slug?: string;
           description?: string | null;
           type?: string;
           privacy?: 'public' | 'private' | 'code_only';
@@ -328,7 +330,54 @@ export interface Database {
           }
         ];
       };
-      // Add more table types as needed
+      wishlist_interactions: {
+        Row: {
+          id: string;
+          wishlist_id: string;
+          item_id: string | null;
+          interaction_type: 'reaction' | 'comment';
+          content: string;
+          author_name: string | null;
+          author_id: string | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          wishlist_id: string;
+          item_id?: string | null;
+          interaction_type: 'reaction' | 'comment';
+          content: string;
+          author_name?: string | null;
+          author_id?: string | null;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          wishlist_id?: string;
+          item_id?: string | null;
+          interaction_type?: 'reaction' | 'comment';
+          content?: string;
+          author_name?: string | null;
+          author_id?: string | null;
+          created_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "wishlist_interactions_wishlist_id_fkey";
+            columns: ["wishlist_id"];
+            isOneToOne: false;
+            referencedRelation: "wishlists";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "wishlist_interactions_item_id_fkey";
+            columns: ["item_id"];
+            isOneToOne: false;
+            referencedRelation: "wishlist_items";
+            referencedColumns: ["id"];
+          }
+        ];
+      };
     };
     Views: {
       [_ in never]: never;

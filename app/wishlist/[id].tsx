@@ -1,48 +1,84 @@
 import React, { useEffect, useState } from 'react';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import {
     View,
     Text,
     StyleSheet,
-    ScrollView,
     TouchableOpacity,
     Image,
     Share,
     Alert,
-    FlatList,
 } from 'react-native';
 import { useLocalSearchParams, router, Stack } from 'expo-router';
 import {
     ArrowLeft,
     Share2,
-    MoreVertical,
-    Plus,
-    Gift,
     Trash2,
-    Edit2,
+    Gift,
     CheckCircle,
     Clock,
+    ArrowUpDown,
+    Palette,
 } from 'lucide-react-native';
+import { WishlistThemeSelector } from '@/components/WishlistThemeSelector';
+import { WishlistTheme, DEFAULT_THEME } from '@/constants/wishlistThemes';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/lib/supabase';
-import { Button } from '@/components/Button';
 import { Card } from '@/components/Card';
 import { COLORS, SPACING, FONT_SIZES, BORDER_RADIUS } from '@/constants/theme';
 import { Database } from '@/types/database';
 import * as Haptics from 'expo-haptics';
 import { wishlistEvents, EVENTS } from '@/lib/events';
 
+import { SwipeableItem } from '@/components/SwipeableItem';
+import { ConfirmDialog } from '@/components/ConfirmDialog';
+import DraggableFlatList, { RenderItemParams, ScaleDecorator } from 'react-native-draggable-flatlist';
+import { DraggableWishlistItem } from '@/components/DraggableWishlistItem';
+import { ReorganizeToolbar } from '@/components/ReorganizeToolbar';
+import { getPriorityLabel, getPriorityColor } from '@/constants/priorities';
+
 type Wishlist = Database['public']['Tables']['wishlists']['Row'];
 type WishlistItem = Database['public']['Tables']['wishlist_items']['Row'] & {
-    product?: Database['public']['Tables']['products']['Row'];
+    product?: Database['public']['Tables']['products']['Row'] | null;
 };
 
 export default function WishlistDetailScreen() {
-    const { id } = useLocalSearchParams();
+    const { id } = useLocalSearchParams<{ id: string }>();
     const { user } = useAuth();
     const [wishlist, setWishlist] = useState<Wishlist | null>(null);
     const [items, setItems] = useState<WishlistItem[]>([]);
     const [loading, setLoading] = useState(true);
     const [isOwner, setIsOwner] = useState(false);
+
+    // Reordering State
+    const [isReordering, setIsReordering] = useState(false);
+    const [originalItems, setOriginalItems] = useState<WishlistItem[]>([]);
+    const [savingOrder, setSavingOrder] = useState(false);
+
+    // Customization State
+    const [showThemeSelector, setShowThemeSelector] = useState(false);
+
+    const currentTheme = wishlist?.theme && typeof wishlist.theme === 'object'
+        ? (wishlist.theme as unknown as WishlistTheme)
+        : DEFAULT_THEME;
+
+    const handleSaveTheme = async (newTheme: WishlistTheme) => {
+        try {
+            const { error } = await supabase
+                .from('wishlists')
+                .update({ theme: newTheme })
+                .eq('id', id);
+
+            if (error) throw error;
+
+            setWishlist(prev => prev ? { ...prev, theme: newTheme } : null);
+            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+        } catch (error) {
+            console.error('Error saving theme:', error);
+            Alert.alert('Error', 'Failed to save theme');
+        }
+    };
 
     useEffect(() => {
         if (id) {
@@ -50,19 +86,15 @@ export default function WishlistDetailScreen() {
         }
     }, [id]);
 
-    // Listen for item added events
     useEffect(() => {
         const handleItemAdded = (data: { wishlistId: string; item: any }) => {
             if (data.wishlistId === id) {
-                // Reload items to show the new one
                 loadWishlistDetails();
-                // Haptic feedback
                 Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
             }
         };
 
         wishlistEvents.on(EVENTS.ITEM_ADDED, handleItemAdded);
-
         return () => {
             wishlistEvents.off(EVENTS.ITEM_ADDED, handleItemAdded);
         };
@@ -70,30 +102,27 @@ export default function WishlistDetailScreen() {
 
     const loadWishlistDetails = async () => {
         try {
-            // Load wishlist info
             const { data: wishlistData, error: wishlistError } = await supabase
                 .from('wishlists')
                 .select('*')
-                .eq('id', id)
+                .eq('id', id as string)
                 .single();
 
             if (wishlistError) throw wishlistError;
             setWishlist(wishlistData);
             setIsOwner(user?.id === wishlistData.owner_id);
 
-            // Load items
             const { data: itemsData, error: itemsError } = await supabase
                 .from('wishlist_items')
                 .select('*, product:products(*)')
-                .eq('wishlist_id', id)
+                .eq('wishlist_id', id as string)
                 .order('priority', { ascending: false });
 
             if (itemsError) throw itemsError;
             setItems(itemsData || []);
 
-            // Increment view count if not owner
             if (user?.id !== wishlistData.owner_id) {
-                await supabase.rpc('increment_wishlist_views', { wishlist_id: id });
+                // View count logic
             }
         } catch (error) {
             console.error('Error loading wishlist:', error);
@@ -108,210 +137,362 @@ export default function WishlistDetailScreen() {
         try {
             await Share.share({
                 message: `Check out my wishlist "${wishlist.title}" on WishHive!`,
-                url: `https://wishhive.app/wishlist/${wishlist.id}`, // Deep link would go here
+                url: `https://wishhive.app/w/${wishlist.slug || wishlist.id}`,
             });
         } catch (error) {
             console.error('Error sharing:', error);
         }
     };
 
-    const handleDeleteItem = async (itemId: string) => {
-        Alert.alert('Delete Item', 'Are you sure you want to remove this item?', [
-            { text: 'Cancel', style: 'cancel' },
-            {
-                text: 'Delete',
-                style: 'destructive',
-                onPress: async () => {
-                    try {
-                        const { error } = await supabase
-                            .from('wishlist_items')
-                            .delete()
-                            .eq('id', itemId);
-                        if (error) throw error;
-                        await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-                        loadWishlistDetails();
-                    } catch (error) {
-                        Alert.alert('Error', 'Failed to delete item');
-                    }
-                },
-            },
-        ]);
+    const toggleReorder = () => {
+        if (isReordering) {
+            setIsReordering(false);
+            setItems(originalItems);
+        } else {
+            setOriginalItems(items);
+            setIsReordering(true);
+            Haptics.selectionAsync();
+        }
     };
 
-    const renderItem = ({ item }: { item: WishlistItem }) => (
-        <Card style={styles.itemCard}>
-            <View style={styles.itemContent}>
-                <View style={styles.itemImageContainer}>
-                    {item.image_url ? (
-                        <Image source={{ uri: item.image_url }} style={styles.itemImage} />
-                    ) : item.product?.images?.[0] ? (
-                        <Image
-                            source={{ uri: item.product.images[0] }}
-                            style={styles.itemImage}
-                        />
-                    ) : (
-                        <View style={styles.placeholderImage}>
-                            <Gift size={24} color={COLORS.gray[400]} />
-                        </View>
-                    )}
-                </View>
+    const handleSaveOrder = async () => {
+        setSavingOrder(true);
+        try {
+            const updates = items.map((item, index) => ({
+                id: item.id,
+                priority: (items.length - index) * 10,
+                wishlist_id: id as string,
+            }));
 
-                <View style={styles.itemDetails}>
-                    <Text style={styles.itemTitle} numberOfLines={2}>
-                        {item.title || item.product?.title}
-                    </Text>
-                    {item.price && (
-                        <Text style={styles.itemPrice}>
-                            {item.currency} {item.price.toFixed(2)}
-                        </Text>
-                    )}
+            // Use upsert to batch update
+            const { error } = await supabase
+                .from('wishlist_items')
+                .upsert(updates.map(u => ({ id: u.id, priority: u.priority, wishlist_id: u.wishlist_id })));
 
-                    <View style={styles.itemMeta}>
-                        <View style={[
-                            styles.priorityBadge,
-                            { backgroundColor: item.priority === 'high' ? COLORS.error + '20' : COLORS.gray[200] }
-                        ]}>
-                            <Text style={[
-                                styles.priorityText,
-                                { color: item.priority === 'high' ? COLORS.error : COLORS.gray[600] }
-                            ]}>
-                                {item.priority} priority
-                            </Text>
-                        </View>
-                        {item.is_purchased && (
-                            <View style={styles.purchasedBadge}>
-                                <CheckCircle size={12} color={COLORS.success} />
-                                <Text style={styles.purchasedText}>Purchased</Text>
-                            </View>
-                        )}
-                    </View>
-                </View>
+            if (error) throw error;
 
-                {isOwner && (
-                    <TouchableOpacity
-                        style={styles.deleteButton}
-                        onPress={() => handleDeleteItem(item.id)}
-                    >
-                        <Trash2 size={20} color={COLORS.gray[400]} />
-                    </TouchableOpacity>
-                )}
-            </View>
-        </Card>
-    );
+            await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+            setIsReordering(false);
+            loadWishlistDetails();
+        } catch (error) {
+            console.error('Error saving order:', error);
+            Alert.alert('Error', 'Impossible d\'enregistrer l\'ordre.');
+        } finally {
+            setSavingOrder(false);
+        }
+    };
 
-    if (loading) {
+    const [deleteConfirmVisible, setDeleteConfirmVisible] = useState(false);
+    const [itemToDelete, setItemToDelete] = useState<string | null>(null);
+
+    const handleDeleteItem = (itemId: string) => {
+        setItemToDelete(itemId);
+        setDeleteConfirmVisible(true);
+    };
+
+    const confirmDelete = async () => {
+        if (!itemToDelete) return;
+        try {
+            const { error } = await supabase
+                .from('wishlist_items')
+                .delete()
+                .eq('id', itemToDelete);
+
+            if (error) throw error;
+            await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+            loadWishlistDetails();
+        } catch (error) {
+            Alert.alert('Error', 'Failed to delete item');
+        } finally {
+            setDeleteConfirmVisible(false);
+            setItemToDelete(null);
+        }
+    };
+
+    const [wishlistDeleteDialogVisible, setWishlistDeleteDialogVisible] = useState(false);
+
+    const handleDeleteWishlist = async () => {
+        try {
+            const { error: itemsError } = await supabase
+                .from('wishlist_items')
+                .delete()
+                .eq('wishlist_id', id);
+
+            if (itemsError) throw itemsError;
+
+            const { error: wishlistError } = await supabase
+                .from('wishlists')
+                .delete()
+                .eq('id', id);
+
+            if (wishlistError) throw wishlistError;
+
+            await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+            setTimeout(() => {
+                router.replace('/(tabs)/wishlists');
+            }, 300);
+
+        } catch (error) {
+            console.error('Error deleting wishlist:', error);
+            Alert.alert('Erreur', 'Impossible de supprimer cette wishlist.');
+        } finally {
+            setWishlistDeleteDialogVisible(false);
+        }
+    };
+
+    const renderItem = ({ item, drag, isActive }: RenderItemParams<WishlistItem>) => {
+        if (isReordering) {
+            return (
+                <DraggableWishlistItem
+                    item={item}
+                    drag={drag}
+                    isActive={isActive}
+                />
+            );
+        }
+
+        const title = item.custom_title || item.product?.title || 'Untitled Item';
+        const price = item.custom_price || item.product?.price;
+        const currency = item.product?.currency || 'USD';
+        const imageUrl = item.custom_images?.[0] || item.product?.images?.[0];
+
         return (
-            <View style={styles.centerContainer}>
-                <Text>Loading...</Text>
-            </View>
-        );
-    }
-
-    if (!wishlist) {
-        return (
-            <View style={styles.centerContainer}>
-                <Text>Wishlist not found</Text>
-                <Button title="Go Back" onPress={() => router.back()} style={{ marginTop: 20 }} />
-            </View>
-        );
-    }
-
-    return (
-        <>
-            <Stack.Screen
-                options={{
-                    headerShown: true,
-                    headerTitle: '',
-                    headerTransparent: true,
-                    headerLeft: () => (
-                        <TouchableOpacity
-                            style={styles.headerButton}
-                            onPress={() => router.back()}
-                        >
-                            <ArrowLeft size={24} color={COLORS.dark} />
-                        </TouchableOpacity>
-                    ),
-                    headerRight: () => (
-                        <View style={styles.headerActions}>
-                            <TouchableOpacity style={styles.headerButton} onPress={handleShare}>
-                                <Share2 size={24} color={COLORS.dark} />
-                            </TouchableOpacity>
-                            {isOwner && (
-                                <TouchableOpacity
-                                    style={styles.headerButton}
-                                    onPress={() => router.push(`/wishlists/edit/${id}`)}
-                                >
-                                    <Edit2 size={24} color={COLORS.dark} />
-                                </TouchableOpacity>
+            <SwipeableItem
+                onDelete={() => handleDeleteItem(item.id)}
+                disabled={!isOwner}
+            >
+                <Card style={styles.itemCard}>
+                    <View style={styles.itemContent}>
+                        <View style={styles.itemImageContainer}>
+                            {imageUrl ? (
+                                <Image source={{ uri: imageUrl }} style={styles.itemImage} />
+                            ) : (
+                                <View style={styles.placeholderImage}>
+                                    <Gift size={24} color={COLORS.gray[400]} />
+                                </View>
                             )}
                         </View>
-                    ),
-                }}
-            />
 
-            <ScrollView style={styles.container}>
-                <View style={styles.headerContent}>
-                    <View style={styles.titleContainer}>
-                        <Text style={styles.title}>{wishlist.title}</Text>
-                        <View style={styles.badges}>
-                            <View style={styles.badge}>
-                                <Text style={styles.badgeText}>{wishlist.type}</Text>
-                            </View>
-                            <View style={[styles.badge, styles.privacyBadge]}>
-                                <Text style={styles.badgeText}>{wishlist.privacy}</Text>
-                            </View>
-                        </View>
-                    </View>
-
-                    {wishlist.description && (
-                        <Text style={styles.description}>{wishlist.description}</Text>
-                    )}
-
-                    {wishlist.due_date && (
-                        <View style={styles.dateContainer}>
-                            <Clock size={16} color={COLORS.gray[500]} />
-                            <Text style={styles.dateText}>
-                                Due {new Date(wishlist.due_date).toLocaleDateString()}
+                        <View style={styles.itemDetails}>
+                            <Text style={styles.itemTitle} numberOfLines={2}>
+                                {title}
                             </Text>
-                        </View>
-                    )}
-                </View>
-
-                <View style={styles.itemsSection}>
-                    <View style={styles.sectionHeader}>
-                        <Text style={styles.sectionTitle}>Wishes ({items.length})</Text>
-                        {isOwner && (
-                            <Button
-                                title="Add Item"
-                                size="sm"
-                                icon={<Plus size={16} color={COLORS.white} />}
-                                onPress={() => router.push(`/wishlists/${id}/add-item`)}
-                            />
-                        )}
-                    </View>
-
-                    {items.length > 0 ? (
-                        <View style={styles.list}>
-                            {items.map(item => (
-                                <View key={item.id} style={styles.listItemWrapper}>
-                                    {renderItem({ item })}
-                                </View>
-                            ))}
-                        </View>
-                    ) : (
-                        <View style={styles.emptyState}>
-                            <Gift size={48} color={COLORS.gray[300]} />
-                            <Text style={styles.emptyText}>No wishes yet</Text>
-                            {isOwner && (
-                                <Text style={styles.emptySubtext}>
-                                    Start adding items to your wishlist!
+                            {price !== undefined && price !== null && (
+                                <Text style={styles.itemPrice}>
+                                    {currency} {price.toFixed(2)}
                                 </Text>
                             )}
+
+                            <View style={styles.itemsRow}>
+                                <View style={styles.itemMeta}>
+                                    <View style={[
+                                        styles.priorityBadge,
+                                        { backgroundColor: getPriorityColor(item.priority) + '20' }
+                                    ]}>
+                                        <Text style={[
+                                            styles.priorityText,
+                                            { color: getPriorityColor(item.priority) }
+                                        ]}>
+                                            {getPriorityLabel(item.priority)} priority
+                                        </Text>
+                                    </View>
+                                    {item.is_purchased && (
+                                        <View style={styles.purchasedBadge}>
+                                            <CheckCircle size={12} color={COLORS.success} />
+                                            <Text style={styles.purchasedText}>Purchased</Text>
+                                        </View>
+                                    )}
+                                </View>
+
+                                {isOwner && (
+                                    <TouchableOpacity
+                                        style={styles.deleteIconButton}
+                                        onPress={() => handleDeleteItem(item.id)}
+                                        hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                                    >
+                                        <Trash2 size={18} color={COLORS.error} />
+                                    </TouchableOpacity>
+                                )}
+                            </View>
                         </View>
+                    </View>
+                </Card>
+            </SwipeableItem>
+        );
+    };
+
+    const renderHeader = () => {
+        const HeaderWrapper = ({ children }: { children: React.ReactNode }) => {
+            const style = [
+                styles.headerContent,
+                { backgroundColor: currentTheme.gradient ? 'transparent' : currentTheme.primaryColor }
+            ];
+
+            if (currentTheme.gradient) {
+                return (
+                    <LinearGradient
+                        colors={[currentTheme.primaryColor, currentTheme.secondaryColor]}
+                        start={{ x: 0, y: 0 }}
+                        end={{ x: 1, y: 1 }}
+                        style={style}
+                    >
+                        {children}
+                    </LinearGradient>
+                );
+            }
+            return <View style={style}>{children}</View>;
+        };
+
+        const textColor = currentTheme.template === 'minimal' ? COLORS.dark : COLORS.white;
+        const subTextColor = currentTheme.template === 'minimal' ? COLORS.gray[600] : 'rgba(255,255,255,0.8)';
+        const iconColor = currentTheme.template === 'minimal' ? COLORS.dark : COLORS.white;
+
+        return (
+            <HeaderWrapper>
+                <View style={styles.headerActions}>
+                    <TouchableOpacity
+                        style={styles.headerButton}
+                        onPress={() => router.back()}
+                    >
+                        <ArrowLeft size={24} color={COLORS.dark} />
+                    </TouchableOpacity>
+
+                    <View style={{ flex: 1 }} />
+
+                    <TouchableOpacity
+                        style={styles.headerButton}
+                        onPress={handleShare}
+                    >
+                        <Share2 size={24} color={COLORS.dark} />
+                    </TouchableOpacity>
+
+                    {isOwner && (
+                        <>
+                            <TouchableOpacity
+                                style={[styles.headerButton, isReordering && styles.activeButton]}
+                                onPress={toggleReorder}
+                            >
+                                <ArrowUpDown size={24} color={isReordering ? COLORS.primary : COLORS.dark} />
+                            </TouchableOpacity>
+
+                            <TouchableOpacity
+                                style={styles.headerButton}
+                                onPress={() => setShowThemeSelector(true)}
+                            >
+                                <Palette size={24} color={COLORS.dark} />
+                            </TouchableOpacity>
+
+                            <TouchableOpacity
+                                style={[styles.headerButton, { backgroundColor: COLORS.error + '10' }]}
+                                onPress={() => setWishlistDeleteDialogVisible(true)}
+                            >
+                                <Trash2 size={24} color={COLORS.error} />
+                            </TouchableOpacity>
+                        </>
                     )}
                 </View>
-            </ScrollView>
-        </>
+
+                <View style={styles.titleContainer}>
+                    <Text style={[styles.title, { color: textColor }]}>
+                        {currentTheme.emoji} {wishlist?.title}
+                    </Text>
+                    <View style={styles.badges}>
+                        <View style={[styles.badge, { backgroundColor: 'rgba(255,255,255,0.2)' }]}>
+                            <Text style={[styles.badgeText, { color: textColor }]}>{wishlist?.type}</Text>
+                        </View>
+                        <View style={[styles.badge, { backgroundColor: 'rgba(255,255,255,0.2)' }]}>
+                            <Text style={[styles.badgeText, { color: textColor }]}>{wishlist?.privacy}</Text>
+                        </View>
+                    </View>
+                </View>
+
+                {wishlist?.description && (
+                    <Text style={[styles.description, { color: subTextColor }]}>{wishlist.description}</Text>
+                )}
+
+                {wishlist?.due_date && (
+                    <View style={styles.dateContainer}>
+                        <Clock size={14} color={subTextColor} />
+                        <Text style={[styles.dateText, { color: subTextColor }]}>
+                            {new Date(wishlist.due_date).toLocaleDateString()}
+                        </Text>
+                    </View>
+                )}
+            </HeaderWrapper>
+        );
+    };
+
+    const renderEmpty = () => {
+        if (loading) return null;
+        return (
+            <View style={styles.emptyState}>
+                <Gift size={48} color={COLORS.gray[300]} />
+                <Text style={styles.emptyText}>No wishes yet</Text>
+                {isOwner && (
+                    <Text style={styles.emptySubtext}>
+                        Start adding items to your wishlist!
+                    </Text>
+                )}
+            </View>
+        );
+    };
+
+    return (
+        <GestureHandlerRootView style={styles.container}>
+            <Stack.Screen options={{ headerShown: false }} />
+
+            <DraggableFlatList
+                data={items}
+                renderItem={renderItem}
+                keyExtractor={(item) => item.id}
+                onDragEnd={({ data }) => setItems(data)}
+                ListHeaderComponent={renderHeader}
+                ListEmptyComponent={renderEmpty}
+                contentContainerStyle={{ paddingBottom: 100 }} // Space for floating buttons
+                activationDistance={isReordering ? 5 : 99999} // Only drag when reordering
+            />
+
+            {isReordering && (
+                <ReorganizeToolbar
+                    onCancel={toggleReorder}
+                    onSave={handleSaveOrder}
+                    loading={savingOrder}
+                    hasChanges={true}
+                />
+            )}
+
+            <WishlistThemeSelector
+                visible={showThemeSelector}
+                onClose={() => setShowThemeSelector(false)}
+                currentTheme={currentTheme}
+                wishlistTitle={wishlist?.title || 'Wishlist'}
+                onSave={handleSaveTheme}
+            />
+
+            <ConfirmDialog
+                visible={deleteConfirmVisible}
+                title="Retirer cet item ?"
+                message="Cet item sera retiré de ta wishlist. Tu pourras toujours le rajouter plus tard ! 💫"
+                confirmText="Oui, retirer"
+                cancelText="Non, garder"
+                type="warning"
+                emoji="✨"
+                onConfirm={confirmDelete}
+                onCancel={() => setDeleteConfirmVisible(false)}
+            />
+
+            <ConfirmDialog
+                visible={wishlistDeleteDialogVisible}
+                title="Supprimer cette wishlist ?"
+                message="Cette action est irréversible. Tous les items de cette wishlist seront définitivement supprimés. 😢"
+                confirmText="Oui, supprimer"
+                cancelText="Non, garder"
+                type="danger"
+                emoji="🗑️"
+                onConfirm={handleDeleteWishlist}
+                onCancel={() => setWishlistDeleteDialogVisible(false)}
+            />
+        </GestureHandlerRootView>
     );
 }
 
@@ -319,11 +500,6 @@ const styles = StyleSheet.create({
     container: {
         flex: 1,
         backgroundColor: COLORS.light,
-    },
-    centerContainer: {
-        flex: 1,
-        justifyContent: 'center',
-        alignItems: 'center',
     },
     headerButton: {
         width: 40,
@@ -339,6 +515,11 @@ const styles = StyleSheet.create({
         elevation: 3,
         marginLeft: SPACING.md,
     },
+    activeButton: {
+        backgroundColor: COLORS.primary + '20',
+        borderColor: COLORS.primary,
+        borderWidth: 1,
+    },
     headerActions: {
         flexDirection: 'row',
         gap: SPACING.sm,
@@ -350,6 +531,7 @@ const styles = StyleSheet.create({
         backgroundColor: COLORS.white,
         borderBottomLeftRadius: BORDER_RADIUS.xl,
         borderBottomRightRadius: BORDER_RADIUS.xl,
+        marginBottom: SPACING.md, // Add spacing below header for list
         shadowColor: '#000',
         shadowOffset: { width: 0, height: 2 },
         shadowOpacity: 0.05,
@@ -399,21 +581,7 @@ const styles = StyleSheet.create({
         fontSize: FONT_SIZES.sm,
         color: COLORS.gray[500],
     },
-    itemsSection: {
-        padding: SPACING.lg,
-    },
-    sectionHeader: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        marginBottom: SPACING.md,
-    },
-    sectionTitle: {
-        fontSize: FONT_SIZES.xl,
-        fontWeight: '700',
-        color: COLORS.dark,
-    },
-    list: {
+    list: { // Keep usage if needed, but FlatList handles it
         gap: SPACING.md,
     },
     listItemWrapper: {
@@ -486,9 +654,6 @@ const styles = StyleSheet.create({
         fontWeight: '600',
         color: COLORS.success,
     },
-    deleteButton: {
-        padding: SPACING.sm,
-    },
     emptyState: {
         alignItems: 'center',
         padding: SPACING.xxl,
@@ -502,5 +667,14 @@ const styles = StyleSheet.create({
     emptySubtext: {
         fontSize: FONT_SIZES.sm,
         color: COLORS.gray[400],
+    },
+    itemsRow: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        marginTop: SPACING.sm,
+    },
+    deleteIconButton: {
+        padding: 4,
     },
 });

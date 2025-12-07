@@ -112,7 +112,7 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   primaryText: {
-    color: COLORS.white,
+    color: COLORS.dark,
   },
   secondaryText: {
     color: COLORS.white,

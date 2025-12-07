@@ -17,6 +17,7 @@ import { Input } from '@/components/Input';
 import { Button } from '@/components/Button';
 import { Card } from '@/components/Card';
 import { COLORS, SPACING, FONT_SIZES, BORDER_RADIUS } from '@/constants/theme';
+import { generateSlug } from '@/lib/slug';
 
 const WISHLIST_TYPES = [
   { value: 'birthday', label: 'Birthday', emoji: '🎂' },
@@ -80,6 +81,7 @@ export default function CreateWishlistScreen() {
         privacy: privacy as any,
         access_code: accessCode,
         due_date: dueDate || null,
+        slug: generateSlug(title.trim()),
       };
 
       const { data, error } = await (supabase

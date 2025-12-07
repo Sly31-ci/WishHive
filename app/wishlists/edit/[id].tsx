@@ -13,6 +13,7 @@ import { useLocalSearchParams, router, Stack } from 'expo-router';
 import { ArrowLeft, Calendar, Trash2 } from 'lucide-react-native';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/lib/supabase';
+import { ConfirmDialog } from '@/components/ConfirmDialog';
 import { Input } from '@/components/Input';
 import { Button } from '@/components/Button';
 import { Card } from '@/components/Card';
@@ -56,6 +57,7 @@ export default function EditWishlistScreen() {
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
     const [error, setError] = useState('');
+    const [deleteConfirmVisible, setDeleteConfirmVisible] = useState(false);
 
     useEffect(() => {
         if (id) {
@@ -68,7 +70,7 @@ export default function EditWishlistScreen() {
             const { data, error } = await supabase
                 .from('wishlists')
                 .select('*')
-                .eq('id', id)
+                .eq('id', id as string)
                 .single();
 
             if (error) throw error;
@@ -121,7 +123,7 @@ export default function EditWishlistScreen() {
             const { error } = await supabase
                 .from('wishlists')
                 .update(updateData)
-                .eq('id', id);
+                .eq('id', id as string);
 
             if (error) throw error;
 
@@ -134,38 +136,25 @@ export default function EditWishlistScreen() {
     };
 
     const handleDelete = () => {
-        Alert.alert(
-            'Delete Wishlist',
-            'Are you sure you want to delete this wishlist? This action cannot be undone.',
-            [
-                { text: 'Cancel', style: 'cancel' },
-                {
-                    text: 'Delete',
-                    style: 'destructive',
-                    onPress: async () => {
-                        try {
-                            const { error } = await supabase
-                                .from('wishlists')
-                                .delete()
-                                .eq('id', id);
-                            if (error) throw error;
-                            router.replace('/(tabs)/wishlists');
-                        } catch (error) {
-                            Alert.alert('Error', 'Failed to delete wishlist');
-                        }
-                    },
-                },
-            ]
-        );
+        setDeleteConfirmVisible(true);
     };
 
-    if (loading) {
-        return (
-            <View style={styles.centerContainer}>
-                <Text>Loading...</Text>
-            </View>
-        );
-    }
+    const confirmDelete = async () => {
+        try {
+            const { error } = await supabase
+                .from('wishlists')
+                .delete()
+                .eq('id', id as string);
+            if (error) throw error;
+            router.replace('/(tabs)/wishlists');
+        } catch (error) {
+            Alert.alert('Error', 'Failed to delete wishlist');
+        } finally {
+            setDeleteConfirmVisible(false);
+        }
+    };
+
+    // ... existing render ...
 
     return (
         <>
@@ -195,6 +184,8 @@ export default function EditWishlistScreen() {
                     keyboardShouldPersistTaps="handled"
                 >
                     <Card>
+                        {/* ... existing inputs ... */}
+
                         <Input
                             label="Wishlist Title"
                             placeholder="My Birthday Wishlist"
@@ -280,9 +271,28 @@ export default function EditWishlistScreen() {
                             loading={saving}
                             style={styles.button}
                         />
+
+                        <Button
+                            title="Delete Wishlist"
+                            onPress={handleDelete}
+                            variant="outline"
+                            style={[styles.button, { borderColor: COLORS.error }] as any}
+                            textStyle={{ color: COLORS.error }}
+                            icon={<Trash2 size={20} color={COLORS.error} />}
+                        />
                     </Card>
                 </ScrollView>
             </KeyboardAvoidingView>
+
+            <ConfirmDialog
+                visible={deleteConfirmVisible}
+                title="Delete Wishlist"
+                message="Are you sure you want to delete this wishlist? This action cannot be undone."
+                confirmText="Delete"
+                isDestructive
+                onConfirm={confirmDelete}
+                onCancel={() => setDeleteConfirmVisible(false)}
+            />
         </>
     );
 }
