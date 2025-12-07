@@ -9,6 +9,7 @@ import {
     Alert,
     FlatList,
 } from 'react-native';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { useLocalSearchParams, router, Stack } from 'expo-router';
 import {
     ArrowLeft,
@@ -30,11 +31,8 @@ import { COLORS, SPACING, FONT_SIZES, BORDER_RADIUS } from '@/constants/theme';
 import { Database } from '@/types/database';
 import * as Haptics from 'expo-haptics';
 import { wishlistEvents, EVENTS } from '@/lib/events';
-
 import { SwipeableItem } from '@/components/SwipeableItem';
 import { ConfirmDialog } from '@/components/ConfirmDialog';
-import DraggableFlatList, { RenderItemParams, ScaleDecorator } from 'react-native-draggable-flatlist';
-import { DraggableWishlistItem } from '@/components/DraggableWishlistItem';
 import { ReorganizeToolbar } from '@/components/ReorganizeToolbar';
 import { getPriorityLabel, getPriorityColor } from '@/constants/priorities';
 
@@ -51,7 +49,7 @@ export default function WishlistDetailScreen() {
     const [loading, setLoading] = useState(true);
     const [isOwner, setIsOwner] = useState(false);
 
-    // Reordering State (note: drag reorder disabled in fallback)
+    // Reordering State (fallback : drag disabled)
     const [isReordering, setIsReordering] = useState(false);
     const [originalItems, setOriginalItems] = useState<WishlistItem[]>([]);
     const [savingOrder, setSavingOrder] = useState(false);
@@ -81,9 +79,7 @@ export default function WishlistDetailScreen() {
     };
 
     useEffect(() => {
-        if (id) {
-            loadWishlistDetails();
-        }
+        if (id) loadWishlistDetails();
     }, [id]);
 
     useEffect(() => {
@@ -95,9 +91,7 @@ export default function WishlistDetailScreen() {
         };
 
         wishlistEvents.on(EVENTS.ITEM_ADDED, handleItemAdded);
-        return () => {
-            wishlistEvents.off(EVENTS.ITEM_ADDED, handleItemAdded);
-        };
+        return () => wishlistEvents.off(EVENTS.ITEM_ADDED, handleItemAdded);
     }, [id]);
 
     const loadWishlistDetails = async () => {
@@ -120,10 +114,6 @@ export default function WishlistDetailScreen() {
 
             if (itemsError) throw itemsError;
             setItems(itemsData || []);
-
-            if (user?.id !== wishlistData.owner_id) {
-                // View count logic
-            }
         } catch (error) {
             console.error('Error loading wishlist:', error);
             Alert.alert('Error', 'Failed to load wishlist details');
@@ -157,6 +147,7 @@ export default function WishlistDetailScreen() {
 
     const handleSaveOrder = async () => {
         setSavingOrder(true);
+
         try {
             const updates = items.map((item, index) => ({
                 id: item.id,
@@ -164,19 +155,18 @@ export default function WishlistDetailScreen() {
                 wishlist_id: id as string,
             }));
 
-            // Use upsert to batch update
             const { error } = await supabase
                 .from('wishlist_items')
-                .upsert(updates.map(u => ({ id: u.id, priority: u.priority, wishlist_id: u.wishlist_id })));
+                .upsert(updates);
 
             if (error) throw error;
 
-            await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
             setIsReordering(false);
             loadWishlistDetails();
         } catch (error) {
-            console.error('Error saving order:', error);
-            Alert.alert('Error', 'Impossible d\'enregistrer l\'ordre.');
+            console.error(error);
+            Alert.alert('Error', "Impossible d'enregistrer l'ordre.");
         } finally {
             setSavingOrder(false);
         }
@@ -199,9 +189,10 @@ export default function WishlistDetailScreen() {
                 .eq('id', itemToDelete);
 
             if (error) throw error;
-            await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+
+            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
             loadWishlistDetails();
-        } catch (error) {
+        } catch {
             Alert.alert('Error', 'Failed to delete item');
         } finally {
             setDeleteConfirmVisible(false);
@@ -213,27 +204,12 @@ export default function WishlistDetailScreen() {
 
     const handleDeleteWishlist = async () => {
         try {
-            const { error: itemsError } = await supabase
-                .from('wishlist_items')
-                .delete()
-                .eq('wishlist_id', id);
+            await supabase.from('wishlist_items').delete().eq('wishlist_id', id);
+            await supabase.from('wishlists').delete().eq('id', id);
 
-            if (itemsError) throw itemsError;
-
-            const { error: wishlistError } = await supabase
-                .from('wishlists')
-                .delete()
-                .eq('id', id);
-
-            if (wishlistError) throw wishlistError;
-
-            await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-            setTimeout(() => {
-                router.replace('/(tabs)/wishlists');
-            }, 300);
-
-        } catch (error) {
-            console.error('Error deleting wishlist:', error);
+            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+            setTimeout(() => router.replace('/(tabs)/wishlists'), 300);
+        } catch {
             Alert.alert('Erreur', 'Impossible de supprimer cette wishlist.');
         } finally {
             setWishlistDeleteDialogVisible(false);
@@ -241,7 +217,6 @@ export default function WishlistDetailScreen() {
     };
 
     const renderItem = ({ item }: { item: WishlistItem }) => {
-        // For now we render items normally even when isReordering is true (drag disabled in fallback)
         const title = item.custom_title || item.product?.title || 'Untitled Item';
         const price = item.custom_price || item.product?.price;
         const currency = item.product?.currency || 'USD';
@@ -268,6 +243,7 @@ export default function WishlistDetailScreen() {
                             <Text style={styles.itemTitle} numberOfLines={2}>
                                 {title}
                             </Text>
+
                             {price !== undefined && price !== null && (
                                 <Text style={styles.itemPrice}>
                                     {currency} {price.toFixed(2)}
@@ -287,6 +263,7 @@ export default function WishlistDetailScreen() {
                                             {getPriorityLabel(item.priority)} priority
                                         </Text>
                                     </View>
+
                                     {item.is_purchased && (
                                         <View style={styles.purchasedBadge}>
                                             <CheckCircle size={12} color={COLORS.success} />
@@ -331,29 +308,23 @@ export default function WishlistDetailScreen() {
                     </LinearGradient>
                 );
             }
+
             return <View style={style}>{children}</View>;
         };
 
         const textColor = currentTheme.template === 'minimal' ? COLORS.dark : COLORS.white;
         const subTextColor = currentTheme.template === 'minimal' ? COLORS.gray[600] : 'rgba(255,255,255,0.8)';
-        const iconColor = currentTheme.template === 'minimal' ? COLORS.dark : COLORS.white;
 
         return (
             <HeaderWrapper>
                 <View style={styles.headerActions}>
-                    <TouchableOpacity
-                        style={styles.headerButton}
-                        onPress={() => router.back()}
-                    >
+                    <TouchableOpacity style={styles.headerButton} onPress={() => router.back()}>
                         <ArrowLeft size={24} color={COLORS.dark} />
                     </TouchableOpacity>
 
                     <View style={{ flex: 1 }} />
 
-                    <TouchableOpacity
-                        style={styles.headerButton}
-                        onPress={handleShare}
-                    >
+                    <TouchableOpacity style={styles.headerButton} onPress={handleShare}>
                         <Share2 size={24} color={COLORS.dark} />
                     </TouchableOpacity>
 
@@ -387,10 +358,12 @@ export default function WishlistDetailScreen() {
                     <Text style={[styles.title, { color: textColor }]}>
                         {currentTheme.emoji} {wishlist?.title}
                     </Text>
+
                     <View style={styles.badges}>
                         <View style={[styles.badge, { backgroundColor: 'rgba(255,255,255,0.2)' }]}>
                             <Text style={[styles.badgeText, { color: textColor }]}>{wishlist?.type}</Text>
                         </View>
+
                         <View style={[styles.badge, { backgroundColor: 'rgba(255,255,255,0.2)' }]}>
                             <Text style={[styles.badgeText, { color: textColor }]}>{wishlist?.privacy}</Text>
                         </View>
@@ -415,10 +388,12 @@ export default function WishlistDetailScreen() {
 
     const renderEmpty = () => {
         if (loading) return null;
+
         return (
             <View style={styles.emptyState}>
                 <Gift size={48} color={COLORS.gray[300]} />
                 <Text style={styles.emptyText}>No wishes yet</Text>
+
                 {isOwner && (
                     <Text style={styles.emptySubtext}>
                         Start adding items to your wishlist!
@@ -429,7 +404,7 @@ export default function WishlistDetailScreen() {
     };
 
     return (
-        <View style={styles.container}>
+        <GestureHandlerRootView style={styles.container}>
             <Stack.Screen options={{ headerShown: false }} />
 
             <FlatList
@@ -438,7 +413,7 @@ export default function WishlistDetailScreen() {
                 keyExtractor={(item) => item.id}
                 ListHeaderComponent={renderHeader}
                 ListEmptyComponent={renderEmpty}
-                contentContainerStyle={{ paddingBottom: 100 }} // Space for floating buttons
+                contentContainerStyle={{ paddingBottom: 100 }}
             />
 
             {isReordering && (
@@ -481,7 +456,7 @@ export default function WishlistDetailScreen() {
                 onConfirm={handleDeleteWishlist}
                 onCancel={() => setWishlistDeleteDialogVisible(false)}
             />
-        </View>
+        </GestureHandlerRootView>
     );
 }
 
@@ -497,12 +472,12 @@ const styles = StyleSheet.create({
         backgroundColor: COLORS.white,
         justifyContent: 'center',
         alignItems: 'center',
+        marginLeft: SPACING.md,
         shadowColor: '#000',
         shadowOffset: { width: 0, height: 2 },
         shadowOpacity: 0.1,
         shadowRadius: 4,
         elevation: 3,
-        marginLeft: SPACING.md,
     },
     activeButton: {
         backgroundColor: COLORS.primary + '20',
@@ -520,7 +495,7 @@ const styles = StyleSheet.create({
         backgroundColor: COLORS.white,
         borderBottomLeftRadius: BORDER_RADIUS.xl,
         borderBottomRightRadius: BORDER_RADIUS.xl,
-        marginBottom: SPACING.md, // Add spacing below header for list
+        marginBottom: SPACING.md,
         shadowColor: '#000',
         shadowOffset: { width: 0, height: 2 },
         shadowOpacity: 0.05,
@@ -533,7 +508,6 @@ const styles = StyleSheet.create({
     title: {
         fontSize: FONT_SIZES.xxxl,
         fontWeight: '700',
-        color: COLORS.dark,
         marginBottom: SPACING.sm,
     },
     badges: {
@@ -546,13 +520,9 @@ const styles = StyleSheet.create({
         paddingVertical: 4,
         borderRadius: BORDER_RADIUS.full,
     },
-    privacyBadge: {
-        backgroundColor: COLORS.gray[200],
-    },
     badgeText: {
         fontSize: FONT_SIZES.xs,
         fontWeight: '600',
-        color: COLORS.dark,
         textTransform: 'capitalize',
     },
     description: {
@@ -570,11 +540,8 @@ const styles = StyleSheet.create({
         fontSize: FONT_SIZES.sm,
         color: COLORS.gray[500],
     },
-    list: { // Keep usage if needed, but FlatList handles it
+    list: {
         gap: SPACING.md,
-    },
-    listItemWrapper: {
-        marginBottom: SPACING.md,
     },
     itemCard: {
         padding: SPACING.md,
