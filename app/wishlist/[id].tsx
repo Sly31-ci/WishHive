@@ -1,5 +1,4 @@
 import React, { useEffect, useState } from 'react';
-import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import {
     View,
     Text,
@@ -8,6 +7,7 @@ import {
     Image,
     Share,
     Alert,
+    FlatList,
 } from 'react-native';
 import { useLocalSearchParams, router, Stack } from 'expo-router';
 import {
@@ -33,8 +33,7 @@ import { wishlistEvents, EVENTS } from '@/lib/events';
 
 import { SwipeableItem } from '@/components/SwipeableItem';
 import { ConfirmDialog } from '@/components/ConfirmDialog';
-import DraggableFlatList, { RenderItemParams, ScaleDecorator } from 'react-native-draggable-flatlist';
-import { DraggableWishlistItem } from '@/components/DraggableWishlistItem';
+// NOTE: We removed the dependency on react-native-draggable-flatlist to avoid bundling errors.
 import { ReorganizeToolbar } from '@/components/ReorganizeToolbar';
 import { getPriorityLabel, getPriorityColor } from '@/constants/priorities';
 
@@ -51,7 +50,7 @@ export default function WishlistDetailScreen() {
     const [loading, setLoading] = useState(true);
     const [isOwner, setIsOwner] = useState(false);
 
-    // Reordering State
+    // Reordering State (note: drag reorder disabled in fallback)
     const [isReordering, setIsReordering] = useState(false);
     const [originalItems, setOriginalItems] = useState<WishlistItem[]>([]);
     const [savingOrder, setSavingOrder] = useState(false);
@@ -240,17 +239,8 @@ export default function WishlistDetailScreen() {
         }
     };
 
-    const renderItem = ({ item, drag, isActive }: RenderItemParams<WishlistItem>) => {
-        if (isReordering) {
-            return (
-                <DraggableWishlistItem
-                    item={item}
-                    drag={drag}
-                    isActive={isActive}
-                />
-            );
-        }
-
+    const renderItem = ({ item }: { item: WishlistItem }) => {
+        // For now we render items normally even when isReordering is true (drag disabled in fallback)
         const title = item.custom_title || item.product?.title || 'Untitled Item';
         const price = item.custom_price || item.product?.price;
         const currency = item.product?.currency || 'USD';
@@ -438,18 +428,16 @@ export default function WishlistDetailScreen() {
     };
 
     return (
-        <GestureHandlerRootView style={styles.container}>
+        <View style={styles.container}>
             <Stack.Screen options={{ headerShown: false }} />
 
-            <DraggableFlatList
+            <FlatList
                 data={items}
                 renderItem={renderItem}
                 keyExtractor={(item) => item.id}
-                onDragEnd={({ data }) => setItems(data)}
                 ListHeaderComponent={renderHeader}
                 ListEmptyComponent={renderEmpty}
                 contentContainerStyle={{ paddingBottom: 100 }} // Space for floating buttons
-                activationDistance={isReordering ? 5 : 99999} // Only drag when reordering
             />
 
             {isReordering && (
@@ -492,7 +480,7 @@ export default function WishlistDetailScreen() {
                 onConfirm={handleDeleteWishlist}
                 onCancel={() => setWishlistDeleteDialogVisible(false)}
             />
-        </GestureHandlerRootView>
+        </View>
     );
 }
 
