@@ -110,7 +110,7 @@ export default function SearchScreen() {
                 router.push(`/user/${item.id}`);
                 break;
             case 'wishlist':
-                router.push(`/wishlist/${item.id}`);
+                router.push(`/wishlists/${item.id}`);
                 break;
             case 'product':
                 router.push(`/product/${item.id}`);

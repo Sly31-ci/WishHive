@@ -86,9 +86,7 @@ async function checkSingleBadge(
 
         // Check if criteria is met
         const criteria = badge.criteria as any;
-        const meetsC
-
-        riteria = await evaluateCriteria(userId, criteria, metadata);
+        const meetsCriteria = await evaluateCriteria(userId, criteria, metadata);
 
         if (!meetsCriteria) {
             return { awarded: false, badge };

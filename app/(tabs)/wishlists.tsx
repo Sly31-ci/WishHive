@@ -103,7 +103,7 @@ export default function WishlistsScreen() {
   const renderWishlistCard = ({ item }: { item: Wishlist }) => (
     <WishlistCard
       wishlist={item}
-      onPress={() => router.push(`/wishlist/${item.id}`)}
+      onPress={() => router.push(`/wishlists/${item.id}`)}
       onLongPress={() => confirmDelete(item.id)}
       onDelete={() => confirmDelete(item.id)}
       showDelete={true}

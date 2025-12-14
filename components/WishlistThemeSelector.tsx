@@ -133,7 +133,7 @@ export function WishlistThemeSelector({
                                 </TouchableOpacity>
                             ))}
                         </View>
-                    ) : (
+                    ) : activeTab === 'custom' ? (
                         <View style={styles.customForm}>
                             <View style={styles.inputGroup}>
                                 <Text style={styles.label}>Emoji</Text>
@@ -175,11 +175,11 @@ export function WishlistThemeSelector({
                             />
                         </View>
                     ) : activeTab === 'text' ? (
-                    <TypographyEditor
-                        typography={theme.typography || DEFAULT_TYPOGRAPHY}
-                        backgroundColor={theme.primaryColor}
-                        onChange={(typography) => updateTheme({ typography })}
-                    />
+                        <TypographyEditor
+                            typography={theme.typography || DEFAULT_TYPOGRAPHY}
+                            backgroundColor={theme.primaryColor}
+                            onChange={(typography) => updateTheme({ typography })}
+                        />
                     ) : null}
                 </ScrollView>
 

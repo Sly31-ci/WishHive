@@ -76,7 +76,7 @@ export default function PublicProfileScreen() {
     const renderWishlist = ({ item }: { item: Wishlist }) => (
         <TouchableOpacity
             style={styles.wishlistCard}
-            onPress={() => router.push(`/wishlist/${item.id}`)}
+            onPress={() => router.push(`/wishlists/${item.id}`)}
         >
             <View style={styles.wishlistHeader}>
                 <View style={styles.typeBadge}>

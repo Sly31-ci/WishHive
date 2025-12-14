@@ -112,7 +112,7 @@ export default function CreateWishlistScreen() {
             text: 'OK',
             onPress: () => {
               router.back();
-              router.push(`/wishlist/${data.id}`);
+              router.push(`/wishlists/${data.id}`);
             },
           },
         ]);

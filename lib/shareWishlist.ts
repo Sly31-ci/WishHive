@@ -1,6 +1,7 @@
 import { Share, Alert } from 'react-native';
 import { supabase } from './supabase';
 import * as Haptics from 'expo-haptics';
+import * as Clipboard from 'expo-clipboard';
 
 /**
  * Partage une wishlist via le système de partage natif
@@ -12,7 +13,7 @@ export async function shareWishlist(wishlistId: string, wishlistTitle: string): 
             .from('wishlists')
             .select('slug, privacy')
             .eq('id', wishlistId)
-            .single();
+            .single() as any;
 
         if (error || !wishlist) {
             throw new Error('Wishlist not found');
@@ -64,7 +65,7 @@ export async function copyShareLink(wishlistId: string): Promise<string | null> 
             .from('wishlists')
             .select('slug, privacy')
             .eq('id', wishlistId)
-            .single();
+            .single() as any;
 
         if (!wishlist || wishlist.privacy !== 'public') {
             Alert.alert('Erreur', 'Cette wishlist n\'est pas publique');
@@ -74,7 +75,7 @@ export async function copyShareLink(wishlistId: string): Promise<string | null> 
         const shareLink = `https://wishhive.app/w/${wishlist.slug}`;
 
         // Copy to clipboard (requires expo-clipboard)
-        // await Clipboard.setStringAsync(shareLink);
+        await Clipboard.setStringAsync(shareLink);
 
         await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
         Alert.alert('Copié !', 'Le lien a été copié dans le presse-papiers');
@@ -95,7 +96,7 @@ export async function generateQRCode(wishlistId: string): Promise<string | null>
             .from('wishlists')
             .select('slug')
             .eq('id', wishlistId)
-            .single();
+            .single() as any;
 
         if (!wishlist) return null;
 
@@ -116,12 +117,12 @@ export async function generateQRCode(wishlistId: string): Promise<string | null>
  */
 async function trackShareEvent(wishlistId: string): Promise<void> {
     try {
-        await supabase
-            .from('wishlist_shares')
+        await (supabase
+            .from('wishlist_shares' as any)
             .insert({
                 wishlist_id: wishlistId,
                 shared_at: new Date().toISOString()
-            });
+            }));
     } catch (error) {
         console.error('Error tracking share event:', error);
         // Don't throw - this is just analytics
@@ -137,10 +138,10 @@ export async function getShareStats(wishlistId: string): Promise<{
 } | null> {
     try {
         // Get share count
-        const { count: shareCount } = await supabase
-            .from('wishlist_shares')
+        const { count: shareCount } = await (supabase
+            .from('wishlist_shares' as any)
             .select('*', { count: 'exact', head: true })
-            .eq('wishlist_id', wishlistId);
+            .eq('wishlist_id', wishlistId));
 
         // Get view count from wishlist
         const { data: wishlist } = await supabase

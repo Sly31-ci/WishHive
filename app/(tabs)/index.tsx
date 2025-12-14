@@ -50,7 +50,7 @@ export default function HomeScreen() {
   const renderWishlistCard = ({ item }: { item: Wishlist }) => (
     <TouchableOpacity
       style={styles.trendingCard}
-      onPress={() => router.push(`/wishlist/${item.id}`)}
+      onPress={() => router.push(`/wishlists/${item.id}`)}
     >
       <View style={styles.trendingCardHeader}>
         <View style={styles.typeBadge}>
