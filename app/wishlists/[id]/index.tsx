@@ -9,7 +9,7 @@ import {
     Alert,
     FlatList,
 } from 'react-native';
-import { GestureHandlerRootView } from 'react-native-gesture-handler';
+// import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { useLocalSearchParams, router, Stack } from 'expo-router';
 import {
     ArrowLeft,
@@ -92,7 +92,7 @@ export default function WishlistDetailScreen() {
         };
 
         wishlistEvents.on(EVENTS.ITEM_ADDED, handleItemAdded);
-        return () => wishlistEvents.off(EVENTS.ITEM_ADDED, handleItemAdded);
+        return () => { wishlistEvents.off(EVENTS.ITEM_ADDED, handleItemAdded); };
     }, [id]);
 
     const loadWishlistDetails = async () => {
@@ -399,7 +399,7 @@ export default function WishlistDetailScreen() {
     };
 
     return (
-        <GestureHandlerRootView style={styles.container}>
+        <View style={styles.container}>
             <Stack.Screen options={{ headerShown: false }} />
 
             <FlatList
@@ -451,7 +451,7 @@ export default function WishlistDetailScreen() {
                 onConfirm={handleDeleteWishlist}
                 onCancel={() => setWishlistDeleteDialogVisible(false)}
             />
-        </GestureHandlerRootView>
+        </View>
     );
 }
 

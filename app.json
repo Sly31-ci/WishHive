@@ -3,7 +3,7 @@
     "name": "WishHive",
     "slug": "wishhive",
     "version": "1.0.0",
-    "sdkVersion": "54.0.0",
+    "scheme": "wishhive",
     "icon": "./assets/icon.png",
     "splash": {
       "image": "./assets/splash.png",
