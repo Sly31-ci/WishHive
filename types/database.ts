@@ -154,26 +154,35 @@ export interface Database {
       badges: {
         Row: {
           id: string;
+          slug: string;
           name: string;
           description: string | null;
+          icon_url: string | null;
+          criteria: any;
+          points_reward: number;
           tier: 'bronze' | 'silver' | 'gold' | 'platinum';
-          icon: string | null;
-          created_at: string;
+          created_at?: string;
         };
         Insert: {
           id?: string;
+          slug: string;
           name: string;
           description?: string | null;
-          tier: 'bronze' | 'silver' | 'gold' | 'platinum';
-          icon?: string | null;
+          icon_url?: string | null;
+          criteria?: any;
+          points_reward?: number;
+          tier?: 'bronze' | 'silver' | 'gold' | 'platinum';
           created_at?: string;
         };
         Update: {
           id?: string;
+          slug?: string;
           name?: string;
           description?: string | null;
+          icon_url?: string | null;
+          criteria?: any;
+          points_reward?: number;
           tier?: 'bronze' | 'silver' | 'gold' | 'platinum';
-          icon?: string | null;
           created_at?: string;
         };
         Relationships: [];
@@ -374,6 +383,194 @@ export interface Database {
             columns: ["item_id"];
             isOneToOne: false;
             referencedRelation: "wishlist_items";
+            referencedColumns: ["id"];
+          }
+        ];
+      };
+      orders: {
+        Row: {
+          id: string;
+          buyer_id: string | null;
+          wishlist_item_id: string | null;
+          seller_id: string | null;
+          product_id: string | null;
+          status: 'pending' | 'confirmed' | 'shipped' | 'delivered' | 'cancelled';
+          total_amount: number;
+          currency: string;
+          delivery_option: 'to_recipient' | 'to_buyer';
+          delivery_address: any;
+          is_anonymous: boolean;
+          payment_id: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          buyer_id?: string | null;
+          wishlist_item_id?: string | null;
+          seller_id?: string | null;
+          product_id?: string | null;
+          status?: 'pending' | 'confirmed' | 'shipped' | 'delivered' | 'cancelled';
+          total_amount: number;
+          currency?: string;
+          delivery_option?: 'to_recipient' | 'to_buyer';
+          delivery_address?: any;
+          is_anonymous?: boolean;
+          payment_id?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          buyer_id?: string | null;
+          wishlist_item_id?: string | null;
+          seller_id?: string | null;
+          product_id?: string | null;
+          status?: 'pending' | 'confirmed' | 'shipped' | 'delivered' | 'cancelled';
+          total_amount?: number;
+          currency?: string;
+          delivery_option?: 'to_recipient' | 'to_buyer';
+          delivery_address?: any;
+          is_anonymous?: boolean;
+          payment_id?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
+      follows: {
+        Row: {
+          id: string;
+          follower_id: string;
+          following_id: string;
+          following_type: 'user' | 'seller';
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          follower_id: string;
+          following_id: string;
+          following_type: 'user' | 'seller';
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          follower_id?: string;
+          following_id?: string;
+          following_type?: 'user' | 'seller';
+          created_at?: string;
+        };
+        Relationships: [];
+      };
+      transactions: {
+        Row: {
+          id: string;
+          user_id: string;
+          type: 'earn' | 'spend' | 'refund';
+          amount: number;
+          source: string;
+          reference_id: string | null;
+          description: string | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          type: 'earn' | 'spend' | 'refund';
+          amount: number;
+          source: string;
+          reference_id?: string | null;
+          description?: string | null;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          user_id?: string;
+          type?: 'earn' | 'spend' | 'refund';
+          amount?: number;
+          source?: string;
+          reference_id?: string | null;
+          description?: string | null;
+          created_at?: string;
+        };
+        Relationships: [];
+      };
+      reactions: {
+        Row: {
+          id: string;
+          user_id: string | null;
+          target_type: 'wishlist' | 'product' | 'item';
+          target_id: string;
+          reaction_type: 'heart' | 'fire' | 'celebrate' | 'shush';
+          is_anonymous: boolean;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id?: string | null;
+          target_type: 'wishlist' | 'product' | 'item';
+          target_id: string;
+          reaction_type: 'heart' | 'fire' | 'celebrate' | 'shush';
+          is_anonymous?: boolean;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          user_id?: string | null;
+          target_type?: 'wishlist' | 'product' | 'item';
+          target_id?: string;
+          reaction_type?: 'heart' | 'fire' | 'celebrate' | 'shush';
+          is_anonymous?: boolean;
+          created_at?: string;
+        };
+        Relationships: [];
+      };
+      public_themes: {
+        Row: {
+          id: string;
+          creator_id: string;
+          name: string;
+          description: string | null;
+          theme: any;
+          preview_image_url: string | null;
+          usage_count: number;
+          is_featured: boolean;
+          tags: string[];
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          creator_id: string;
+          name: string;
+          description?: string | null;
+          theme: any;
+          preview_image_url?: string | null;
+          usage_count?: number;
+          is_featured?: boolean;
+          tags?: string[];
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          creator_id?: string;
+          name?: string;
+          description?: string | null;
+          theme?: any;
+          preview_image_url?: string | null;
+          usage_count?: number;
+          is_featured?: boolean;
+          tags?: string[];
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "public_themes_creator_id_fkey";
+            columns: ["creator_id"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
             referencedColumns: ["id"];
           }
         ];

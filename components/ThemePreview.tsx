@@ -2,6 +2,7 @@ import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { WishlistTheme } from '@/constants/wishlistThemes';
+import { getTypographyStyle } from '@/utils/typography';
 import { BORDER_RADIUS, SHADOWS, COLORS, FONT_SIZES } from '@/constants/theme';
 
 interface ThemePreviewProps {
@@ -38,7 +39,13 @@ export function ThemePreview({ theme, title = 'Wishlist', size = 'medium', style
                 {theme.emoji}
             </Text>
             {size !== 'small' && (
-                <Text style={styles.title} numberOfLines={1}>
+                <Text
+                    style={[
+                        styles.title,
+                        theme.typography && getTypographyStyle(theme.typography),
+                    ]}
+                    numberOfLines={1}
+                >
                     {title}
                 </Text>
             )}

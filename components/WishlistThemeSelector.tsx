@@ -9,12 +9,17 @@ import {
     Switch,
     TextInput,
 } from 'react-native';
-import { X, Check, Palette, LayoutGrid } from 'lucide-react-native';
+import { X, Check, Palette, LayoutGrid, Type } from 'lucide-react-native';
 import { COLORS, SPACING, FONT_SIZES, BORDER_RADIUS, SHADOWS } from '@/constants/theme';
 import { WishlistTheme, WISHLIST_TEMPLATES, DEFAULT_THEME } from '@/constants/wishlistThemes';
 import { ThemePreview } from './ThemePreview';
 import { ColorPicker } from './ColorPicker';
 import { Button } from './Button';
+import TypographyEditor from './TypographyEditor';
+import LiveThemePreview from './LiveThemePreview';
+import EditorActionBar from './EditorActionBar';
+import { DEFAULT_TYPOGRAPHY } from '@/constants/wishlistThemes';
+import { useThemeEditor } from '@/hooks/useThemeEditor';
 import * as Haptics from 'expo-haptics';
 
 interface WishlistThemeSelectorProps {
@@ -32,8 +37,19 @@ export function WishlistThemeSelector({
     wishlistTitle,
     onSave,
 }: WishlistThemeSelectorProps) {
-    const [activeTab, setActiveTab] = useState<'templates' | 'custom'>('templates');
-    const [theme, setTheme] = useState<WishlistTheme>(currentTheme);
+    const [activeTab, setActiveTab] = useState<'templates' | 'custom' | 'text'>('templates');
+
+    // Use theme editor hook for undo/redo functionality
+    const {
+        theme,
+        updateTheme,
+        undo,
+        redo,
+        reset,
+        canUndo,
+        canRedo,
+        hasChanges,
+    } = useThemeEditor(currentTheme);
 
     const handleSave = () => {
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
@@ -43,11 +59,11 @@ export function WishlistThemeSelector({
 
     const handleTemplateSelect = (template: WishlistTheme) => {
         Haptics.selectionAsync();
-        setTheme(template);
+        updateTheme(template);
     };
 
     const handleColorChange = (key: 'primaryColor' | 'secondaryColor' | 'accentColor', color: string) => {
-        setTheme(prev => ({ ...prev, [key]: color }));
+        updateTheme({ [key]: color });
     };
 
     return (
@@ -63,7 +79,10 @@ export function WishlistThemeSelector({
 
                 {/* Preview Section */}
                 <View style={styles.previewSection}>
-                    <ThemePreview theme={theme} title={wishlistTitle} size="large" />
+                    <LiveThemePreview
+                        theme={theme}
+                        wishlistTitle={wishlistTitle}
+                    />
                 </View>
 
                 {/* Tabs */}
@@ -81,6 +100,13 @@ export function WishlistThemeSelector({
                     >
                         <Palette size={20} color={activeTab === 'custom' ? COLORS.primary : COLORS.gray[500]} />
                         <Text style={[styles.tabText, activeTab === 'custom' && styles.activeTabText]}>Personnalisé</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                        style={[styles.tab, activeTab === 'text' && styles.activeTab]}
+                        onPress={() => setActiveTab('text')}
+                    >
+                        <Type size={20} color={activeTab === 'text' ? COLORS.primary : COLORS.gray[500]} />
+                        <Text style={[styles.tabText, activeTab === 'text' && styles.activeTabText]}>Texte</Text>
                     </TouchableOpacity>
                 </View>
 
@@ -114,7 +140,7 @@ export function WishlistThemeSelector({
                                 <TextInput
                                     style={styles.emojiInput}
                                     value={theme.emoji}
-                                    onChangeText={(text) => setTheme(prev => ({ ...prev, emoji: text }))}
+                                    onChangeText={(text) => updateTheme({ emoji: text })}
                                     maxLength={2}
                                 />
                             </View>
@@ -123,7 +149,7 @@ export function WishlistThemeSelector({
                                 <Text style={styles.label}>Dégradé</Text>
                                 <Switch
                                     value={theme.gradient}
-                                    onValueChange={(val) => setTheme(prev => ({ ...prev, gradient: val }))}
+                                    onValueChange={(val) => updateTheme({ gradient: val })}
                                     trackColor={{ false: COLORS.gray[300], true: COLORS.primary }}
                                 />
                             </View>
@@ -148,17 +174,25 @@ export function WishlistThemeSelector({
                                 onColorChange={(c) => handleColorChange('accentColor', c)}
                             />
                         </View>
-                    )}
+                    ) : activeTab === 'text' ? (
+                    <TypographyEditor
+                        typography={theme.typography || DEFAULT_TYPOGRAPHY}
+                        backgroundColor={theme.primaryColor}
+                        onChange={(typography) => updateTheme({ typography })}
+                    />
+                    ) : null}
                 </ScrollView>
 
-                {/* Footer */}
-                <View style={styles.footer}>
-                    <Button
-                        title="Enregistrer"
-                        onPress={handleSave}
-                        style={{ width: '100%' }}
-                    />
-                </View>
+                {/* Action Bar */}
+                <EditorActionBar
+                    canUndo={canUndo}
+                    canRedo={canRedo}
+                    hasChanges={hasChanges}
+                    onUndo={undo}
+                    onRedo={redo}
+                    onReset={reset}
+                    onSave={handleSave}
+                />
             </View>
         </Modal>
     );

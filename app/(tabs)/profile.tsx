@@ -21,6 +21,7 @@ import {
 } from 'lucide-react-native';
 import { SvgUri } from 'react-native-svg';
 import { SimpleAvatarPicker } from '@/components/SimpleAvatarPicker';
+import { LevelProgressBar } from '@/components/LevelProgressBar';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/lib/supabase';
 import { Card } from '@/components/Card';

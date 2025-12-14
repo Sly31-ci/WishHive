@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="robots" content="noindex, nofollow">
+    <title id="page-title">Wishlist - WishHive</title>
+    
+    <!-- Open Graph pour partage social -->
+    <meta property="og:title" content="Ma Wishlist">
+    <meta property="og:description" content="Découvrez ma liste de souhaits">
+    <meta property="og:image" content="">
+    <meta property="og:type" content="website">
+    
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
+    
+    <link rel="stylesheet" href="/public/styles.css">
+</head>
+<body>
+    <!-- Loading State -->
+    <div id="loading" class="loading-container">
+        <div class="spinner"></div>
+        <p>Chargement de la wishlist...</p>
+    </div>
+    
+    <!-- Error State -->
+    <div id="error" class="error-container hidden">
+        <div class="error-icon">❌</div>
+        <h2>Oups !</h2>
+        <p id="error-message">Cette wishlist n'existe pas ou est privée.</p>
+        <a href="https://wishhive.app" class="cta-button">Créer ma wishlist</a>
+    </div>
+    
+    <!-- Main Content -->
+    <div id="content" class="hidden">
+        <!-- Dynamic Background -->
+        <div id="background-layer" class="background-layer"></div>
+        
+        <!-- Header -->
+        <header class="wishlist-header">
+            <div class="container">
+                <!-- Creator Profile -->
+                <div class="creator-profile">
+                    <img id="creator-avatar" src="" alt="" class="avatar">
+                    <div class="creator-info">
+                        <p class="creator-label">Wishlist de</p>
+                        <h3 id="creator-name" class="creator-name">...</h3>
+                    </div>
+                </div>
+                
+                <!-- Wishlist Title -->
+                <div class="wishlist-title-section">
+                    <h1 id="wishlist-title" class="wishlist-title">
+                        <span id="wishlist-emoji" class="title-emoji">🎁</span>
+                        <span id="wishlist-text">Ma Wishlist</span>
+                    </h1>
+                    <p id="wishlist-description" class="wishlist-description"></p>
+                </div>
+                
+                <!-- Stats -->
+                <div class="wishlist-stats">
+                    <div class="stat">
+                        <span id="item-count" class="stat-value">0</span>
+                        <span class="stat-label">cadeaux</span>
+                    </div>
+                </div>
+            </div>
+        </header>
+        
+        <!-- Items Grid -->
+        <main class="wishlist-content">
+            <div class="container">
+                <div id="items-grid" class="items-grid">
+                    <!-- Items will be dynamically inserted here -->
+                </div>
+            </div>
+        </main>
+        
+        <!-- Footer -->
+        <footer class="wishlist-footer">
+            <div class="container">
+                <p class="footer-text">
+                    Créé avec <span class="heart">❤️</span> sur 
+                    <a href="https://wishhive.app" class="footer-link">WishHive</a>
+                </p>
+                <p class="footer-cta">
+                    <a href="https://wishhive.app" class="cta-button">Créer ma wishlist gratuite</a>
+                </p>
+            </div>
+        </footer>
+    </div>
+    
+    <script src="/public/app.js"></script>
+</body>
+</html>

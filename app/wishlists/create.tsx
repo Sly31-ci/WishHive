@@ -11,6 +11,8 @@ import {
 } from 'react-native';
 import { router, Stack } from 'expo-router';
 import { ArrowLeft, Calendar } from 'lucide-react-native';
+import { checkAndAwardBadges } from '@/lib/badgeEngine';
+import { BadgeUnlockedModal } from '@/components/BadgeUnlockedModal';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/lib/supabase';
 import { Input } from '@/components/Input';
@@ -55,6 +57,8 @@ export default function CreateWishlistScreen() {
   const [dueDate, setDueDate] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [unlockedBadge, setUnlockedBadge] = useState<any>(null);
+  const [showBadgeModal, setShowBadgeModal] = useState(false);
 
   const handleCreate = async () => {
     if (!user) return;
@@ -93,6 +97,16 @@ export default function CreateWishlistScreen() {
       if (error) throw error;
 
       if (data) {
+        // Check for badge unlock
+        if (user) {
+          const badgeResults = await checkAndAwardBadges(user.id, 'create_wishlist');
+          const awarded = badgeResults.find(r => r.awarded);
+          if (awarded && awarded.badge) {
+            setUnlockedBadge(awarded.badge);
+            setShowBadgeModal(true);
+          }
+        }
+
         Alert.alert('Success', 'Wishlist created successfully!', [
           {
             text: 'OK',
@@ -112,6 +126,12 @@ export default function CreateWishlistScreen() {
 
   return (
     <>
+      <BadgeUnlockedModal
+        visible={showBadgeModal}
+        badge={unlockedBadge}
+        onClose={() => setShowBadgeModal(false)}
+      />
+
       <Stack.Screen
         options={{
           headerShown: true,
