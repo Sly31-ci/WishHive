@@ -32,7 +32,7 @@ import { COLORS, SPACING, FONT_SIZES, BORDER_RADIUS } from '@/constants/theme';
 import { Database } from '@/types/database';
 import * as Haptics from 'expo-haptics';
 import { wishlistEvents, EVENTS } from '@/lib/events';
-import { SwipeableItem } from '@/components/SwipeableItem';
+// import { SwipeableItem } from '@/components/SwipeableItem';
 import { ConfirmDialog } from '@/components/ConfirmDialog';
 import { ReorganizeToolbar } from '@/components/ReorganizeToolbar';
 import { getPriorityLabel, getPriorityColor } from '@/constants/priorities';
@@ -214,69 +214,64 @@ export default function WishlistDetailScreen() {
         const imageUrl = item.custom_images?.[0] || item.product?.images?.[0];
 
         return (
-            <SwipeableItem
-                onDelete={() => handleDeleteItem(item.id)}
-                disabled={!isOwner}
-            >
-                <Card style={styles.itemCard}>
-                    <View style={styles.itemContent}>
-                        <View style={styles.itemImageContainer}>
-                            {imageUrl ? (
-                                <Image source={{ uri: imageUrl }} style={styles.itemImage} />
-                            ) : (
-                                <View style={styles.placeholderImage}>
-                                    <Gift size={24} color={COLORS.gray[400]} />
-                                </View>
-                            )}
-                        </View>
+            <Card style={styles.itemCard} >
+                <View style={styles.itemContent}>
+                    <View style={styles.itemImageContainer}>
+                        {imageUrl ? (
+                            <Image source={{ uri: imageUrl }} style={styles.itemImage} />
+                        ) : (
+                            <View style={styles.placeholderImage}>
+                                <Gift size={24} color={COLORS.gray[400]} />
+                            </View>
+                        )}
+                    </View>
 
-                        <View style={styles.itemDetails}>
-                            <Text style={styles.itemTitle} numberOfLines={2}>
-                                {title}
+                    <View style={styles.itemDetails}>
+                        <Text style={styles.itemTitle} numberOfLines={2}>
+                            {title}
+                        </Text>
+
+                        {price !== undefined && price !== null && (
+                            <Text style={styles.itemPrice}>
+                                {currency} {price.toFixed(2)}
                             </Text>
+                        )}
 
-                            {price !== undefined && price !== null && (
-                                <Text style={styles.itemPrice}>
-                                    {currency} {price.toFixed(2)}
-                                </Text>
-                            )}
-
-                            <View style={styles.itemsRow}>
-                                <View style={styles.itemMeta}>
-                                    <View style={[
-                                        styles.priorityBadge,
-                                        { backgroundColor: getPriorityColor(item.priority) + '20' }
+                        <View style={styles.itemsRow}>
+                            <View style={styles.itemMeta}>
+                                <View style={[
+                                    styles.priorityBadge,
+                                    { backgroundColor: getPriorityColor(item.priority) + '20' }
+                                ]}>
+                                    <Text style={[
+                                        styles.priorityText,
+                                        { color: getPriorityColor(item.priority) }
                                     ]}>
-                                        <Text style={[
-                                            styles.priorityText,
-                                            { color: getPriorityColor(item.priority) }
-                                        ]}>
-                                            {getPriorityLabel(item.priority)} priority
-                                        </Text>
-                                    </View>
-
-                                    {item.is_purchased && (
-                                        <View style={styles.purchasedBadge}>
-                                            <CheckCircle size={12} color={COLORS.success} />
-                                            <Text style={styles.purchasedText}>Purchased</Text>
-                                        </View>
-                                    )}
+                                        {getPriorityLabel(item.priority)} priority
+                                    </Text>
                                 </View>
 
-                                {isOwner && (
-                                    <TouchableOpacity
-                                        style={styles.deleteIconButton}
-                                        onPress={() => handleDeleteItem(item.id)}
-                                        hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-                                    >
-                                        <Trash2 size={18} color={COLORS.error} />
-                                    </TouchableOpacity>
+                                {item.is_purchased && (
+                                    <View style={styles.purchasedBadge}>
+                                        <CheckCircle size={12} color={COLORS.success} />
+                                        <Text style={styles.purchasedText}>Purchased</Text>
+                                    </View>
                                 )}
                             </View>
+
+                            {isOwner && (
+                                <TouchableOpacity
+                                    style={styles.deleteIconButton}
+                                    onPress={() => handleDeleteItem(item.id)}
+                                    hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                                >
+                                    <Trash2 size={18} color={COLORS.error} />
+                                </TouchableOpacity>
+                            )}
                         </View>
                     </View>
-                </Card>
-            </SwipeableItem>
+                </View>
+            </Card >
         );
     };
 
