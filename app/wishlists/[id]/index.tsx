@@ -508,6 +508,7 @@ const styles = StyleSheet.create({
     badges: {
         flexDirection: 'row',
         gap: SPACING.sm,
+        marginRight: SPACING.md,
     },
     badge: {
         backgroundColor: COLORS.primary + '20',
