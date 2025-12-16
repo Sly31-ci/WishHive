@@ -12,11 +12,7 @@ interface LiveThemePreviewProps {
     sampleItems?: Array<{ title: string; price?: string }>;
 }
 
-const DEFAULT_SAMPLE_ITEMS = [
-    { title: 'Exemple de cadeau 1', price: '29.99€' },
-    { title: 'Exemple de cadeau 2', price: '49.99€' },
-    { title: 'Exemple de cadeau 3', price: '19.99€' },
-];
+const DEFAULT_SAMPLE_ITEMS: Array<{ title: string; price?: string }> = [];
 
 export default function LiveThemePreview({
     theme,
@@ -30,52 +26,57 @@ export default function LiveThemePreview({
             <ThemeBackground
                 settings={theme.background}
                 width={screenWidth}
-                height={400}
+                height={sampleItems.length > 0 ? 400 : 180}
             >
-                <View style={styles.content}>
+                <View style={[styles.content, sampleItems.length === 0 && styles.contentCentered]}>
                     {/* Header avec titre */}
-                    <View style={styles.header}>
+                    <View style={[styles.header, sampleItems.length === 0 && styles.headerNoMargin]}>
                         <Text
                             style={[
                                 styles.title,
                                 theme.typography && getTypographyStyle(theme.typography),
+                                sampleItems.length === 0 && styles.titleLarge
                             ]}
                             numberOfLines={2}
                         >
                             {wishlistTitle}
                         </Text>
-                        <Text style={styles.subtitle}>
-                            {sampleItems.length} cadeaux
-                        </Text>
+                        {sampleItems.length > 0 && (
+                            <Text style={styles.subtitle}>
+                                {sampleItems.length} cadeaux
+                            </Text>
+                        )}
                     </View>
 
                     {/* Sample items avec card style */}
-                    <ScrollView
-                        style={styles.itemsList}
-                        showsVerticalScrollIndicator={false}
-                    >
-                        {sampleItems.map((item, index) => (
-                            <View
-                                key={index}
-                                style={[
-                                    styles.itemCard,
-                                    getCardStyle(theme.cardStyle, theme.accentColor),
-                                ]}
-                            >
-                                <View style={styles.itemContent}>
-                                    <View style={styles.itemImage} />
-                                    <View style={styles.itemInfo}>
-                                        <Text style={styles.itemTitle} numberOfLines={1}>
-                                            {item.title}
-                                        </Text>
-                                        {item.price && (
-                                            <Text style={styles.itemPrice}>{item.price}</Text>
-                                        )}
+                    {sampleItems.length > 0 && (
+                        <ScrollView
+                            style={styles.itemsList}
+                            showsVerticalScrollIndicator={false}
+                        >
+                            {sampleItems.map((item, index) => (
+                                <View
+                                    key={index}
+                                    style={[
+                                        styles.itemCard,
+                                        getCardStyle(theme.cardStyle, theme.accentColor),
+                                    ]}
+                                >
+                                    <View style={styles.itemContent}>
+                                        <View style={styles.itemImage} />
+                                        <View style={styles.itemInfo}>
+                                            <Text style={styles.itemTitle} numberOfLines={1}>
+                                                {item.title}
+                                            </Text>
+                                            {item.price && (
+                                                <Text style={styles.itemPrice}>{item.price}</Text>
+                                            )}
+                                        </View>
                                     </View>
                                 </View>
-                            </View>
-                        ))}
-                    </ScrollView>
+                            ))}
+                        </ScrollView>
+                    )}
                 </View>
             </ThemeBackground>
 
@@ -157,5 +158,18 @@ const styles = StyleSheet.create({
         fontSize: FONT_SIZES.xs,
         color: COLORS.white,
         fontWeight: '500',
+    },
+    contentCentered: {
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    headerNoMargin: {
+        marginBottom: 0,
+        alignItems: 'center',
+    },
+    titleLarge: {
+        fontSize: 28,
+        textAlign: 'center',
+        marginBottom: 0,
     },
 });
