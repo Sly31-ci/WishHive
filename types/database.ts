@@ -656,6 +656,281 @@ export interface Database {
           }
         ];
       };
+      friend_circles: {
+        Row: {
+          id: string;
+          owner_id: string;
+          name: string;
+          description: string | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          owner_id: string;
+          name: string;
+          description?: string | null;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          owner_id?: string;
+          name?: string;
+          description?: string | null;
+          created_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "friend_circles_owner_id_fkey";
+            columns: ["owner_id"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          }
+        ];
+      };
+      circle_members: {
+        Row: {
+          id: string;
+          circle_id: string;
+          user_id: string;
+          joined_at: string;
+        };
+        Insert: {
+          id?: string;
+          circle_id: string;
+          user_id: string;
+          joined_at?: string;
+        };
+        Update: {
+          id?: string;
+          circle_id?: string;
+          user_id?: string;
+          joined_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "circle_members_circle_id_fkey";
+            columns: ["circle_id"];
+            isOneToOne: false;
+            referencedRelation: "friend_circles";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "circle_members_user_id_fkey";
+            columns: ["user_id"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          }
+        ];
+      };
+      collaborative_wishlists: {
+        Row: {
+          id: string;
+          wishlist_id: string;
+          user_id: string;
+          role: 'owner' | 'editor' | 'viewer';
+          added_at: string;
+        };
+        Insert: {
+          id?: string;
+          wishlist_id: string;
+          user_id: string;
+          role?: 'owner' | 'editor' | 'viewer';
+          added_at?: string;
+        };
+        Update: {
+          id?: string;
+          wishlist_id?: string;
+          user_id?: string;
+          role?: 'owner' | 'editor' | 'viewer';
+          added_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "collaborative_wishlists_wishlist_id_fkey";
+            columns: ["wishlist_id"];
+            isOneToOne: false;
+            referencedRelation: "wishlists";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "collaborative_wishlists_user_id_fkey";
+            columns: ["user_id"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          }
+        ];
+      };
+      wishlist_activities: {
+        Row: {
+          id: string;
+          wishlist_id: string;
+          user_id: string;
+          action: string;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          wishlist_id: string;
+          user_id: string;
+          action: string;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          wishlist_id?: string;
+          user_id?: string;
+          action?: string;
+          created_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "wishlist_activities_wishlist_id_fkey";
+            columns: ["wishlist_id"];
+            isOneToOne: false;
+            referencedRelation: "wishlists";
+            referencedColumns: ["id"];
+          }
+        ];
+      };
+      group_gifts: {
+        Row: {
+          id: string;
+          item_id: string;
+          target_amount: number;
+          current_amount: number;
+          status: 'active' | 'completed' | 'cancelled';
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          item_id: string;
+          target_amount: number;
+          current_amount?: number;
+          status?: 'active' | 'completed' | 'cancelled';
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          item_id?: string;
+          target_amount?: number;
+          current_amount?: number;
+          status?: 'active' | 'completed' | 'cancelled';
+          created_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "group_gifts_item_id_fkey";
+            columns: ["item_id"];
+            isOneToOne: false;
+            referencedRelation: "wishlist_items";
+            referencedColumns: ["id"];
+          }
+        ];
+      };
+      gift_contributions: {
+        Row: {
+          id: string;
+          group_gift_id: string;
+          user_id: string | null;
+          amount: number;
+          message: string | null;
+          contributor_name: string | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          group_gift_id: string;
+          user_id?: string | null;
+          amount: number;
+          message?: string | null;
+          contributor_name?: string | null;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          group_gift_id?: string;
+          user_id?: string | null;
+          amount?: number;
+          message?: string | null;
+          contributor_name?: string | null;
+          created_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "gift_contributions_group_gift_id_fkey";
+            columns: ["group_gift_id"];
+            isOneToOne: false;
+            referencedRelation: "group_gifts";
+            referencedColumns: ["id"];
+          }
+        ];
+      };
+      chat_rooms: {
+        Row: {
+          id: string;
+          type: 'private' | 'group' | 'wishlist' | 'circle';
+          name: string | null;
+          target_id: string | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          type: 'private' | 'group' | 'wishlist' | 'circle';
+          name?: string | null;
+          target_id?: string | null;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          type?: 'private' | 'group' | 'wishlist' | 'circle';
+          name?: string | null;
+          target_id?: string | null;
+          created_at?: string;
+        };
+        Relationships: [];
+      };
+      chat_messages: {
+        Row: {
+          id: string;
+          room_id: string;
+          sender_id: string;
+          content: string;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          room_id: string;
+          sender_id: string;
+          content: string;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          room_id?: string;
+          sender_id?: string;
+          content?: string;
+          created_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "chat_messages_room_id_fkey";
+            columns: ["room_id"];
+            isOneToOne: false;
+            referencedRelation: "chat_rooms";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "chat_messages_sender_id_fkey";
+            columns: ["sender_id"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          }
+        ];
+      };
     };
     Views: {
       [_ in never]: never;

@@ -14,6 +14,9 @@ Become the reference social app for creating, sharing, and purchasing wishlists 
 - Create and organize wishlists by event type
 - Add products with photos, links, prices, and variations
 - Share wishlists via links, QR codes, or social media
+- **Cagnotte (Group Gifting)**: Collective funding for expensive gifts
+- **Real-time Chat**: Dedicated chat rooms for circles and shared wishlists
+- **SEO & Social Previews**: Rich OG meta-tags for beautiful social sharing
 - Purchase verification system to prevent spoiling
 - Anonymous viewing and messaging options
 - Marketplace with seller integration
@@ -34,10 +37,13 @@ Become the reference social app for creating, sharing, and purchasing wishlists 
 ## Tech Stack
 
 - **Frontend**: React Native with Expo
-- **Backend**: Supabase (PostgreSQL + Auth)
+- **Backend**: Supabase (PostgreSQL + Auth + Realtime)
 - **Language**: TypeScript
 - **Navigation**: Expo Router
+- **Animations**: React Native Reanimated
 - **Icons**: Lucide React Native
+- **Analytics**: Mixpanel & Sentry
+- **Haptics**: Expo Haptics Integration
 
 ## Setup Instructions
 
@@ -161,9 +167,10 @@ This creates an optimized build in the `dist/` directory.
 1. Sign up and complete onboarding
 2. Create a wishlist with title, type, and privacy settings
 3. Add products from marketplace or custom items
-4. Share wishlist via link/QR code
-5. Monitor views, reactions, and purchases
-6. Earn rewards and unlock badges
+4. **Collaborate**: Chat with friends or set up a Group Gift (Cagnotte)
+5. Share wishlist via link/QR code
+6. Monitor views, reactions, and purchases
+7. Earn rewards and unlock badges
 
 ### Buyer
 1. Find wishlist via shared link
@@ -181,11 +188,11 @@ This creates an optimized build in the `dist/` directory.
 
 ## Color Palette
 
-- **Primary**: #6C63FF (Dynamic Purple)
-- **Accent**: #FFB86B (Fun Orange)
-- **Secondary**: #2BD4A5 (Mint)
-- **Dark**: #0F1724
-- **Light**: #F7FAFC
+- **Primary**: #E69100 (HoneyGlow - Joy & CTA)
+- **Secondary**: #6B44FF (HivePurple - Modern Identity)
+- **Accent**: #00B37E (MintFresh - Trust & Success)
+- **Dark**: #1E1C2E (CharcoalDeep)
+- **Light**: #F7F8FA (CloudWhite)
 
 ## Contributing
 

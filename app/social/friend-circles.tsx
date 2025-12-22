@@ -18,13 +18,14 @@ import {
     Share2,
     TrendingUp,
     Plus,
+    MessageCircle,
 } from 'lucide-react-native';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/Button';
 import { Card } from '@/components/Card';
 import { Input } from '@/components/Input';
-import { COLORS, SPACING, FONT_SIZES, BORDER_RADIUS } from '@/constants/theme';
+import { COLORS, SPACING, FONT_SIZES, BORDER_RADIUS, PALETTE } from '@/constants/theme';
 
 type FriendCircle = {
     id: string;
@@ -254,6 +255,40 @@ export default function FriendCirclesScreen() {
         setShowMembersModal(true);
     };
 
+    const handleOpenChat = async (circle: FriendCircle) => {
+        try {
+            // Check if room already exists for this circle
+            const { data: existingRoom } = await supabase
+                .from('chat_rooms')
+                .select('id')
+                .eq('target_id', circle.id)
+                .eq('type', 'circle')
+                .single();
+
+            if (existingRoom) {
+                router.push(`/social/chat/${existingRoom.id}`);
+                return;
+            }
+
+            // Create new room if not exists
+            const { data: newRoom, error: createError } = await supabase
+                .from('chat_rooms')
+                .insert({
+                    type: 'circle',
+                    target_id: circle.id,
+                    name: circle.name,
+                })
+                .select()
+                .single();
+
+            if (createError) throw createError;
+            router.push(`/social/chat/${newRoom.id}`);
+
+        } catch (error: any) {
+            Alert.alert('Error', 'Impossible d\'ouvrir la discussion.');
+        }
+    };
+
     const renderCircle = ({ item }: { item: FriendCircle }) => (
         <Card style={styles.circleCard}>
             <View style={styles.circleHeader}>
@@ -272,6 +307,13 @@ export default function FriendCirclesScreen() {
             </View>
             <View style={styles.circleActions}>
                 <TouchableOpacity
+                    onPress={() => handleOpenChat(item)}
+                    style={styles.actionButton}
+                >
+                    <MessageCircle size={18} color={COLORS.primary} />
+                    <Text style={styles.actionButtonText}>Discuter</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
                     onPress={() => handleViewMembers(item)}
                     style={styles.actionButton}
                 >
@@ -283,7 +325,7 @@ export default function FriendCirclesScreen() {
                     style={[styles.actionButton, styles.deleteButton]}
                 >
                     <UserMinus size={18} color={COLORS.error} />
-                    <Text style={[styles.actionButtonText, styles.deleteText]}>Delete</Text>
+                    <Text style={[styles.actionButtonText, styles.deleteText]}>Suppr.</Text>
                 </TouchableOpacity>
             </View>
         </Card>
@@ -341,7 +383,7 @@ export default function FriendCirclesScreen() {
                     scrollEnabled={false}
                     ListEmptyComponent={
                         <Card style={styles.emptyCard}>
-                            <Users size={48} color={COLORS.textLight} />
+                            <Users size={48} color={COLORS.gray[400]} />
                             <Text style={styles.emptyText}>No circles yet</Text>
                             <Text style={styles.emptySubtext}>
                                 Create your first circle to organize friends
@@ -450,7 +492,7 @@ export default function FriendCirclesScreen() {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: COLORS.background,
+        backgroundColor: COLORS.light,
     },
     content: {
         flex: 1,
@@ -484,7 +526,7 @@ const styles = StyleSheet.create({
         width: 48,
         height: 48,
         borderRadius: 24,
-        backgroundColor: COLORS.backgroundSecondary,
+        backgroundColor: COLORS.gray[100],
         alignItems: 'center',
         justifyContent: 'center',
         marginRight: SPACING.md,
@@ -500,7 +542,7 @@ const styles = StyleSheet.create({
     },
     circleDescription: {
         fontSize: FONT_SIZES.sm,
-        color: COLORS.textSecondary,
+        color: COLORS.gray[600],
         marginBottom: SPACING.xs,
     },
     memberCount: {
@@ -521,7 +563,7 @@ const styles = StyleSheet.create({
         paddingVertical: SPACING.sm,
         paddingHorizontal: SPACING.md,
         borderRadius: BORDER_RADIUS.sm,
-        backgroundColor: COLORS.backgroundSecondary,
+        backgroundColor: COLORS.gray[100],
     },
     deleteButton: {
         backgroundColor: COLORS.error + '10',
@@ -541,13 +583,13 @@ const styles = StyleSheet.create({
     emptyText: {
         fontSize: FONT_SIZES.lg,
         fontWeight: '600',
-        color: COLORS.textSecondary,
+        color: COLORS.gray[600],
         marginTop: SPACING.md,
         marginBottom: SPACING.xs,
     },
     emptySubtext: {
         fontSize: FONT_SIZES.sm,
-        color: COLORS.textLight,
+        color: COLORS.gray[400],
         marginBottom: SPACING.lg,
         textAlign: 'center',
     },
@@ -556,13 +598,13 @@ const styles = StyleSheet.create({
     },
     modalOverlay: {
         flex: 1,
-        backgroundColor: COLORS.overlay,
+        backgroundColor: PALETTE.overlay,
         justifyContent: 'center',
         alignItems: 'center',
         padding: SPACING.lg,
     },
     modalContent: {
-        backgroundColor: COLORS.background,
+        backgroundColor: COLORS.white,
         borderRadius: BORDER_RADIUS.lg,
         padding: SPACING.lg,
         width: '100%',
@@ -596,7 +638,7 @@ const styles = StyleSheet.create({
         justifyContent: 'space-between',
         paddingVertical: SPACING.sm,
         borderBottomWidth: 1,
-        borderBottomColor: COLORS.border,
+        borderBottomColor: COLORS.gray[200],
     },
     memberInfo: {
         flexDirection: 'row',
@@ -607,7 +649,7 @@ const styles = StyleSheet.create({
         width: 32,
         height: 32,
         borderRadius: 16,
-        backgroundColor: COLORS.backgroundSecondary,
+        backgroundColor: COLORS.gray[100],
         alignItems: 'center',
         justifyContent: 'center',
         marginRight: SPACING.sm,
@@ -621,7 +663,7 @@ const styles = StyleSheet.create({
     },
     emptyMembersText: {
         textAlign: 'center',
-        color: COLORS.textSecondary,
+        color: COLORS.gray[600],
         fontSize: FONT_SIZES.sm,
         paddingVertical: SPACING.lg,
     },

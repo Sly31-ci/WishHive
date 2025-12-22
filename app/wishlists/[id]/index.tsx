@@ -42,6 +42,7 @@ import { cache } from '@/lib/cache';
 type Wishlist = Database['public']['Tables']['wishlists']['Row'];
 type WishlistItem = Database['public']['Tables']['wishlist_items']['Row'] & {
     product?: Database['public']['Tables']['products']['Row'] | null;
+    group_gift?: Database['public']['Tables']['group_gifts']['Row'] | null;
 };
 
 export default function WishlistDetailScreen() {
@@ -146,14 +147,18 @@ export default function WishlistDetailScreen() {
 
             const { data: itemsData, error: itemsError } = await supabase
                 .from('wishlist_items')
-                .select('*, product:products(*)')
+                .select('*, product:products(*), group_gift:group_gifts(*)')
                 .eq('wishlist_id', id as string)
                 .order('priority', { ascending: false })
                 .range(start, end);
 
             if (itemsError) throw itemsError;
 
-            const newItems = itemsData || [];
+            const newItems = (itemsData || []).map(item => ({
+                ...item,
+                group_gift: Array.isArray(item.group_gift) ? item.group_gift[0] : item.group_gift
+            }));
+
             if (isFirstLoad) {
                 setItems(newItems);
                 setPagination({ page: 1, hasMore: newItems.length === PAGE_SIZE, loadingMore: false });
@@ -327,10 +332,17 @@ export default function WishlistDetailScreen() {
                                     </Text>
                                 </View>
 
-                                {item.is_purchased && (
+                                {item.is_purchased && !item.group_gift && (
                                     <View style={styles.purchasedBadge}>
                                         <CheckCircle size={12} color={COLORS.success} />
                                         <Text style={styles.purchasedText}>Purchased</Text>
+                                    </View>
+                                )}
+
+                                {item.group_gift && (
+                                    <View style={styles.cagnotteBadge}>
+                                        <Gift size={12} color={COLORS.primary} />
+                                        <Text style={styles.cagnotteBadgeText}>Cagnotte</Text>
                                     </View>
                                 )}
                             </View>
@@ -341,6 +353,27 @@ export default function WishlistDetailScreen() {
                                 </View>
                             )}
                         </View>
+
+                        {item.group_gift && (
+                            <View style={styles.cagnotteContainer}>
+                                <View style={styles.progressBarBackground}>
+                                    <View
+                                        style={[
+                                            styles.progressBarFill,
+                                            { width: `${Math.min(100, (item.group_gift.current_amount / item.group_gift.target_amount) * 100)}%` }
+                                        ]}
+                                    />
+                                </View>
+                                <View style={styles.cagnotteDetails}>
+                                    <Text style={styles.cagnotteAmount}>
+                                        {currency} {item.group_gift.current_amount.toFixed(2)} / {item.group_gift.target_amount.toFixed(2)}
+                                    </Text>
+                                    <Text style={styles.cagnottePercent}>
+                                        {Math.round((item.group_gift.current_amount / item.group_gift.target_amount) * 100)}%
+                                    </Text>
+                                </View>
+                            </View>
+                        )}
                     </View>
                 </View>
             </Card>
@@ -721,5 +754,51 @@ const styles = StyleSheet.create({
     },
     deleteIconButton: {
         padding: 4,
+    },
+    cagnotteBadge: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 4,
+        backgroundColor: COLORS.primary + '20',
+        paddingHorizontal: 8,
+        paddingVertical: 2,
+        borderRadius: 4,
+    },
+    cagnotteBadgeText: {
+        fontSize: 10,
+        fontWeight: '600',
+        color: COLORS.primary,
+    },
+    cagnotteContainer: {
+        marginTop: SPACING.md,
+        padding: SPACING.sm,
+        backgroundColor: COLORS.gray[50],
+        borderRadius: BORDER_RADIUS.sm,
+    },
+    progressBarBackground: {
+        height: 8,
+        backgroundColor: COLORS.gray[200],
+        borderRadius: 4,
+        overflow: 'hidden',
+        marginBottom: 8,
+    },
+    progressBarFill: {
+        height: '100%',
+        backgroundColor: COLORS.primary,
+    },
+    cagnotteDetails: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+    },
+    cagnotteAmount: {
+        fontSize: 12,
+        fontWeight: '600',
+        color: COLORS.dark,
+    },
+    cagnottePercent: {
+        fontSize: 12,
+        fontWeight: '700',
+        color: COLORS.primary,
     },
 });

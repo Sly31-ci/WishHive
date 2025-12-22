@@ -184,6 +184,41 @@ export default function CollaborativeWishlistScreen() {
         }
     };
 
+    const handleOpenChat = async () => {
+        if (!id || !wishlistTitle) return;
+        try {
+            // Check if room already exists for this wishlist
+            const { data: existingRoom } = await supabase
+                .from('chat_rooms')
+                .select('id')
+                .eq('target_id', id)
+                .eq('type', 'wishlist')
+                .single();
+
+            if (existingRoom) {
+                router.push(`/social/chat/${existingRoom.id}`);
+                return;
+            }
+
+            // Create new room if not exists
+            const { data: newRoom, error: createError } = await supabase
+                .from('chat_rooms')
+                .insert({
+                    type: 'wishlist',
+                    target_id: id,
+                    name: `Chat: ${wishlistTitle}`,
+                })
+                .select()
+                .single();
+
+            if (createError) throw createError;
+            router.push(`/social/chat/${newRoom.id}`);
+
+        } catch (error: any) {
+            Alert.alert('Error', 'Impossible d\'ouvrir la discussion.');
+        }
+    };
+
     const handleChangeRole = async (collaboratorId: string, newRole: 'editor' | 'viewer') => {
         if (!isOwner) {
             Alert.alert('Error', 'Only the owner can change roles');
@@ -198,12 +233,13 @@ export default function CollaborativeWishlistScreen() {
 
             if (error) throw error;
 
-            // Log activity
-            await supabase.from('wishlist_activities').insert({
-                wishlist_id: id,
-                user_id: user?.id,
-                action: `changed role to ${newRole}`,
-            });
+            if (user?.id) {
+                await supabase.from('wishlist_activities').insert({
+                    wishlist_id: id,
+                    user_id: user.id,
+                    action: `changed role to ${newRole}`,
+                });
+            }
 
             loadCollaborativeData();
             Alert.alert('Success', 'Role updated');
@@ -235,12 +271,13 @@ export default function CollaborativeWishlistScreen() {
 
                             if (error) throw error;
 
-                            // Log activity
-                            await supabase.from('wishlist_activities').insert({
-                                wishlist_id: id,
-                                user_id: user?.id,
-                                action: `removed ${username}`,
-                            });
+                            if (user?.id) {
+                                await supabase.from('wishlist_activities').insert({
+                                    wishlist_id: id,
+                                    user_id: user.id,
+                                    action: `removed ${username}`,
+                                });
+                            }
 
                             loadCollaborativeData();
                         } catch (error: any) {
@@ -318,10 +355,21 @@ export default function CollaborativeWishlistScreen() {
             <ScrollView style={styles.content}>
                 {/* Wishlist Info */}
                 <Card style={styles.infoCard}>
-                    <Text style={styles.wishlistTitle}>{wishlistTitle}</Text>
-                    <Text style={styles.collaboratorCount}>
-                        {collaborators.length} collaborator{collaborators.length !== 1 ? 's' : ''}
-                    </Text>
+                    <View style={styles.infoRow}>
+                        <View style={{ flex: 1 }}>
+                            <Text style={styles.wishlistTitle}>{wishlistTitle}</Text>
+                            <Text style={styles.collaboratorCount}>
+                                {collaborators.length} collaborator{collaborators.length !== 1 ? 's' : ''}
+                            </Text>
+                        </View>
+                        <TouchableOpacity
+                            style={styles.chatIconButton}
+                            onPress={handleOpenChat}
+                        >
+                            <MessageCircle size={24} color={COLORS.primary} />
+                            <Text style={styles.chatIconText}>Discussion</Text>
+                        </TouchableOpacity>
+                    </View>
                 </Card>
 
                 {/* Invite Section */}
@@ -389,7 +437,7 @@ export default function CollaborativeWishlistScreen() {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: COLORS.background,
+        backgroundColor: COLORS.light,
     },
     content: {
         flex: 1,
@@ -397,6 +445,23 @@ const styles = StyleSheet.create({
     },
     infoCard: {
         marginBottom: SPACING.md,
+    },
+    infoRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+    },
+    chatIconButton: {
+        alignItems: 'center',
+        padding: SPACING.sm,
+        backgroundColor: COLORS.primary + '10',
+        borderRadius: BORDER_RADIUS.md,
+    },
+    chatIconText: {
+        fontSize: 10,
+        fontWeight: '700',
+        color: COLORS.primary,
+        marginTop: 2,
     },
     wishlistTitle: {
         fontSize: FONT_SIZES.xl,
@@ -406,7 +471,7 @@ const styles = StyleSheet.create({
     },
     collaboratorCount: {
         fontSize: FONT_SIZES.sm,
-        color: COLORS.textSecondary,
+        color: COLORS.gray[600],
     },
     inviteCard: {
         marginBottom: SPACING.md,
@@ -446,7 +511,7 @@ const styles = StyleSheet.create({
         width: 40,
         height: 40,
         borderRadius: 20,
-        backgroundColor: COLORS.backgroundSecondary,
+        backgroundColor: COLORS.gray[100],
         alignItems: 'center',
         justifyContent: 'center',
         marginRight: SPACING.sm,
@@ -461,7 +526,7 @@ const styles = StyleSheet.create({
     },
     collaboratorRole: {
         fontSize: FONT_SIZES.sm,
-        color: COLORS.textSecondary,
+        color: COLORS.gray[600],
     },
     collaboratorActions: {
         flexDirection: 'row',
@@ -501,11 +566,11 @@ const styles = StyleSheet.create({
     },
     activityTime: {
         fontSize: FONT_SIZES.xs,
-        color: COLORS.textSecondary,
+        color: COLORS.gray[600],
     },
     emptyText: {
         textAlign: 'center',
-        color: COLORS.textSecondary,
+        color: COLORS.gray[600],
         fontSize: FONT_SIZES.sm,
         paddingVertical: SPACING.lg,
     },

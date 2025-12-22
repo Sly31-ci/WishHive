@@ -117,20 +117,21 @@ WishHive/
 ## 🎨 Fonctionnalités disponibles
 
 ### ✅ Déjà implémenté
-- Authentification (signup/login)
-- Structure de navigation
-- Composants UI de base
-- Hooks pour wishlists, produits, gamification
-- Migrations base de données complètes
-- Système de points et badges
-- Design system complet
+- Authentification (signup/login/forgot password)
+- Structure de navigation fluide (Expo Router)
+- **Design System Premium** (Haptics, Reanimated, Skeleton loaders)
+- **Social V2** (Cagnotte collective, Chat temps-réel)
+- **Engagement** (Notifications, Reels interactions, Gamification)
+- **Performance** (Lazy loading, Memoization, Caching offline)
+- **SEO & Viralité** (Deep linking, OG Meta-tags dynamiques)
+- Marketplace & Profils vendeurs
+- Migrations base de données complètes (15+ tables)
 
 ### 🔄 À tester
-- Créer une wishlist
-- Ajouter des produits
-- Partager via lien/QR code
-- Système de gamification
-- Marketplace
+- Flow complet de contribution à une cagnotte
+- Discussion en temps réel dans un salon de chat
+- Partage de wishlist et aperçu social rich
+- Performance sur un grand nombre d'items (pagination)
 
 ## 🐛 Dépannage
 

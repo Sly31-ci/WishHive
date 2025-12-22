@@ -86,6 +86,31 @@ Ledger points et récompenses
 - Types : earn, spend, refund
 - Traçabilité complète
 
+#### 11. notifications
+Système d'alertes temps-réel
+- Types : follow, like, gift, system
+- Statut de lecture et métadonnées
+
+#### 12. friend_circles & circle_members
+Organisation sociale
+- Cercles privés (Famille, Amis, etc.)
+- Gestion des membres par email
+
+#### 13. collaborative_wishlists
+Édition partagée
+- Rôles : owner, editor, viewer
+- Historique d'activités (wishlist_activities)
+
+#### 14. group_gifts & gift_contributions
+Cagnotte collective
+- Objectif de financement
+- Suivi des contributions individuelles
+
+#### 15. chat_rooms & chat_messages
+Communication temps-réel
+- Salons contextuels (Cercle ou Wishlist)
+- Support Supabase Realtime
+
 ## Architecture Frontend
 
 ### Structure des Dossiers
@@ -138,6 +163,11 @@ lib/
 3. **Gamification**
    ```
    Action → useGamification.awardPoints() → Transaction Insert → Profile Update
+   ```
+
+4. **Chat & Temps-Réel**
+   ```
+   Message → chatService.sendMessage() → Supabase Insert → Realtime Broadcast → Subscriber Update
    ```
 
 ## Patterns de Code
@@ -212,21 +242,22 @@ eas build --platform android
 
 ## Monitoring & Analytics
 
+### Implémenté
+- **Sentry** : Error tracking en production
+- **Mixpanel** : Analytics comportemental
+- **Expo Haptics** : Feedback tactile foundation
+- **Deep Linking** : Routage via scheme `wishhive://`
+
 ### À implémenter
-- Sentry pour error tracking
-- Analytics utilisateur
-- Performance monitoring
-- A/B testing
+- Test de charge et scalabilité
+- A/B testing framework
+- Performance monitoring avancé (Flashlight)
 
 ## Évolutions Futures
 
-### Phase 2
-- Notifications push
-- Chat en temps réel
+### Phase 3
 - Paiements intégrés (Stripe)
 - Recommandations IA
-
-### Phase 3
 - App desktop (Electron)
 - Extensions navigateur
 - API publique

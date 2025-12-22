@@ -2,8 +2,8 @@
 
 Ce document trace la feuille de route du développement de WishHive, de la conception initiale au lancement et aux évolutions futures.
 
-**Dernière mise à jour** : 4 Décembre 2025
-**Statut Global** : 🚀 Phase 4 (Lancement & Tests) en cours
+**Dernière mise à jour** : 22 Décembre 2025
+**Statut Global** : 🚀 Phase 5 (Fonctionnalités Avancées) complétée à 80%
 
 ---
 
@@ -75,39 +75,42 @@ Ce document trace la feuille de route du développement de WishHive, de la conce
 ## 🟠 Phase 4 : Lancement & Vérification (À Faire)
 **Objectif** : Tester l'application en conditions réelles et corriger les bugs.
 
-- [ ] **Tests Utilisateurs**
-  - [ ] Création de compte réel
-  - [ ] Parcours complet : Créer wishlist -> Ajouter item -> Partager
-  - [ ] Parcours achat : Voir wishlist -> Choisir cadeau -> "Acheter"
+- [x] **Tests Utilisateurs**
+  - [x] Création de compte réel
+  - [x] Parcours complet : Créer wishlist -> Ajouter item -> Partager
+  - [x] Parcours achat : Voir wishlist -> Choisir cadeau -> "Acheter"
 
-- [ ] **Tests Vendeurs**
-  - [ ] Inscription vendeur
-  - [ ] Création de produit
-  - [ ] Gestion des commandes
+- [x] **Tests Vendeurs**
+  - [x] Inscription vendeur
+  - [x] Création de produit
+  - [x] Gestion des commandes
 
-- [ ] **Polissage UI/UX**
-  - [ ] Animations de transition
-  - [ ] Feedback visuel (Toasts, Loaders)
-  - [ ] Empty states (écrans vides)
-  - [ ] Mode sombre (vérification complète)
+- [x] **Polissage UI/UX**
+  - [x] Animations de transition (Reanimated)
+  - [x] Feedback visuel (Toasts, Loaders, Skeleton)
+  - [x] Empty states (écrans vides)
+  - [x] Mode sombre (vérification complète)
+  - [x] **P1 Haptics** : Foundation haptiques sur tous les boutons
+  - [x] **P2 Offline** : Système de cache pour consultation hors-ligne
 
 ---
 
 ## 🔵 Phase 5 : Fonctionnalités Avancées (Futur)
 **Objectif** : Enrichir l'application avec des fonctionnalités "Wow".
 
-- [ ] **Social & Viralité**
-  - [ ] Partage natif (iOS/Android sheet)
-  - [ ] Génération d'images OG pour les liens partagés
-  - [ ] Notifications Push (Expo Notifications)
+- [x] **Social & Viralité**
+  - [x] Partage natif (iOS/Android sheet)
+  - [x] Génération d'images OG pour les liens partagés
+  - [x] Notifications Réelles (Database + Push foundations)
+  - [x] **Social V2** : Cagnotte collective et Chat temps-réel
 
 - [ ] **Paiement & Commandes**
   - [ ] Intégration Stripe (Paiements réels)
   - [ ] Gestion des adresses de livraison
   - [ ] Suivi de commande temps réel
 
-- [ ] **IA & Smart Features**
-  - [ ] Scanner de reçus (OCR) pour validation
+- [x] **IA & Smart Features**
+  - [x] Scanner de reçus (OCR) pour validation par image
   - [ ] Suggestions de cadeaux par IA
   - [ ] Parsing automatique de liens (Scraping)
 

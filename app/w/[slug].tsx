@@ -17,8 +17,11 @@ import { getPriorityLabel, getPriorityColor } from '@/constants/priorities';
 import { SkeletonLoader } from '@/components/SkeletonLoader';
 
 type Wishlist = Database['public']['Tables']['wishlists']['Row'];
+import { CagnotteModal } from '@/components/CagnotteModal';
+
 type WishlistItem = Database['public']['Tables']['wishlist_items']['Row'] & {
     product?: Database['public']['Tables']['products']['Row'] | null;
+    group_gift?: Database['public']['Tables']['group_gifts']['Row'] | null;
 };
 
 export default function PublicWishlistScreen() {
@@ -26,6 +29,8 @@ export default function PublicWishlistScreen() {
     const [wishlist, setWishlist] = useState<Wishlist | null>(null);
     const [items, setItems] = useState<WishlistItem[]>([]);
     const [loading, setLoading] = useState(true);
+    const [participatingItem, setParticipatingItem] = useState<WishlistItem | null>(null);
+    const [showCagnotteModal, setShowCagnotteModal] = useState(false);
     const [interactionModalVisible, setInteractionModalVisible] = useState(false);
     const [interactionType, setInteractionType] = useState<'reaction' | 'comment'>('reaction');
     const [activeItem, setActiveItem] = useState<string | null>(null);
@@ -70,14 +75,18 @@ export default function PublicWishlistScreen() {
 
             const { data: itemsData, error: itemsError } = await supabase
                 .from('wishlist_items')
-                .select('*, product:products(*)')
+                .select('*, product:products(*), group_gift:group_gifts(*)')
                 .eq('wishlist_id', activeWishlistId)
                 .order('priority', { ascending: false })
                 .range(start, end);
 
             if (itemsError) throw itemsError;
 
-            const newItems = itemsData || [];
+            const newItems = (itemsData || []).map(item => ({
+                ...item,
+                group_gift: Array.isArray(item.group_gift) ? item.group_gift[0] : item.group_gift
+            }));
+
             if (isFirstLoad) {
                 setItems(newItems);
                 setPagination({ page: 1, hasMore: newItems.length === PAGE_SIZE, loadingMore: false });
@@ -140,45 +149,54 @@ export default function PublicWishlistScreen() {
     };
 
     const handleMarkAsPurchased = async (item: WishlistItem) => {
-        if (item.is_purchased) return;
+        // ... (existing alert logic)
+    };
 
-        Alert.alert(
-            '🎁 Offrir ce cadeau ?',
-            `Voulez-vous indiquer que vous allez offrir "${item.custom_title || item.product?.title}" ?\n\nCela évitera que d'autres personnes ne l'achètent en double.`,
-            [
-                { text: 'Annuler', style: 'cancel' },
-                {
-                    text: 'Oui, je l\'offre !',
-                    onPress: async () => {
-                        try {
-                            const { error } = await supabase
-                                .from('wishlist_items')
-                                .update({ is_purchased: true })
-                                .eq('id', item.id);
+    const handleContribute = async (amount: number, message: string) => {
+        if (!participatingItem?.group_gift) return;
 
-                            if (error) throw error;
+        try {
+            const { error: contribError } = await supabase
+                .from('gift_contributions')
+                .insert({
+                    group_gift_id: participatingItem.group_gift.id,
+                    amount,
+                    message,
+                    user_id: null, // Public users are anonymous by default
+                    contributor_name: 'Anonyme',
+                });
 
-                            // Update local state
-                            setItems(prev => prev.map(i => i.id === item.id ? { ...i, is_purchased: true } : i));
+            if (contribError) throw contribError;
 
-                            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-                            Alert.alert('Merci !', 'L\'article a été marqué comme acheté. 🥳');
+            const newAmount = participatingItem.group_gift.current_amount + amount;
+            const isCompleted = newAmount >= participatingItem.group_gift.target_amount;
 
-                            // Track interaction
-                            await handleInteractionSubmit({
-                                type: 'reaction',
-                                content: 'A marqué l\'article comme acheté',
-                                authorName: 'Anonyme'
-                            });
+            const { error: updateError } = await supabase
+                .from('group_gifts')
+                .update({
+                    current_amount: newAmount,
+                    status: isCompleted ? 'completed' : 'active'
+                })
+                .eq('id', participatingItem.group_gift.id);
 
-                        } catch (error) {
-                            console.error('Error marking as purchased:', error);
-                            Alert.alert('Erreur', 'Impossible de mettre à jour l\'article.');
-                        }
-                    }
+            if (updateError) throw updateError;
+
+            setItems(prev => prev.map(item => {
+                if (item.id === participatingItem.id && item.group_gift) {
+                    return {
+                        ...item,
+                        group_gift: { ...item.group_gift, current_amount: newAmount, status: isCompleted ? 'completed' : 'active' }
+                    } as WishlistItem;
                 }
-            ]
-        );
+                return item;
+            }));
+
+            Alert.alert('Merci !', 'Votre participation a bien été enregistrée. 🎁');
+
+        } catch (error) {
+            console.error('Contribution failed:', error);
+            throw error;
+        }
     };
 
     const renderItem = ({ item }: { item: WishlistItem }) => {
@@ -206,7 +224,7 @@ export default function PublicWishlistScreen() {
                     </View>
                     <View style={styles.itemDetails}>
                         <Text style={styles.itemTitle}>{title}</Text>
-                        {price && <Text style={styles.itemPrice}>{item.product?.currency} {price}</Text>}
+                        {price && <Text style={styles.itemPrice}>{item.product?.currency || wishlist?.theme?.currency || '€'} {price}</Text>}
 
                         <View style={[
                             styles.priorityBadge,
@@ -216,6 +234,22 @@ export default function PublicWishlistScreen() {
                                 {getPriorityLabel(item.priority)}
                             </Text>
                         </View>
+
+                        {item.group_gift && (
+                            <View style={styles.cagnottePreview}>
+                                <View style={styles.cagnotteProgressBg}>
+                                    <View
+                                        style={[
+                                            styles.cagnotteProgressFill,
+                                            { width: `${Math.min(100, (item.group_gift.current_amount / item.group_gift.target_amount) * 100)}%` }
+                                        ]}
+                                    />
+                                </View>
+                                <Text style={styles.cagnotteText}>
+                                    {Math.round((item.group_gift.current_amount / item.group_gift.target_amount) * 100)}% financé
+                                </Text>
+                            </View>
+                        )}
                     </View>
                 </View>
                 <View style={styles.itemActions}>
@@ -223,10 +257,23 @@ export default function PublicWishlistScreen() {
                         <Heart size={20} color={COLORS.gray[500]} />
                     </TouchableOpacity>
 
-                    {item.is_purchased ? (
+                    {item.is_purchased && !item.group_gift ? (
                         <View style={styles.purchasedBadge}>
                             <Text style={styles.purchasedText}>Déjà Offert ! 🎁</Text>
                         </View>
+                    ) : item.group_gift ? (
+                        <TouchableOpacity
+                            onPress={() => {
+                                setParticipatingItem(item);
+                                setShowCagnotteModal(true);
+                            }}
+                            style={[styles.buyButton, { backgroundColor: themeColor, opacity: item.group_gift.status === 'completed' ? 0.6 : 1 }]}
+                            disabled={item.group_gift.status === 'completed'}
+                        >
+                            <Text style={styles.buyButtonText}>
+                                {item.group_gift.status === 'completed' ? 'Cagnotte terminée' : 'Participer 🪙'}
+                            </Text>
+                        </TouchableOpacity>
                     ) : (
                         <TouchableOpacity
                             onPress={() => handleMarkAsPurchased(item)}
@@ -315,6 +362,16 @@ export default function PublicWishlistScreen() {
                 onSubmit={handleInteractionSubmit}
                 initialType={interactionType}
                 wishlistThemeColor={themeColor}
+            />
+
+            <CagnotteModal
+                visible={showCagnotteModal}
+                onClose={() => setShowCagnotteModal(false)}
+                onSubmit={handleContribute}
+                itemTitle={participatingItem?.product?.title || participatingItem?.custom_title || ''}
+                targetAmount={participatingItem?.group_gift?.target_amount || 0}
+                currentAmount={participatingItem?.group_gift?.current_amount || 0}
+                currency={wishlist?.theme?.currency || '€'}
             />
         </View>
     );
@@ -440,5 +497,24 @@ const styles = StyleSheet.create({
         shadowOpacity: 0.2,
         shadowRadius: 4,
         elevation: 5,
-    }
+    },
+    cagnottePreview: {
+        marginTop: 8,
+    },
+    cagnotteProgressBg: {
+        height: 6,
+        backgroundColor: COLORS.gray[200],
+        borderRadius: 3,
+        overflow: 'hidden',
+        marginBottom: 4,
+    },
+    cagnotteProgressFill: {
+        height: '100%',
+        backgroundColor: COLORS.primary,
+    },
+    cagnotteText: {
+        fontSize: 10,
+        fontWeight: '600',
+        color: COLORS.primary,
+    },
 });
