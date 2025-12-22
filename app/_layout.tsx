@@ -46,8 +46,8 @@ function RootLayoutContent() {
       <Stack screenOptions={{ headerShown: false }}>
         <Stack.Screen name="(auth)" />
         <Stack.Screen name="(tabs)" />
-        <Stack.Screen name="wishlists/create" />
-        <Stack.Screen name="wishlists/[id]/index" />
+        <Stack.Screen name="wishlists/create" options={{ presentation: 'modal' }} />
+        <Stack.Screen name="wishlists/[id]/index" options={{ title: 'Wishlist' }} />
         <Stack.Screen name="+not-found" />
       </Stack>
 

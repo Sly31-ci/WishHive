@@ -120,6 +120,8 @@ export default function HomeScreen() {
               <Text style={styles.actionText}>Create Wishlist</Text>
             </TouchableOpacity>
 
+            {/* V2 Features Hidden for V1 */}
+            {/* 
             <TouchableOpacity
               style={styles.actionButton}
               onPress={() => router.push('/(tabs)/marketplace')}
@@ -139,6 +141,7 @@ export default function HomeScreen() {
               </View>
               <Text style={styles.actionText}>Leaderboard</Text>
             </TouchableOpacity>
+            */}
           </View>
         </Card>
 

@@ -32,6 +32,8 @@ export default function TabLayout() {
           tabBarIcon: ({ size, color }) => <List size={size} color={color} />,
         }}
       />
+      {/* Commented out Marketplace/Shop for V1 stability */}
+      {/* 
       <Tabs.Screen
         name="marketplace"
         options={{
@@ -40,7 +42,8 @@ export default function TabLayout() {
             <ShoppingBag size={size} color={color} />
           ),
         }}
-      />
+      /> 
+      */}
       <Tabs.Screen
         name="profile"
         options={{
