@@ -8,6 +8,10 @@ import { useFrameworkReady } from '@/hooks/useFrameworkReady';
 import { AuthProvider, useAuth } from '@/contexts/AuthContext';
 import { ThemeProvider, useTheme } from '@/contexts/ThemeContext';
 import { ToastProvider } from '@/contexts/ToastContext';
+import { initSentry, Sentry } from '@/lib/sentry';
+
+// Initialize Sentry
+initSentry();
 
 function RootLayoutContent() {
   useFrameworkReady();
@@ -52,13 +56,15 @@ function RootLayoutContent() {
   );
 }
 
+const SentryWrappedRootLayoutContent = Sentry.wrap(RootLayoutContent);
+
 export default function RootLayout() {
   return (
     <ThemeProvider>
       <AuthProvider>
         <ToastProvider>
           <GestureHandlerRootView style={{ flex: 1 }}>
-            <RootLayoutContent />
+            <SentryWrappedRootLayoutContent />
           </GestureHandlerRootView>
         </ToastProvider>
       </AuthProvider>

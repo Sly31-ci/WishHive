@@ -1,6 +1,8 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, FlatList, Image, TouchableOpacity, Alert, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet, FlatList, TouchableOpacity, Alert, ActivityIndicator } from 'react-native';
 import { useLocalSearchParams, router, Stack } from 'expo-router';
+import Head from 'expo-router/head';
+import { Image } from 'expo-image';
 import { supabase } from '@/lib/supabase';
 import { PublicWishlistHeader } from '@/components/PublicWishlistHeader';
 import { AnonymousInteraction } from '@/components/AnonymousInteraction';
@@ -10,7 +12,9 @@ import { Database } from '@/types/database';
 import { MessageCircle, Heart, Download } from 'lucide-react-native';
 import { WishlistTheme, DEFAULT_THEME } from '@/constants/wishlistThemes';
 import * as Linking from 'expo-linking';
+import * as Haptics from 'expo-haptics';
 import { getPriorityLabel, getPriorityColor } from '@/constants/priorities';
+import { SkeletonLoader } from '@/components/SkeletonLoader';
 
 type Wishlist = Database['public']['Tables']['wishlists']['Row'];
 type WishlistItem = Database['public']['Tables']['wishlist_items']['Row'] & {
@@ -24,50 +28,80 @@ export default function PublicWishlistScreen() {
     const [loading, setLoading] = useState(true);
     const [interactionModalVisible, setInteractionModalVisible] = useState(false);
     const [interactionType, setInteractionType] = useState<'reaction' | 'comment'>('reaction');
-    const [activeItem, setActiveItem] = useState<string | null>(null); // For item-specific interactions if needed
+    const [activeItem, setActiveItem] = useState<string | null>(null);
+
+    // Pagination State
+    const [pagination, setPagination] = useState({ page: 0, hasMore: true, loadingMore: false });
+    const PAGE_SIZE = 15;
 
     useEffect(() => {
         loadWishlist();
     }, [slug]);
 
-    const loadWishlist = async () => {
+    const loadWishlist = async (isFirstLoad = true) => {
+        if (isFirstLoad) {
+            setLoading(true);
+            setPagination({ page: 0, hasMore: true, loadingMore: false });
+        } else {
+            setPagination(prev => ({ ...prev, loadingMore: true }));
+        }
+
         try {
-            // Find wishlist by slug
-            const { data: wishlistData, error: wishlistError } = await supabase
-                .from('wishlists')
-                .select('*')
-                .eq('slug', slug)
-                .single();
+            // Only load wishlist info on first load
+            if (isFirstLoad) {
+                const { data: wishlistData, error: wishlistError } = await supabase
+                    .from('wishlists')
+                    .select('*')
+                    .eq('slug', slug)
+                    .single();
 
-            if (wishlistError) throw wishlistError;
-            setWishlist(wishlistData);
+                if (wishlistError) throw wishlistError;
+                setWishlist(wishlistData);
 
-            // Access Check (Public or Code Only) - Logic handled by RLS mostly, but UI check:
-            if (wishlistData.privacy === 'private') {
-                // If private, maybe redirect or show error (unless owner, but this is public route)
-                // For simplicity, we show it, but RLS might block items if not public.
+                // Increment view count
+                await (supabase.rpc as any)('increment_view_count', { wishlist_id: wishlistData.id });
             }
+
+            const activeWishlistId = wishlist?.id || (await supabase.from('wishlists').select('id').eq('slug', slug).single()).data?.id;
+            if (!activeWishlistId) throw new Error('Wishlist not found');
+
+            const start = isFirstLoad ? 0 : pagination.page * PAGE_SIZE;
+            const end = start + PAGE_SIZE - 1;
 
             const { data: itemsData, error: itemsError } = await supabase
                 .from('wishlist_items')
                 .select('*, product:products(*)')
-                .eq('wishlist_id', wishlistData.id)
-                .order('priority', { ascending: false });
+                .eq('wishlist_id', activeWishlistId)
+                .order('priority', { ascending: false })
+                .range(start, end);
 
             if (itemsError) throw itemsError;
-            setItems(itemsData || []);
 
-            // Increment view count
-            await supabase.rpc('increment_view_count', { wishlist_id: wishlistData.id }).catch(() => { });
-            // Or simpler update if RPC not exists:
-            // await supabase.from('wishlists').update({ view_count: wishlistData.view_count + 1 }).eq('id', wishlistData.id);
-
+            const newItems = itemsData || [];
+            if (isFirstLoad) {
+                setItems(newItems);
+                setPagination({ page: 1, hasMore: newItems.length === PAGE_SIZE, loadingMore: false });
+            } else {
+                setItems(prev => [...prev, ...newItems]);
+                setPagination(prev => ({
+                    page: prev.page + 1,
+                    hasMore: newItems.length === PAGE_SIZE,
+                    loadingMore: false
+                }));
+            }
         } catch (error) {
             console.error('Error loading public wishlist:', error);
             Alert.alert('Erreur', 'Impossible de charger la wishlist. Vérifiez le lien.');
             router.replace('/');
         } finally {
             setLoading(false);
+            setPagination(prev => ({ ...prev, loadingMore: false }));
+        }
+    };
+
+    const handleLoadMore = () => {
+        if (pagination.hasMore && !pagination.loadingMore && !loading) {
+            loadWishlist(false);
         }
     };
 
@@ -99,9 +133,52 @@ export default function PublicWishlistScreen() {
     };
 
     const openInteraction = (type: 'reaction' | 'comment', itemId: string | null = null) => {
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
         setInteractionType(type);
         setActiveItem(itemId);
         setInteractionModalVisible(true);
+    };
+
+    const handleMarkAsPurchased = async (item: WishlistItem) => {
+        if (item.is_purchased) return;
+
+        Alert.alert(
+            '🎁 Offrir ce cadeau ?',
+            `Voulez-vous indiquer que vous allez offrir "${item.custom_title || item.product?.title}" ?\n\nCela évitera que d'autres personnes ne l'achètent en double.`,
+            [
+                { text: 'Annuler', style: 'cancel' },
+                {
+                    text: 'Oui, je l\'offre !',
+                    onPress: async () => {
+                        try {
+                            const { error } = await supabase
+                                .from('wishlist_items')
+                                .update({ is_purchased: true })
+                                .eq('id', item.id);
+
+                            if (error) throw error;
+
+                            // Update local state
+                            setItems(prev => prev.map(i => i.id === item.id ? { ...i, is_purchased: true } : i));
+
+                            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+                            Alert.alert('Merci !', 'L\'article a été marqué comme acheté. 🥳');
+
+                            // Track interaction
+                            await handleInteractionSubmit({
+                                type: 'reaction',
+                                content: 'A marqué l\'article comme acheté',
+                                authorName: 'Anonyme'
+                            });
+
+                        } catch (error) {
+                            console.error('Error marking as purchased:', error);
+                            Alert.alert('Erreur', 'Impossible de mettre à jour l\'article.');
+                        }
+                    }
+                }
+            ]
+        );
     };
 
     const renderItem = ({ item }: { item: WishlistItem }) => {
@@ -110,10 +187,22 @@ export default function PublicWishlistScreen() {
         const imageUrl = item.custom_images?.[0] || item.product?.images?.[0];
 
         return (
-            <Card style={styles.itemCard}>
+            <Card
+                style={styles.itemCard}
+                accessibilityLabel={`Article: ${title}`}
+            >
                 <View style={styles.itemContent}>
                     <View style={styles.itemImageContainer}>
-                        {imageUrl && <Image source={{ uri: imageUrl }} style={styles.itemImage} />}
+                        {imageUrl && (
+                            <Image
+                                source={{ uri: imageUrl }}
+                                style={styles.itemImage}
+                                contentFit="cover"
+                                transition={300}
+                                cachePolicy="memory-disk"
+                                accessibilityLabel={`Photo de ${title}`}
+                            />
+                        )}
                     </View>
                     <View style={styles.itemDetails}>
                         <Text style={styles.itemTitle}>{title}</Text>
@@ -133,7 +222,19 @@ export default function PublicWishlistScreen() {
                     <TouchableOpacity onPress={() => openInteraction('reaction', item.id)} style={styles.actionButton}>
                         <Heart size={20} color={COLORS.gray[500]} />
                     </TouchableOpacity>
-                    {/* Only show 'Want' or 'Buy' button if needed? Maybe later. */}
+
+                    {item.is_purchased ? (
+                        <View style={styles.purchasedBadge}>
+                            <Text style={styles.purchasedText}>Déjà Offert ! 🎁</Text>
+                        </View>
+                    ) : (
+                        <TouchableOpacity
+                            onPress={() => handleMarkAsPurchased(item)}
+                            style={[styles.buyButton, { backgroundColor: themeColor }]}
+                        >
+                            <Text style={styles.buyButtonText}>C'est pour moi !</Text>
+                        </TouchableOpacity>
+                    )}
                 </View>
             </Card>
         );
@@ -152,6 +253,20 @@ export default function PublicWishlistScreen() {
         <View style={styles.container}>
             <Stack.Screen options={{ headerShown: false }} />
 
+            {wishlist && (
+                <Head>
+                    <title>{`${wishlist.title} | WishHive`}</title>
+                    <meta name="description" content={wishlist.description || `Découvrez la liste de souhaits "${wishlist.title}" sur WishHive.`} />
+                    <meta property="og:title" content={wishlist.title} />
+                    <meta property="og:description" content={wishlist.description || `Découvrez la liste de souhaits "${wishlist.title}" sur WishHive.`} />
+                    {items[0]?.custom_images?.[0] || items[0]?.product?.images?.[0] ? (
+                        <meta property="og:image" content={items[0]?.custom_images?.[0] || items[0]?.product?.images?.[0]} />
+                    ) : null}
+                    <meta property="og:type" content="website" />
+                    <meta name="twitter:card" content="summary_large_image" />
+                </Head>
+            )}
+
             <FlatList
                 data={items}
                 renderItem={renderItem}
@@ -166,28 +281,32 @@ export default function PublicWishlistScreen() {
                     />
                 }
                 ListFooterComponent={
-                    <View style={styles.footer}>
-                        <TouchableOpacity style={[styles.ctaButton, { backgroundColor: themeColor }]}>
-                            <Download size={20} color={COLORS.white} />
-                            <Text style={styles.ctaText}>Télécharger WishHive</Text>
-                        </TouchableOpacity>
-                        <View style={styles.fabContainer}>
-                            <TouchableOpacity
-                                style={[styles.fab, { backgroundColor: COLORS.white }]}
-                                onPress={() => openInteraction('comment')}
-                            >
-                                <MessageCircle size={24} color={themeColor} />
+                    <View>
+                        <View style={styles.footer}>
+                            <TouchableOpacity style={[styles.ctaButton, { backgroundColor: themeColor }]}>
+                                <Download size={20} color={COLORS.white} />
+                                <Text style={styles.ctaText}>Télécharger WishHive</Text>
                             </TouchableOpacity>
-                            <TouchableOpacity
-                                style={[styles.fab, { backgroundColor: themeColor }]}
-                                onPress={() => openInteraction('reaction')}
-                            >
-                                <Heart size={24} color={COLORS.white} />
-                            </TouchableOpacity>
+                            <View style={styles.fabContainer}>
+                                <TouchableOpacity
+                                    style={[styles.fab, { backgroundColor: COLORS.white }]}
+                                    onPress={() => openInteraction('comment')}
+                                >
+                                    <MessageCircle size={24} color={themeColor} />
+                                </TouchableOpacity>
+                                <TouchableOpacity
+                                    style={[styles.fab, { backgroundColor: themeColor }]}
+                                    onPress={() => openInteraction('reaction')}
+                                >
+                                    <Heart size={24} color={COLORS.white} />
+                                </TouchableOpacity>
+                            </View>
                         </View>
+                        {pagination.loadingMore && (
+                            <ActivityIndicator style={{ marginVertical: 20 }} color={COLORS.primary} />
+                        )}
                     </View>
                 }
-                contentContainerStyle={{ paddingBottom: 100 }}
             />
 
             <AnonymousInteraction
@@ -258,8 +377,32 @@ const styles = StyleSheet.create({
     },
     itemActions: {
         flexDirection: 'row',
-        justifyContent: 'flex-end',
+        justifyContent: 'space-between',
+        alignItems: 'center',
         marginTop: SPACING.sm,
+    },
+    buyButton: {
+        paddingHorizontal: SPACING.md,
+        paddingVertical: 6,
+        borderRadius: BORDER_RADIUS.md,
+    },
+    buyButtonText: {
+        color: COLORS.white,
+        fontSize: 12,
+        fontWeight: '700',
+    },
+    purchasedBadge: {
+        backgroundColor: COLORS.success + '20',
+        paddingHorizontal: SPACING.md,
+        paddingVertical: 6,
+        borderRadius: BORDER_RADIUS.md,
+        borderWidth: 1,
+        borderColor: COLORS.success,
+    },
+    purchasedText: {
+        color: COLORS.success,
+        fontSize: 12,
+        fontWeight: '700',
     },
     actionButton: {
         padding: 8,

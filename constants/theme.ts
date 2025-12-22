@@ -1,8 +1,8 @@
 export const PALETTE = {
   // Brand Colors
-  honeyGlow: '#FFB937',   // Primary / Joy / CTA
-  hivePurple: '#7F5BFF',  // Secondary / Identity / Modernity
-  mintFresh: '#2DE4A7',   // Success / Validation / Trust
+  honeyGlow: '#E69100',   // Primary / Joy / CTA (Slightly darker for better contrast)
+  hivePurple: '#6B44FF',  // Secondary / Identity / Modernity (Darkened for AA compliance on white)
+  mintFresh: '#00B37E',   // Success / Validation / Trust (Darkened for AA compliance on white)
 
   // Neutrals - Light
   cloudWhite: '#F7F8FA',  // Background
@@ -26,8 +26,8 @@ export const PALETTE = {
     200: '#E5E7EB',
     300: '#D1D5DB',
     400: '#9CA3AF',
-    500: '#6B7280',
-    600: '#4B5563',
+    500: '#71717A', // Adjusted for AA contrast on white background
+    600: '#52525B', // Adjusted for AA contrast on white background
     700: '#374151',
     800: '#1F2937',
     900: '#111827',

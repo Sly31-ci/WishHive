@@ -18,7 +18,7 @@ interface WishlistCardProps {
     showDelete?: boolean;
 }
 
-export function WishlistCard({ wishlist, onPress, onLongPress, onDelete, showDelete }: WishlistCardProps) {
+export const WishlistCard = React.memo(({ wishlist, onPress, onLongPress, onDelete, showDelete }: WishlistCardProps) => {
     const { theme: appTheme } = useTheme();
 
     // Parse theme safely
@@ -111,7 +111,7 @@ export function WishlistCard({ wishlist, onPress, onLongPress, onDelete, showDel
             </Card>
         </TouchableOpacity>
     );
-}
+});
 
 const styles = StyleSheet.create({
     card: {

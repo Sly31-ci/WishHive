@@ -6,6 +6,7 @@ import {
   FlatList,
   TouchableOpacity,
   RefreshControl,
+  ActivityIndicator,
 } from 'react-native';
 import { router } from 'expo-router';
 import { Plus, Calendar, Eye, Trash2 } from 'lucide-react-native';
@@ -19,6 +20,8 @@ import { COLORS, SPACING, FONT_SIZES, BORDER_RADIUS } from '@/constants/theme';
 import { Database } from '@/types/database';
 import { useTheme } from '@/contexts/ThemeContext';
 import { WishlistListSkeleton } from '@/components/skeletons/WishlistCardSkeleton';
+import { analytics } from '@/lib/analytics';
+import { cache } from '@/lib/cache';
 
 type Wishlist = Database['public']['Tables']['wishlists']['Row'];
 
@@ -28,36 +31,83 @@ export default function WishlistsScreen() {
   const [wishlists, setWishlists] = useState<Wishlist[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [pagination, setPagination] = useState({ page: 0, hasMore: true, loadingMore: false });
+  const PAGE_SIZE = 10;
   const [deleteDialogVisible, setDeleteDialogVisible] = useState(false);
   const [wishlistToDelete, setWishlistToDelete] = useState<string | null>(null);
 
   useEffect(() => {
-    loadWishlists();
+    loadCachedWishlists();
+    loadWishlists(true);
   }, [user]);
 
-  const loadWishlists = async () => {
+  const loadCachedWishlists = async () => {
+    if (!user) return;
+    const cachedData = await cache.get<Wishlist[]>(`wishlists_${user.id}`);
+    if (cachedData && cachedData.length > 0) {
+      setWishlists(cachedData);
+      setLoading(false);
+    }
+  };
+
+  const loadWishlists = async (isRefresh = false) => {
     if (!user) return;
 
+    if (isRefresh) {
+      setRefreshing(true);
+    } else if (pagination.page === 0) {
+      setLoading(true);
+    } else {
+      setPagination(prev => ({ ...prev, loadingMore: true }));
+    }
+
     try {
+      const start = isRefresh ? 0 : pagination.page * PAGE_SIZE;
+      const end = start + PAGE_SIZE - 1;
+
       const { data, error } = await supabase
         .from('wishlists')
         .select('*')
         .eq('owner_id', user.id)
-        .order('created_at', { ascending: false });
+        .order('created_at', { ascending: false })
+        .range(start, end);
 
       if (error) throw error;
-      setWishlists(data || []);
+
+      const newWishlists = data || [];
+      if (isRefresh) {
+        setWishlists(newWishlists);
+        setPagination({ page: 1, hasMore: newWishlists.length === PAGE_SIZE, loadingMore: false });
+      } else {
+        setWishlists(prev => [...prev, ...newWishlists]);
+        setPagination(prev => ({
+          page: prev.page + 1,
+          hasMore: newWishlists.length === PAGE_SIZE,
+          loadingMore: false
+        }));
+      }
     } catch (error) {
       console.error('Error loading wishlists:', error);
     } finally {
       setLoading(false);
       setRefreshing(false);
+      setPagination(prev => ({ ...prev, loadingMore: false }));
+
+      // Save to cache after successful load or refresh
+      if (user && wishlists.length > 0) {
+        cache.set(`wishlists_${user.id}`, wishlists);
+      }
     }
   };
 
   const onRefresh = () => {
-    setRefreshing(true);
-    loadWishlists();
+    loadWishlists(true);
+  };
+
+  const handleLoadMore = () => {
+    if (pagination.hasMore && !pagination.loadingMore && !loading) {
+      loadWishlists();
+    }
   };
 
   const confirmDelete = (id: string) => {
@@ -91,6 +141,8 @@ export default function WishlistsScreen() {
 
       // 4. Update local state
       setWishlists(prev => prev.filter(w => w.id !== wishlistToDelete));
+
+      analytics.track('Wishlist Deleted', { wishlist_id: wishlistToDelete });
 
     } catch (error) {
       console.error('Error deleting wishlist:', error);
@@ -161,7 +213,14 @@ export default function WishlistsScreen() {
           keyExtractor={(item) => item.id}
           contentContainerStyle={styles.listContent}
           refreshControl={
-            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={COLORS.primary} />
+          }
+          onEndReached={handleLoadMore}
+          onEndReachedThreshold={0.5}
+          ListFooterComponent={() =>
+            pagination.loadingMore ? (
+              <ActivityIndicator style={{ marginVertical: 20 }} color={COLORS.primary} />
+            ) : null
           }
         />
       )}

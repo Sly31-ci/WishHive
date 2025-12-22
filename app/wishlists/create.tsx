@@ -20,6 +20,7 @@ import { Button } from '@/components/Button';
 import { Card } from '@/components/Card';
 import { COLORS, SPACING, FONT_SIZES, BORDER_RADIUS } from '@/constants/theme';
 import { generateSlug } from '@/lib/slug';
+import { analytics } from '@/lib/analytics';
 
 const WISHLIST_TYPES = [
   { value: 'birthday', label: 'Birthday', emoji: '🎂' },
@@ -113,6 +114,13 @@ export default function CreateWishlistScreen() {
           type: 'success',
           message: '🎉 Wishlist created successfully!',
           duration: 2000,
+        });
+
+        analytics.track('Wishlist Created', {
+          wishlist_id: data.id,
+          type: data.type,
+          privacy: data.privacy,
+          has_due_date: !!data.due_date,
         });
 
         router.back();

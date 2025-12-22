@@ -2,6 +2,8 @@ import React, { createContext, useContext, useEffect, useState } from 'react';
 import { Session, User } from '@supabase/supabase-js';
 import { supabase } from '@/lib/supabase';
 import { Database } from '@/types/database';
+import { registerForPushNotificationsAsync, savePushTokenInSupabase } from '@/lib/pushNotifications';
+import { analytics } from '@/lib/analytics';
 
 type Profile = Database['public']['Tables']['profiles']['Row'];
 
@@ -61,10 +63,22 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       if (error) throw error;
       setProfile(data);
+
+      if (data) {
+        analytics.identify(userId, {
+          username: data.username,
+          points: data.points,
+          level: data.level,
+        });
+      }
     } catch (error) {
       console.error('Error loading profile:', error);
     } finally {
       setLoading(false);
+      // Register for push notifications after profile is loaded
+      registerForPushNotificationsAsync().then(token => {
+        if (token) savePushTokenInSupabase(token);
+      });
     }
   };
 
@@ -74,6 +88,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       password,
     });
     if (error) throw error;
+    analytics.track('Sign In', { email });
   };
 
   const signUp = async (email: string, password: string, username: string) => {
@@ -87,12 +102,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       },
     });
     if (response.error) throw response.error;
+    analytics.track('Sign Up', { email, username });
     return response;
   };
 
   const signOut = async () => {
     const { error } = await supabase.auth.signOut();
     if (error) throw error;
+    analytics.reset();
+    analytics.track('Sign Out');
   };
 
   const refreshProfile = async () => {

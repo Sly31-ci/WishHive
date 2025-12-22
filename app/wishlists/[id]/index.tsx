@@ -4,11 +4,12 @@ import {
     Text,
     StyleSheet,
     TouchableOpacity,
-    Image,
     Platform,
     Alert,
     FlatList,
+    ActivityIndicator,
 } from 'react-native';
+import { Image } from 'expo-image';
 // import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { useLocalSearchParams, router, Stack } from 'expo-router';
 import {
@@ -36,6 +37,7 @@ import { SwipeableItem } from '@/components/SwipeableItem';
 import { ConfirmDialog } from '@/components/ConfirmDialog';
 import { ReorganizeToolbar } from '@/components/ReorganizeToolbar';
 import { getPriorityLabel, getPriorityColor } from '@/constants/priorities';
+import { cache } from '@/lib/cache';
 
 type Wishlist = Database['public']['Tables']['wishlists']['Row'];
 type WishlistItem = Database['public']['Tables']['wishlist_items']['Row'] & {
@@ -57,6 +59,10 @@ export default function WishlistDetailScreen() {
 
     // Customization State
     const [showThemeSelector, setShowThemeSelector] = useState(false);
+
+    // Pagination State
+    const [pagination, setPagination] = useState({ page: 0, hasMore: true, loadingMore: false });
+    const PAGE_SIZE = 15;
 
     const currentTheme = wishlist?.theme && typeof wishlist.theme === 'object'
         ? (wishlist.theme as unknown as WishlistTheme)
@@ -80,8 +86,26 @@ export default function WishlistDetailScreen() {
     };
 
     useEffect(() => {
-        if (id) loadWishlistDetails();
+        if (id) {
+            loadCachedDetails();
+            loadWishlistDetails();
+        }
     }, [id]);
+
+    const loadCachedDetails = async () => {
+        if (!id) return;
+        const cachedWishlist = await cache.get<Wishlist>(`wishlist_${id}`);
+        const cachedItems = await cache.get<WishlistItem[]>(`wishlist_items_${id}`);
+
+        if (cachedWishlist) {
+            setWishlist(cachedWishlist);
+            setIsOwner(user?.id === cachedWishlist.owner_id);
+        }
+        if (cachedItems && cachedItems.length > 0) {
+            setItems(cachedItems);
+            setLoading(false);
+        }
+    };
 
     useEffect(() => {
         const handleItemAdded = (data: { wishlistId: string; item: any }) => {
@@ -95,31 +119,72 @@ export default function WishlistDetailScreen() {
         return () => { wishlistEvents.off(EVENTS.ITEM_ADDED, handleItemAdded); };
     }, [id]);
 
-    const loadWishlistDetails = async () => {
-        try {
-            const { data: wishlistData, error: wishlistError } = await supabase
-                .from('wishlists')
-                .select('*')
-                .eq('id', id as string)
-                .single();
+    const loadWishlistDetails = async (isFirstLoad = true) => {
+        if (isFirstLoad) {
+            setLoading(true);
+            setPagination({ page: 0, hasMore: true, loadingMore: false });
+        } else {
+            setPagination(prev => ({ ...prev, loadingMore: true }));
+        }
 
-            if (wishlistError) throw wishlistError;
-            setWishlist(wishlistData);
-            setIsOwner(user?.id === wishlistData.owner_id);
+        try {
+            // Only load wishlist info on first load
+            if (isFirstLoad) {
+                const { data: wishlistData, error: wishlistError } = await supabase
+                    .from('wishlists')
+                    .select('*')
+                    .eq('id', id as string)
+                    .single();
+
+                if (wishlistError) throw wishlistError;
+                setWishlist(wishlistData);
+                setIsOwner(user?.id === wishlistData.owner_id);
+            }
+
+            const start = isFirstLoad ? 0 : pagination.page * PAGE_SIZE;
+            const end = start + PAGE_SIZE - 1;
 
             const { data: itemsData, error: itemsError } = await supabase
                 .from('wishlist_items')
                 .select('*, product:products(*)')
                 .eq('wishlist_id', id as string)
-                .order('priority', { ascending: false });
+                .order('priority', { ascending: false })
+                .range(start, end);
 
             if (itemsError) throw itemsError;
-            setItems(itemsData || []);
+
+            const newItems = itemsData || [];
+            if (isFirstLoad) {
+                setItems(newItems);
+                setPagination({ page: 1, hasMore: newItems.length === PAGE_SIZE, loadingMore: false });
+            } else {
+                setItems(prev => [...prev, ...newItems]);
+                setPagination(prev => ({
+                    page: prev.page + 1,
+                    hasMore: newItems.length === PAGE_SIZE,
+                    loadingMore: false
+                }));
+            }
         } catch (error) {
             console.error('Error loading wishlist:', error);
             Alert.alert('Error', 'Failed to load wishlist details');
         } finally {
             setLoading(false);
+            setPagination(prev => ({ ...prev, loadingMore: false }));
+
+            // Save to cache
+            if (wishlist) {
+                cache.set(`wishlist_${id}`, wishlist);
+            }
+            if (items.length > 0) {
+                cache.set(`wishlist_items_${id}`, items);
+            }
+        }
+    };
+
+    const handleLoadMore = () => {
+        if (pagination.hasMore && !pagination.loadingMore && !loading) {
+            loadWishlistDetails(false);
         }
     };
 
@@ -207,7 +272,12 @@ export default function WishlistDetailScreen() {
         }
     };
 
-    const renderItem = ({ item }: { item: WishlistItem }) => {
+    const WishlistItemCard = React.memo(({ item, isOwner, isReordering, onDelete }: {
+        item: WishlistItem;
+        isOwner: boolean;
+        isReordering: boolean;
+        onDelete: (id: string) => void
+    }) => {
         const title = item.custom_title || item.product?.title || 'Untitled Item';
         const price = item.custom_price || item.product?.price;
         const currency = item.product?.currency || 'USD';
@@ -218,7 +288,13 @@ export default function WishlistDetailScreen() {
                 <View style={styles.itemContent}>
                     <View style={styles.itemImageContainer}>
                         {imageUrl ? (
-                            <Image source={{ uri: imageUrl }} style={styles.itemImage} />
+                            <Image
+                                source={{ uri: imageUrl }}
+                                style={styles.itemImage}
+                                contentFit="cover"
+                                transition={200}
+                                cachePolicy="memory-disk"
+                            />
                         ) : (
                             <View style={styles.placeholderImage}>
                                 <Gift size={24} color={COLORS.gray[400]} />
@@ -272,14 +348,23 @@ export default function WishlistDetailScreen() {
 
         if (isOwner && !isReordering) {
             return (
-                <SwipeableItem onDelete={() => handleDeleteItem(item.id)}>
+                <SwipeableItem onDelete={() => onDelete(item.id)}>
                     {content}
                 </SwipeableItem>
             );
         }
 
         return content;
-    };
+    });
+
+    const renderItem = ({ item }: { item: WishlistItem }) => (
+        <WishlistItemCard
+            item={item}
+            isOwner={isOwner}
+            isReordering={isReordering}
+            onDelete={handleDeleteItem}
+        />
+    );
 
     const renderHeader = () => {
         const HeaderWrapper = ({ children }: { children: React.ReactNode }) => {
@@ -410,6 +495,13 @@ export default function WishlistDetailScreen() {
                 ListHeaderComponent={renderHeader}
                 ListEmptyComponent={renderEmpty}
                 contentContainerStyle={{ paddingBottom: 100 }}
+                onEndReached={handleLoadMore}
+                onEndReachedThreshold={0.5}
+                ListFooterComponent={() =>
+                    pagination.loadingMore ? (
+                        <ActivityIndicator style={{ marginVertical: 20 }} color={COLORS.primary} />
+                    ) : null
+                }
             />
 
             {isReordering && (

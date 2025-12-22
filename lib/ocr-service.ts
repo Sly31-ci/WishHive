@@ -5,7 +5,8 @@
  * amount, and date from purchase receipts for verification purposes.
  */
 
-import { createWorker } from 'tesseract.js';
+// tesseract.js is a large dependency, we import it dynamically only when needed
+// import { createWorker } from 'tesseract.js';
 
 export interface OCRResult {
     merchantName: string;
@@ -28,6 +29,9 @@ export interface OCRExtractionResult {
  */
 export async function extractReceiptData(imageUri: string): Promise<OCRExtractionResult> {
     try {
+        // Dynamic import to reduce initial bundle size
+        const { createWorker } = await import('tesseract.js');
+
         // Create Tesseract worker
         const worker = await createWorker('eng');
 

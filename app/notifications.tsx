@@ -11,16 +11,10 @@ import { ArrowLeft, Bell, Heart, User, Gift } from 'lucide-react-native';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/lib/supabase';
 import { COLORS, SPACING, FONT_SIZES, BORDER_RADIUS } from '@/constants/theme';
+import { getNotifications, markAsRead, Notification } from '@/lib/notifications';
+import { SkeletonLoader } from '@/components/SkeletonLoader';
 
-// Mock notification type since we don't have a table yet
-type Notification = {
-    id: string;
-    type: 'follow' | 'like' | 'gift';
-    title: string;
-    message: string;
-    created_at: string;
-    read: boolean;
-};
+
 
 export default function NotificationsScreen() {
     const { user } = useAuth();
@@ -28,29 +22,22 @@ export default function NotificationsScreen() {
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        // Simulate loading notifications
-        setTimeout(() => {
-            setNotifications([
-                {
-                    id: '1',
-                    type: 'follow',
-                    title: 'New Follower',
-                    message: 'Sarah started following you',
-                    created_at: new Date().toISOString(),
-                    read: false,
-                },
-                {
-                    id: '2',
-                    type: 'gift',
-                    title: 'Gift Purchased',
-                    message: 'Someone bought an item from your Birthday Wishlist!',
-                    created_at: new Date(Date.now() - 86400000).toISOString(),
-                    read: true,
-                },
-            ]);
-            setLoading(false);
-        }, 1000);
+        loadNotifications();
     }, []);
+
+    const loadNotifications = async () => {
+        setLoading(true);
+        const data = await getNotifications();
+        setNotifications(data);
+        setLoading(false);
+    };
+
+    const handleMarkAsRead = async (id: string) => {
+        await markAsRead(id);
+        setNotifications(prev =>
+            prev.map(n => n.id === id ? { ...n, read: true } : n)
+        );
+    };
 
     const getIcon = (type: string) => {
         switch (type) {
@@ -68,6 +55,7 @@ export default function NotificationsScreen() {
     const renderItem = ({ item }: { item: Notification }) => (
         <TouchableOpacity
             style={[styles.item, !item.read && styles.unreadItem]}
+            onPress={() => handleMarkAsRead(item.id)}
         >
             <View style={styles.iconContainer}>
                 {getIcon(item.type)}
@@ -99,8 +87,18 @@ export default function NotificationsScreen() {
 
             <View style={styles.container}>
                 {loading ? (
-                    <View style={styles.centerContainer}>
-                        <Text>Loading...</Text>
+                    <View style={styles.list}>
+                        {[1, 2, 3, 4, 5].map((i) => (
+                            <View key={i} style={styles.skeletonItem}>
+                                <SkeletonLoader width={48} height={48} borderRadius={24} />
+                                <View style={{ flex: 1, marginLeft: 12 }}>
+                                    <View style={{ marginBottom: 8 }}>
+                                        <SkeletonLoader width="60%" height={16} />
+                                    </View>
+                                    <SkeletonLoader width="90%" height={12} />
+                                </View>
+                            </View>
+                        ))}
                     </View>
                 ) : notifications.length > 0 ? (
                     <FlatList
@@ -176,5 +174,13 @@ const styles = StyleSheet.create({
         marginTop: SPACING.md,
         fontSize: FONT_SIZES.lg,
         color: COLORS.gray[500],
+    },
+    skeletonItem: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        padding: SPACING.md,
+        backgroundColor: COLORS.white,
+        borderRadius: BORDER_RADIUS.md,
+        marginBottom: SPACING.sm,
     },
 });

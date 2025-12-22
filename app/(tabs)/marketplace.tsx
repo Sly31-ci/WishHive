@@ -4,12 +4,12 @@ import {
   Text,
   StyleSheet,
   FlatList,
-  Image,
   TouchableOpacity,
   TextInput,
   ScrollView,
   RefreshControl,
 } from 'react-native';
+import { Image } from 'expo-image';
 import { router } from 'expo-router';
 import { Search, Store } from 'lucide-react-native';
 import { supabase } from '@/lib/supabase';
@@ -117,7 +117,7 @@ export default function MarketplaceScreen() {
     setDisplayedProducts(filtered);
   };
 
-  const renderProduct = ({ item }: { item: Product }) => {
+  const ProductCard = React.memo(({ item, theme, sortBy }: { item: Product; theme: any; sortBy: string }) => {
     const images = item.images as string[];
     const imageUrl = images && images.length > 0 ? images[0] : null;
     const isPopular = sortBy === 'popular' && (item as any).times_added > 0;
@@ -129,7 +129,13 @@ export default function MarketplaceScreen() {
       >
         <View style={styles.imageContainer}>
           {imageUrl ? (
-            <Image source={{ uri: imageUrl }} style={styles.productImage} />
+            <Image
+              source={{ uri: imageUrl }}
+              style={styles.productImage}
+              contentFit="cover"
+              transition={200}
+              cachePolicy="memory-disk"
+            />
           ) : (
             <View style={styles.placeholderImage}>
               <Store size={32} color={COLORS.gray[400]} />
@@ -149,7 +155,7 @@ export default function MarketplaceScreen() {
         </Text>
       </TouchableOpacity>
     );
-  };
+  });
 
   return (
     <View style={[styles.container, { backgroundColor: theme.background }]}>
@@ -207,7 +213,7 @@ export default function MarketplaceScreen() {
 
       <FlatList
         data={displayedProducts}
-        renderItem={renderProduct}
+        renderItem={({ item }) => <ProductCard item={item} theme={theme} sortBy={sortBy} />}
         keyExtractor={(item) => item.id}
         numColumns={2}
         contentContainerStyle={styles.productGrid}

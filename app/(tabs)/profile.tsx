@@ -18,6 +18,7 @@ import {
   Crown,
   Package,
   Camera,
+  Edit2,
 } from 'lucide-react-native';
 import { SvgUri } from 'react-native-svg';
 import { SimpleAvatarPicker } from '@/components/SimpleAvatarPicker';
@@ -26,6 +27,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/lib/supabase';
 import { Card } from '@/components/Card';
 import { Button } from '@/components/Button';
+import { Input } from '@/components/Input';
 import { COLORS, SPACING, FONT_SIZES, BORDER_RADIUS } from '@/constants/theme';
 import { Database } from '@/types/database';
 
@@ -39,6 +41,10 @@ export default function ProfileScreen() {
   const [badges, setBadges] = useState<UserBadge[]>([]);
   const [loading, setLoading] = useState(true);
   const [showAvatarPicker, setShowAvatarPicker] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
+  const [editUsername, setEditUsername] = useState('');
+  const [editBio, setEditBio] = useState('');
+  const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     loadBadges();
@@ -60,6 +66,43 @@ export default function ProfileScreen() {
       console.error('Error loading badges:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleStartEditing = () => {
+    setEditUsername(profile?.username || '');
+    setEditBio(profile?.bio || '');
+    setIsEditing(true);
+  };
+
+  const handleSaveProfile = async () => {
+    if (!user) return;
+    if (!editUsername.trim()) {
+      Alert.alert('Error', 'Username cannot be empty');
+      return;
+    }
+
+    try {
+      setSaving(true);
+      const { error } = await supabase
+        .from('profiles')
+        .update({
+          username: editUsername.trim(),
+          bio: editBio.trim() || null,
+        })
+        .eq('id', user.id);
+
+      if (error) throw error;
+
+      setIsEditing(false);
+      Alert.alert('Success', 'Profile updated successfully! ✨');
+      // The profile in context should be updated if AuthProvider listens to changes or if we refresh it.
+      // Re-fetch badges or profile if needed, but since profile is in context, we hope it refreshes.
+    } catch (error) {
+      console.error('Error saving profile:', error);
+      Alert.alert('Error', 'Failed to save profile changes');
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -150,8 +193,48 @@ export default function ProfileScreen() {
           </View>
         </TouchableOpacity>
 
-        <Text style={styles.username}>@{profile?.username}</Text>
-        {profile?.bio && <Text style={styles.bio}>{profile.bio}</Text>}
+        {isEditing ? (
+          <View style={styles.editForm}>
+            <Input
+              label="Username"
+              value={editUsername}
+              onChangeText={setEditUsername}
+              placeholder="Your username"
+              containerStyle={styles.editInput}
+            />
+            <Input
+              label="Bio"
+              value={editBio}
+              onChangeText={setEditBio}
+              placeholder="Tell us about yourself..."
+              multiline
+              numberOfLines={2}
+              containerStyle={styles.editInput}
+            />
+            <View style={styles.editActions}>
+              <Button
+                title="Cancel"
+                onPress={() => setIsEditing(false)}
+                variant="outline"
+                size="sm"
+              />
+              <Button
+                title="Save Changes"
+                onPress={handleSaveProfile}
+                loading={saving}
+                size="sm"
+              />
+            </View>
+          </View>
+        ) : (
+          <>
+            <Text style={styles.username}>@{profile?.username}</Text>
+            {profile?.bio && <Text style={styles.bio}>{profile.bio}</Text>}
+            <TouchableOpacity onPress={handleStartEditing} style={styles.editProfileButton}>
+              <Text style={styles.editProfileText}>Edit Profile</Text>
+            </TouchableOpacity>
+          </>
+        )}
 
         <View style={styles.statsContainer}>
           <View style={styles.statItem}>
@@ -311,6 +394,31 @@ const styles = StyleSheet.create({
     color: COLORS.gray[600],
     textAlign: 'center',
     marginBottom: SPACING.md,
+  },
+  editProfileButton: {
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    borderRadius: BORDER_RADIUS.md,
+    backgroundColor: COLORS.gray[100],
+    marginTop: SPACING.xs,
+  },
+  editProfileText: {
+    fontSize: 12,
+    color: COLORS.gray[600],
+    fontWeight: '600',
+  },
+  editForm: {
+    width: '100%',
+    paddingHorizontal: SPACING.lg,
+  },
+  editInput: {
+    marginBottom: SPACING.sm,
+  },
+  editActions: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    gap: SPACING.md,
+    marginTop: SPACING.md,
   },
   statsContainer: {
     flexDirection: 'row',
