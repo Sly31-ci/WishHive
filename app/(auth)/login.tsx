@@ -11,31 +11,42 @@ import {
 import { router } from 'expo-router';
 import { Mail, Lock } from 'lucide-react-native';
 import { useAuth } from '@/contexts/AuthContext';
+import { useToast } from '@/contexts/ToastContext';
 import { Input } from '@/components/Input';
 import { Button } from '@/components/Button';
 import { COLORS, SPACING, FONT_SIZES } from '@/constants/theme';
+import { getErrorMessage } from '@/lib/errorMessages';
 
 export default function LoginScreen() {
   const { signIn } = useAuth();
+  const { showToast } = useToast();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
 
   const handleLogin = async () => {
-
     if (!email || !password) {
-      setError('Please fill in all fields');
+      showToast({
+        type: 'warning',
+        message: '📝 Please fill in all fields',
+      });
       return;
     }
 
     try {
       setLoading(true);
-      setError('');
       await signIn(email, password);
+      showToast({
+        type: 'success',
+        message: '🎉 Welcome back!',
+        duration: 2000,
+      });
       router.replace('/(tabs)');
     } catch (err: any) {
-      setError(err.message || 'Login failed');
+      showToast({
+        type: 'error',
+        message: getErrorMessage(err),
+      });
     } finally {
       setLoading(false);
     }
@@ -75,7 +86,12 @@ export default function LoginScreen() {
             icon={<Lock size={20} color={COLORS.gray[400]} />}
           />
 
-          {error ? <Text style={styles.error}>{error}</Text> : null}
+          <TouchableOpacity
+            onPress={() => router.push('/(auth)/forgot-password')}
+            style={styles.forgotPassword}
+          >
+            <Text style={styles.forgotPasswordText}>Forgot password?</Text>
+          </TouchableOpacity>
 
           <Button
             title="Sign In"
@@ -145,5 +161,15 @@ const styles = StyleSheet.create({
     fontSize: FONT_SIZES.sm,
     color: COLORS.primary,
     fontWeight: '600',
+  },
+  forgotPassword: {
+    alignSelf: 'flex-end',
+    marginTop: SPACING.sm,
+    marginBottom: SPACING.sm,
+  },
+  forgotPasswordText: {
+    fontSize: FONT_SIZES.sm,
+    color: COLORS.primary,
+    fontWeight: '500',
   },
 });

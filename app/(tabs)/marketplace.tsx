@@ -8,6 +8,7 @@ import {
   TouchableOpacity,
   TextInput,
   ScrollView,
+  RefreshControl,
 } from 'react-native';
 import { router } from 'expo-router';
 import { Search, Store } from 'lucide-react-native';
@@ -27,6 +28,7 @@ export default function MarketplaceScreen() {
   const [trendingProducts, setTrendingProducts] = useState<Product[]>([]);
 
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [sortBy, setSortBy] = useState<'popular' | 'newest' | 'price_asc' | 'price_desc' | 'trending'>('popular');
 
@@ -82,7 +84,13 @@ export default function MarketplaceScreen() {
       console.error('Error loading products:', error);
     } finally {
       setLoading(false);
+      setRefreshing(false);
     }
+  };
+
+  const onRefresh = () => {
+    setRefreshing(true);
+    loadProductsAndStats();
   };
 
   const filterAndSortProducts = () => {
@@ -204,6 +212,14 @@ export default function MarketplaceScreen() {
         numColumns={2}
         contentContainerStyle={styles.productGrid}
         columnWrapperStyle={styles.productRow}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            tintColor={COLORS.primary}
+            colors={[COLORS.primary]}
+          />
+        }
         ListHeaderComponent={
           <TrendingSection products={trendingProducts} loading={loading} />
         }

@@ -8,8 +8,8 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { CheckCircle2, Clock, XCircle, AlertTriangle } from 'lucide-react-native';
-import { Colors } from '@/constants/Colors';
-import Card from './Card';
+import { COLORS } from '@/constants/theme';
+import { Card } from './Card';
 
 export type VerificationStatus = 'pending' | 'approved' | 'rejected' | 'review_required';
 
@@ -30,36 +30,36 @@ export default function VerificationStatus({
         switch (status) {
             case 'approved':
                 return {
-                    icon: <CheckCircle2 color={Colors.success} size={48} />,
+                    icon: <CheckCircle2 color={COLORS.success} size={48} />,
                     title: 'Verified ✓',
                     message: 'Your purchase has been verified!',
-                    color: Colors.success,
-                    backgroundColor: Colors.success + '10',
+                    color: COLORS.success,
+                    backgroundColor: COLORS.success + '10',
                 };
             case 'rejected':
                 return {
-                    icon: <XCircle color={Colors.error} size={48} />,
+                    icon: <XCircle color={COLORS.error} size={48} />,
                     title: 'Verification Failed',
                     message: rejectionReason || 'Could not verify this purchase.',
-                    color: Colors.error,
-                    backgroundColor: Colors.error + '10',
+                    color: COLORS.error,
+                    backgroundColor: COLORS.error + '10',
                 };
             case 'review_required':
                 return {
-                    icon: <AlertTriangle color={Colors.warning} size={48} />,
+                    icon: <AlertTriangle color={COLORS.warning} size={48} />,
                     title: 'Manual Review Required',
                     message: `This verification requires admin review. Expected time: ${estimatedTime}`,
-                    color: Colors.warning,
-                    backgroundColor: Colors.warning + '10',
+                    color: COLORS.warning,
+                    backgroundColor: COLORS.warning + '10',
                 };
             case 'pending':
             default:
                 return {
-                    icon: <Clock color={Colors.primary} size={48} />,
+                    icon: <Clock color={COLORS.primary} size={48} />,
                     title: 'Pending Verification',
                     message: `Awaiting seller confirmation. Expected time: ${estimatedTime}`,
-                    color: Colors.primary,
-                    backgroundColor: Colors.primary + '10',
+                    color: COLORS.primary,
+                    backgroundColor: COLORS.primary + '10',
                 };
         }
     };
@@ -116,25 +116,25 @@ const styles = StyleSheet.create({
     },
     message: {
         fontSize: 16,
-        color: Colors.gray,
+        color: COLORS.gray[500],
         textAlign: 'center',
         lineHeight: 22,
     },
     timestamp: {
         fontSize: 14,
-        color: Colors.gray,
+        color: COLORS.gray[500],
         marginTop: 4,
     },
     infoBox: {
         marginTop: 16,
         padding: 12,
-        backgroundColor: Colors.light,
+        backgroundColor: COLORS.light,
         borderRadius: 8,
         width: '100%',
     },
     infoText: {
         fontSize: 14,
-        color: Colors.dark,
+        color: COLORS.dark,
         textAlign: 'center',
         lineHeight: 20,
     },

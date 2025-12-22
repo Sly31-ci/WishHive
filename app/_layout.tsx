@@ -7,6 +7,7 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { useFrameworkReady } from '@/hooks/useFrameworkReady';
 import { AuthProvider, useAuth } from '@/contexts/AuthContext';
 import { ThemeProvider, useTheme } from '@/contexts/ThemeContext';
+import { ToastProvider } from '@/contexts/ToastContext';
 
 function RootLayoutContent() {
   useFrameworkReady();
@@ -42,7 +43,7 @@ function RootLayoutContent() {
         <Stack.Screen name="(auth)" />
         <Stack.Screen name="(tabs)" />
         <Stack.Screen name="wishlists/create" />
-        <Stack.Screen name="wishlists/[id]" />
+        <Stack.Screen name="wishlists/[id]/index" />
         <Stack.Screen name="+not-found" />
       </Stack>
 
@@ -55,9 +56,11 @@ export default function RootLayout() {
   return (
     <ThemeProvider>
       <AuthProvider>
-        <GestureHandlerRootView style={{ flex: 1 }}>
-          <RootLayoutContent />
-        </GestureHandlerRootView>
+        <ToastProvider>
+          <GestureHandlerRootView style={{ flex: 1 }}>
+            <RootLayoutContent />
+          </GestureHandlerRootView>
+        </ToastProvider>
       </AuthProvider>
     </ThemeProvider>
   );

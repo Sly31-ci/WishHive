@@ -7,6 +7,7 @@ import {
   TouchableOpacity,
   Image,
   FlatList,
+  RefreshControl,
 } from 'react-native';
 import { router } from 'expo-router';
 import { Plus, TrendingUp, Gift, Sparkles, Search, Bell, Trophy } from 'lucide-react-native';
@@ -23,6 +24,7 @@ export default function HomeScreen() {
   const { profile } = useAuth();
   const [trendingWishlists, setTrendingWishlists] = useState<Wishlist[]>([]);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
 
   useEffect(() => {
     loadTrendingWishlists();
@@ -44,7 +46,13 @@ export default function HomeScreen() {
       console.error('Error loading trending wishlists:', error);
     } finally {
       setLoading(false);
+      setRefreshing(false);
     }
+  };
+
+  const onRefresh = () => {
+    setRefreshing(true);
+    loadTrendingWishlists();
   };
 
   const renderWishlistCard = ({ item }: { item: Wishlist }) => (
@@ -87,7 +95,18 @@ export default function HomeScreen() {
 
       </View>
 
-      <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
+      <ScrollView
+        style={styles.content}
+        showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            tintColor={COLORS.primary}
+            colors={[COLORS.primary]}
+          />
+        }
+      >
         <Card style={styles.quickActions}>
           <Text style={styles.sectionTitle}>Quick Actions</Text>
           <View style={styles.actionButtons}>

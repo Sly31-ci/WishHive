@@ -9,9 +9,9 @@ import React from 'react';
 import { View, Text, StyleSheet, Share, TouchableOpacity } from 'react-native';
 import QRCode from 'react-native-qrcode-svg';
 import { Download, Share2 } from 'lucide-react-native';
-import { Colors } from '@/constants/Colors';
-import Button from './Button';
-import Card from './Card';
+import { COLORS } from '@/constants/theme';
+import { Button } from './Button';
+import { Card } from './Card';
 
 interface QRCodeGeneratorProps {
     data: string;
@@ -53,11 +53,11 @@ export default function QRCodeGenerator({
                 <QRCode
                     value={data}
                     size={size}
-                    color={Colors.dark}
-                    backgroundColor={Colors.light}
+                    color={COLORS.dark}
+                    backgroundColor={COLORS.light}
                     logo={logoUrl ? { uri: logoUrl } : undefined}
                     logoSize={logoUrl ? 40 : undefined}
-                    logoBackgroundColor={Colors.light}
+                    logoBackgroundColor={COLORS.light}
                     logoMargin={4}
                     logoBorderRadius={8}
                 />
@@ -69,13 +69,13 @@ export default function QRCodeGenerator({
 
             <View style={styles.actions}>
                 <TouchableOpacity style={styles.actionButton} onPress={handleShare}>
-                    <Share2 color={Colors.primary} size={20} />
+                    <Share2 color={COLORS.primary} size={20} />
                     <Text style={styles.actionText}>Share</Text>
                 </TouchableOpacity>
 
                 {onDownload && (
                     <TouchableOpacity style={styles.actionButton} onPress={onDownload}>
-                        <Download color={Colors.primary} size={20} />
+                        <Download color={COLORS.primary} size={20} />
                         <Text style={styles.actionText}>Download</Text>
                     </TouchableOpacity>
                 )}
@@ -97,22 +97,22 @@ const styles = StyleSheet.create({
     title: {
         fontSize: 20,
         fontWeight: 'bold',
-        color: Colors.dark,
+        color: COLORS.dark,
     },
     subtitle: {
         fontSize: 14,
-        color: Colors.gray,
+        color: COLORS.gray[500],
         textAlign: 'center',
     },
     qrContainer: {
         padding: 16,
-        backgroundColor: Colors.light,
+        backgroundColor: COLORS.light,
         borderRadius: 16,
         marginVertical: 8,
     },
     hint: {
         fontSize: 14,
-        color: Colors.gray,
+        color: COLORS.gray[500],
         textAlign: 'center',
     },
     actions: {
@@ -126,17 +126,17 @@ const styles = StyleSheet.create({
         gap: 8,
         paddingVertical: 8,
         paddingHorizontal: 16,
-        backgroundColor: Colors.primary + '10',
+        backgroundColor: COLORS.primary + '10',
         borderRadius: 8,
     },
     actionText: {
         fontSize: 14,
         fontWeight: '600',
-        color: Colors.primary,
+        color: COLORS.primary,
     },
     urlText: {
         fontSize: 12,
-        color: Colors.gray,
+        color: COLORS.gray[500],
         fontFamily: 'monospace',
         textAlign: 'center',
         marginTop: 8,

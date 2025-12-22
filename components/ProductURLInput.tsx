@@ -17,7 +17,7 @@ import {
     TouchableOpacity,
 } from 'react-native';
 import { Link, AlertCircle, CheckCircle2 } from 'lucide-react-native';
-import { Colors } from '@/constants/Colors';
+import { COLORS, SPACING, FONT_SIZES, BORDER_RADIUS } from '@/constants/theme';
 import { extractProductFromURL, ProductMetadata, isScrapableURL } from '@/lib/scraping-service';
 import { Button } from './Button';
 import { Card } from './Card';
@@ -102,7 +102,7 @@ export default function ProductURLInput({
         <ScrollView style={styles.container}>
             <Card style={styles.card}>
                 <View style={styles.header}>
-                    <Link color={Colors.primary} size={24} />
+                    <Link color={COLORS.primary} size={24} />
                     <Text style={styles.title}>Add from URL</Text>
                 </View>
 
@@ -124,7 +124,7 @@ export default function ProductURLInput({
 
                         {error && (
                             <View style={styles.errorContainer}>
-                                <AlertCircle color={Colors.error} size={20} />
+                                <AlertCircle color={COLORS.error} size={20} />
                                 <Text style={styles.errorText}>{error}</Text>
                             </View>
                         )}
@@ -132,25 +132,20 @@ export default function ProductURLInput({
                         <View style={styles.buttonRow}>
                             {onCancel && (
                                 <Button
+                                    title="Cancel"
                                     variant="outline"
                                     onPress={onCancel}
                                     style={styles.halfButton}
                                     disabled={isLoading}
-                                >
-                                    Cancel
-                                </Button>
+                                />
                             )}
                             <Button
+                                title={isLoading ? "" : "Fetch Product"}
                                 onPress={handleFetchProduct}
                                 style={onCancel ? styles.halfButton : undefined}
                                 disabled={isLoading || !url.trim()}
-                            >
-                                {isLoading ? (
-                                    <ActivityIndicator color={Colors.light} />
-                                ) : (
-                                    'Fetch Product'
-                                )}
-                            </Button>
+                                icon={isLoading ? <ActivityIndicator color={COLORS.white} /> : undefined}
+                            />
                         </View>
 
                         <Text style={styles.hint}>
@@ -160,8 +155,8 @@ export default function ProductURLInput({
                 ) : (
                     <>
                         <View style={styles.successBanner}>
-                            <CheckCircle2 color={Colors.success} size={24} />
-                            <Text style={styles.successText}>Product Found!</Text>
+                            <CheckCircle2 color={COLORS.success} size={24} />
+                            <Text style={styles.successText}>Found it! ✨</Text>
                         </View>
 
                         {extractedProduct.images.length > 0 && (
@@ -213,19 +208,17 @@ export default function ProductURLInput({
 
                         <View style={styles.buttonRow}>
                             <Button
+                                title="Start Over"
                                 variant="outline"
                                 onPress={handleReset}
                                 style={styles.halfButton}
-                            >
-                                Start Over
-                            </Button>
+                            />
                             <Button
+                                title="Add to Wishlist"
                                 onPress={handleConfirm}
                                 style={styles.halfButton}
                                 disabled={!editedTitle.trim()}
-                            >
-                                Add to Wishlist
-                            </Button>
+                            />
                         </View>
                     </>
                 )}
@@ -251,11 +244,11 @@ const styles = StyleSheet.create({
     title: {
         fontSize: 24,
         fontWeight: 'bold',
-        color: Colors.dark,
+        color: COLORS.dark,
     },
     subtitle: {
         fontSize: 16,
-        color: Colors.gray,
+        color: COLORS.gray[500],
         marginBottom: 24,
     },
     errorContainer: {
@@ -263,14 +256,14 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         gap: 8,
         padding: 12,
-        backgroundColor: Colors.error + '10',
+        backgroundColor: COLORS.error + '10',
         borderRadius: 8,
         marginTop: 12,
     },
     errorText: {
         flex: 1,
         fontSize: 14,
-        color: Colors.error,
+        color: COLORS.error,
     },
     buttonRow: {
         flexDirection: 'row',
@@ -282,7 +275,7 @@ const styles = StyleSheet.create({
     },
     hint: {
         fontSize: 12,
-        color: Colors.gray,
+        color: COLORS.gray[500],
         textAlign: 'center',
         marginTop: 12,
     },
@@ -291,14 +284,14 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         gap: 8,
         padding: 12,
-        backgroundColor: Colors.success + '10',
+        backgroundColor: COLORS.success + '10',
         borderRadius: 8,
         marginBottom: 16,
     },
     successText: {
         fontSize: 16,
         fontWeight: '600',
-        color: Colors.success,
+        color: COLORS.success,
     },
     productImage: {
         width: '100%',
@@ -309,7 +302,7 @@ const styles = StyleSheet.create({
     label: {
         fontSize: 14,
         fontWeight: '600',
-        color: Colors.dark,
+        color: COLORS.dark,
         marginBottom: 8,
         marginTop: 12,
     },

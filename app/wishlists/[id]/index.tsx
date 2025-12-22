@@ -32,7 +32,7 @@ import { COLORS, SPACING, FONT_SIZES, BORDER_RADIUS } from '@/constants/theme';
 import { Database } from '@/types/database';
 import * as Haptics from 'expo-haptics';
 import { wishlistEvents, EVENTS } from '@/lib/events';
-// import { SwipeableItem } from '@/components/SwipeableItem';
+import { SwipeableItem } from '@/components/SwipeableItem';
 import { ConfirmDialog } from '@/components/ConfirmDialog';
 import { ReorganizeToolbar } from '@/components/ReorganizeToolbar';
 import { getPriorityLabel, getPriorityColor } from '@/constants/priorities';
@@ -213,8 +213,8 @@ export default function WishlistDetailScreen() {
         const currency = item.product?.currency || 'USD';
         const imageUrl = item.custom_images?.[0] || item.product?.images?.[0];
 
-        return (
-            <Card style={styles.itemCard} >
+        const content = (
+            <Card style={styles.itemCard}>
                 <View style={styles.itemContent}>
                     <View style={styles.itemImageContainer}>
                         {imageUrl ? (
@@ -260,19 +260,25 @@ export default function WishlistDetailScreen() {
                             </View>
 
                             {isOwner && (
-                                <TouchableOpacity
-                                    style={styles.deleteIconButton}
-                                    onPress={() => handleDeleteItem(item.id)}
-                                    hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-                                >
+                                <View style={styles.deleteIconButton}>
                                     <Trash2 size={18} color={COLORS.error} />
-                                </TouchableOpacity>
+                                </View>
                             )}
                         </View>
                     </View>
                 </View>
-            </Card >
+            </Card>
         );
+
+        if (isOwner && !isReordering) {
+            return (
+                <SwipeableItem onDelete={() => handleDeleteItem(item.id)}>
+                    {content}
+                </SwipeableItem>
+            );
+        }
+
+        return content;
     };
 
     const renderHeader = () => {

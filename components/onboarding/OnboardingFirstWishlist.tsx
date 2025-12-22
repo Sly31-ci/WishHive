@@ -7,7 +7,7 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, ScrollView } from 'react-native';
 import { Cake, Heart, TreePine, Baby, Calendar, Sparkles } from 'lucide-react-native';
-import { Colors } from '@/constants/Colors';
+import { COLORS } from '@/constants/theme';
 import { Button } from '../Button';
 import { Input } from '../Input';
 import { Card } from '../Card';
@@ -19,11 +19,11 @@ interface OnboardingFirstWishlistProps {
 }
 
 const WISHLIST_TYPES = [
-    { id: 'birthday', label: 'Birthday', icon: Cake, color: Colors.accent },
+    { id: 'birthday', label: 'Birthday', icon: Cake, color: COLORS.warning },
     { id: 'wedding', label: 'Wedding', icon: Heart, color: '#E74C3C' },
     { id: 'christmas', label: 'Christmas', icon: TreePine, color: '#27AE60' },
     { id: 'baby', label: 'Baby Shower', icon: Baby, color: '#F39C12' },
-    { id: 'custom', label: 'Other Event', icon: Calendar, color: Colors.primary },
+    { id: 'custom', label: 'Other Event', icon: Calendar, color: COLORS.primary },
 ];
 
 export default function OnboardingFirstWishlist({
@@ -55,7 +55,7 @@ export default function OnboardingFirstWishlist({
         <View style={styles.container}>
             <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
                 <View style={styles.header}>
-                    <Sparkles color={Colors.primary} size={40} />
+                    <Sparkles color={COLORS.primary} size={40} />
                     <Text style={styles.title}>Create Your First Wishlist!</Text>
                 </View>
 
@@ -112,29 +112,26 @@ export default function OnboardingFirstWishlist({
             {/* Footer */}
             <View style={styles.footer}>
                 <Button
+                    title="Back"
                     variant="outline"
                     onPress={onBack}
                     style={styles.halfButton}
-                >
-                    Back
-                </Button>
+                />
                 <Button
+                    title="Create Wishlist"
                     onPress={handleComplete}
                     style={styles.halfButton}
                     disabled={!title.trim()}
-                >
-                    Create Wishlist
-                </Button>
+                />
             </View>
 
             {onSkip && (
                 <Button
+                    title="Skip for now"
                     variant="ghost"
                     onPress={onSkip}
                     style={styles.skipButton}
-                >
-                    Skip for now
-                </Button>
+                />
             )}
         </View>
     );
@@ -143,7 +140,7 @@ export default function OnboardingFirstWishlist({
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: Colors.light,
+        backgroundColor: COLORS.light,
     },
     content: {
         flex: 1,
@@ -157,20 +154,20 @@ const styles = StyleSheet.create({
     title: {
         fontSize: 28,
         fontWeight: 'bold',
-        color: Colors.dark,
+        color: COLORS.dark,
         marginTop: 12,
         textAlign: 'center',
     },
     subtitle: {
         fontSize: 16,
-        color: Colors.gray,
+        color: COLORS.gray[500],
         marginBottom: 32,
         textAlign: 'center',
     },
     label: {
         fontSize: 16,
         fontWeight: '600',
-        color: Colors.dark,
+        color: COLORS.dark,
         marginBottom: 12,
     },
     typeGrid: {
@@ -190,18 +187,18 @@ const styles = StyleSheet.create({
     typeLabel: {
         fontSize: 12,
         fontWeight: '600',
-        color: Colors.dark,
+        color: COLORS.dark,
         textAlign: 'center',
     },
     infoCard: {
-        backgroundColor: Colors.primary + '10',
+        backgroundColor: COLORS.primary + '10',
         padding: 16,
         marginTop: 16,
         marginBottom: 24,
     },
     infoText: {
         fontSize: 14,
-        color: Colors.dark,
+        color: COLORS.dark,
         lineHeight: 20,
     },
     progressContainer: {
@@ -214,14 +211,14 @@ const styles = StyleSheet.create({
         width: 8,
         height: 8,
         borderRadius: 4,
-        backgroundColor: Colors.primary,
+        backgroundColor: COLORS.primary,
     },
     progressDotInactive: {
-        backgroundColor: Colors.gray + '40',
+        backgroundColor: COLORS.gray[300],
     },
     step: {
         fontSize: 14,
-        color: Colors.gray,
+        color: COLORS.gray[500],
         textAlign: 'center',
         marginBottom: 16,
     },

@@ -17,10 +17,10 @@ import {
 } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import { Camera, Upload, CheckCircle2, AlertCircle } from 'lucide-react-native';
-import { Colors } from '@/constants/Colors';
+import { COLORS } from '@/constants/theme';
 import { extractReceiptData, OCRResult } from '@/lib/ocr-service';
-import Button from './Button';
-import Card from './Card';
+import { Button } from './Button';
+import { Card } from './Card';
 
 interface ReceiptUploadProps {
     onDataExtracted: (data: OCRResult, imageUri: string) => void;
@@ -127,7 +127,7 @@ export default function ReceiptUpload({ onDataExtracted, onCancel }: ReceiptUplo
                             style={styles.uploadButton}
                             onPress={handleTakePhoto}
                         >
-                            <Camera color={Colors.primary} size={32} />
+                            <Camera color={COLORS.primary} size={32} />
                             <Text style={styles.buttonText}>Take Photo</Text>
                         </TouchableOpacity>
 
@@ -135,19 +135,18 @@ export default function ReceiptUpload({ onDataExtracted, onCancel }: ReceiptUplo
                             style={styles.uploadButton}
                             onPress={handlePickImage}
                         >
-                            <Upload color={Colors.primary} size={32} />
+                            <Upload color={COLORS.primary} size={32} />
                             <Text style={styles.buttonText}>Choose from Library</Text>
                         </TouchableOpacity>
                     </View>
 
                     {onCancel && (
                         <Button
+                            title="Cancel"
                             variant="ghost"
                             onPress={onCancel}
                             style={styles.cancelButton}
-                        >
-                            Cancel
-                        </Button>
+                        />
                     )}
                 </Card>
             ) : (
@@ -156,7 +155,7 @@ export default function ReceiptUpload({ onDataExtracted, onCancel }: ReceiptUplo
 
                     {isProcessing && (
                         <View style={styles.processingContainer}>
-                            <ActivityIndicator size="large" color={Colors.primary} />
+                            <ActivityIndicator size="large" color={COLORS.primary} />
                             <Text style={styles.processingText}>
                                 Extracting receipt data...
                             </Text>
@@ -165,18 +164,16 @@ export default function ReceiptUpload({ onDataExtracted, onCancel }: ReceiptUplo
 
                     {error && !isProcessing && (
                         <View style={styles.errorContainer}>
-                            <AlertCircle color={Colors.error} size={24} />
+                            <AlertCircle color={COLORS.error} size={24} />
                             <Text style={styles.errorText}>{error}</Text>
-                            <Button onPress={handleRetry} style={styles.retryButton}>
-                                Try Again
-                            </Button>
+                            <Button title="Try Again" onPress={handleRetry} style={styles.retryButton} />
                         </View>
                     )}
 
                     {ocrData && !isProcessing && (
                         <View style={styles.dataContainer}>
                             <View style={styles.successHeader}>
-                                <CheckCircle2 color={Colors.success} size={24} />
+                                <CheckCircle2 color={COLORS.success} size={24} />
                                 <Text style={styles.successText}>Data Extracted</Text>
                             </View>
 
@@ -209,7 +206,7 @@ export default function ReceiptUpload({ onDataExtracted, onCancel }: ReceiptUplo
 
                             {ocrData.confidence < 0.6 && (
                                 <View style={styles.warningContainer}>
-                                    <AlertCircle color={Colors.warning} size={20} />
+                                    <AlertCircle color={COLORS.warning} size={20} />
                                     <Text style={styles.warningText}>
                                         Low confidence detection. This will require admin review.
                                     </Text>
@@ -218,18 +215,16 @@ export default function ReceiptUpload({ onDataExtracted, onCancel }: ReceiptUplo
 
                             <View style={styles.actionButtons}>
                                 <Button
+                                    title="Retake"
                                     variant="outline"
                                     onPress={handleRetry}
                                     style={styles.actionButton}
-                                >
-                                    Retake
-                                </Button>
+                                />
                                 <Button
+                                    title="Confirm"
                                     onPress={handleConfirm}
                                     style={styles.actionButton}
-                                >
-                                    Confirm
-                                </Button>
+                                />
                             </View>
                         </View>
                     )}
@@ -251,12 +246,12 @@ const styles = StyleSheet.create({
     title: {
         fontSize: 24,
         fontWeight: 'bold',
-        color: Colors.dark,
+        color: COLORS.dark,
         marginBottom: 8,
     },
     subtitle: {
         fontSize: 16,
-        color: Colors.gray,
+        color: COLORS.gray[500],
         marginBottom: 32,
         textAlign: 'center',
     },
@@ -268,19 +263,19 @@ const styles = StyleSheet.create({
     uploadButton: {
         flex: 1,
         aspectRatio: 1,
-        backgroundColor: Colors.light,
+        backgroundColor: COLORS.light,
         borderRadius: 16,
         padding: 20,
         alignItems: 'center',
         justifyContent: 'center',
         gap: 12,
         borderWidth: 2,
-        borderColor: Colors.primary + '20',
+        borderColor: COLORS.primary + '20',
     },
     buttonText: {
         fontSize: 14,
         fontWeight: '600',
-        color: Colors.dark,
+        color: COLORS.dark,
         textAlign: 'center',
     },
     cancelButton: {
@@ -302,7 +297,7 @@ const styles = StyleSheet.create({
     },
     processingText: {
         fontSize: 16,
-        color: Colors.gray,
+        color: COLORS.gray[500],
     },
     errorContainer: {
         padding: 24,
@@ -311,7 +306,7 @@ const styles = StyleSheet.create({
     },
     errorText: {
         fontSize: 16,
-        color: Colors.error,
+        color: COLORS.error,
         textAlign: 'center',
     },
     retryButton: {
@@ -329,40 +324,40 @@ const styles = StyleSheet.create({
     successText: {
         fontSize: 18,
         fontWeight: '600',
-        color: Colors.success,
+        color: COLORS.success,
     },
     dataRow: {
         flexDirection: 'row',
         justifyContent: 'space-between',
         paddingVertical: 8,
         borderBottomWidth: 1,
-        borderBottomColor: Colors.light,
+        borderBottomColor: COLORS.light,
     },
     dataLabel: {
         fontSize: 16,
-        color: Colors.gray,
+        color: COLORS.gray[500],
         fontWeight: '500',
     },
     dataValue: {
         fontSize: 16,
-        color: Colors.dark,
+        color: COLORS.dark,
         fontWeight: '600',
     },
     lowConfidence: {
-        color: Colors.warning,
+        color: COLORS.warning,
     },
     warningContainer: {
         flexDirection: 'row',
         gap: 8,
         padding: 12,
-        backgroundColor: Colors.warning + '10',
+        backgroundColor: COLORS.warning + '10',
         borderRadius: 8,
         marginTop: 8,
     },
     warningText: {
         flex: 1,
         fontSize: 14,
-        color: Colors.warning,
+        color: COLORS.warning,
     },
     actionButtons: {
         flexDirection: 'row',

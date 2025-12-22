@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, Text, StyleSheet, Image } from 'react-native';
-import { Colors } from '@/constants/Colors';
+import { COLORS } from '@/constants/theme';
 
 interface BadgeProps {
     name: string;
@@ -19,7 +19,7 @@ export function Badge({ name, description, iconUrl, tier, earned = false }: Badg
             gold: '#FFD700',
             platinum: '#E5E4E2',
         };
-        return colors[tier] || Colors.textSecondary;
+        return colors[tier] || COLORS.gray[500];
     };
 
     return (
@@ -85,16 +85,16 @@ const styles = StyleSheet.create({
     name: {
         fontSize: 16,
         fontWeight: '700',
-        color: Colors.dark,
+        color: COLORS.dark,
         marginBottom: 4,
     },
     description: {
         fontSize: 13,
-        color: Colors.textSecondary,
+        color: COLORS.gray[500],
         marginBottom: 6,
     },
     lockedText: {
-        color: Colors.textSecondary,
+        color: COLORS.gray[500],
     },
     tierBadge: {
         alignSelf: 'flex-start',

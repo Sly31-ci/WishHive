@@ -1,13 +1,5 @@
 import React from 'react';
-import { View, StyleSheet } from 'react-native';
-import { GestureDetector, Gesture } from 'react-native-gesture-handler';
-import Animated, {
-    useAnimatedStyle,
-    useSharedValue,
-    withSpring,
-    runOnJS,
-    withTiming,
-} from 'react-native-reanimated';
+import { View, StyleSheet, Animated, PanResponder, Dimensions } from 'react-native';
 import { Trash2 } from 'lucide-react-native';
 import { useTheme } from '@/contexts/ThemeContext';
 import { SPACING, BORDER_RADIUS } from '@/constants/theme';
@@ -18,52 +10,65 @@ interface SwipeableItemProps {
     disabled?: boolean;
 }
 
+const SCREEN_WIDTH = Dimensions.get('window').width;
 const TRANSLATE_X_THRESHOLD = -80;
 
 export const SwipeableItem: React.FC<SwipeableItemProps> = ({ children, onDelete, disabled = false }) => {
     const { theme } = useTheme();
-    const translateX = useSharedValue(0);
+    const translateX = React.useRef(new Animated.Value(0)).current;
 
-    const panGesture = Gesture.Pan()
-        .enabled(!disabled)
-        .activeOffsetX([-10, 10])
-        .onUpdate((event) => {
-            translateX.value = Math.min(0, Math.max(event.translationX, -100));
+    const panResponder = React.useRef(
+        PanResponder.create({
+            onStartShouldSetPanResponder: () => !disabled,
+            onMoveShouldSetPanResponder: (_, gestureState) => {
+                return !disabled && Math.abs(gestureState.dx) > Math.abs(gestureState.dy);
+            },
+            onPanResponderMove: (_, gestureState) => {
+                const x = Math.min(0, Math.max(gestureState.dx, -100));
+                translateX.setValue(x);
+            },
+            onPanResponderRelease: (_, gestureState) => {
+                if (gestureState.dx < TRANSLATE_X_THRESHOLD) {
+                    Animated.timing(translateX, {
+                        toValue: -SCREEN_WIDTH,
+                        duration: 300,
+                        useNativeDriver: true,
+                    }).start(() => {
+                        onDelete();
+                    });
+                } else {
+                    Animated.spring(translateX, {
+                        toValue: 0,
+                        useNativeDriver: true,
+                    }).start();
+                }
+            },
         })
-        .onEnd(() => {
-            const shouldBeDismissed = translateX.value < TRANSLATE_X_THRESHOLD;
-            if (shouldBeDismissed) {
-                translateX.value = withTiming(-1000, undefined, (isFinished) => {
-                    if (isFinished) {
-                        runOnJS(onDelete)();
-                    }
-                });
-            } else {
-                translateX.value = withSpring(0);
-            }
-        });
+    ).current;
 
-    const rStyle = useAnimatedStyle(() => ({
-        transform: [{ translateX: translateX.value }],
-    }));
+    const itemStyle = {
+        transform: [{ translateX }],
+    };
 
-    const rIconContainerStyle = useAnimatedStyle(() => {
-        const opacity = withTiming(translateX.value < TRANSLATE_X_THRESHOLD ? 1 : 0.5);
-        return { opacity };
+    const iconOpacity = translateX.interpolate({
+        inputRange: [-100, TRANSLATE_X_THRESHOLD, 0],
+        outputRange: [1, 0.5, 0],
+        extrapolate: 'clamp',
     });
 
     return (
         <View style={styles.container}>
             <View style={[styles.iconContainer, { backgroundColor: theme.error }]}>
-                <Animated.View style={[styles.icon, rIconContainerStyle]}>
+                <Animated.View style={[styles.icon, { opacity: iconOpacity }]}>
                     <Trash2 color="white" size={24} />
                 </Animated.View>
             </View>
-            <GestureDetector gesture={panGesture}>
-                <Animated.View style={[styles.item, { backgroundColor: theme.background }, rStyle]}>
-                    {children}
-                </Animated.View>
-            </GestureDetector>
+            <Animated.View
+                style={[styles.item, { backgroundColor: theme.background }, itemStyle]}
+                {...panResponder.panHandlers}
+            >
+                {children}
+            </Animated.View>
         </View>
     );
 };
@@ -95,4 +100,3 @@ const styles = StyleSheet.create({
         height: 24,
     },
 });
-

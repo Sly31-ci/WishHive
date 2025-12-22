@@ -7,13 +7,13 @@ import {
   KeyboardAvoidingView,
   Platform,
   TouchableOpacity,
-  Alert,
 } from 'react-native';
 import { router, Stack } from 'expo-router';
 import { ArrowLeft, Calendar } from 'lucide-react-native';
 import { checkAndAwardBadges } from '@/lib/badgeEngine';
 import { BadgeUnlockedModal } from '@/components/BadgeUnlockedModal';
 import { useAuth } from '@/contexts/AuthContext';
+import { useToast } from '@/contexts/ToastContext';
 import { supabase } from '@/lib/supabase';
 import { Input } from '@/components/Input';
 import { Button } from '@/components/Button';
@@ -50,13 +50,13 @@ const PRIVACY_OPTIONS = [
 
 export default function CreateWishlistScreen() {
   const { user } = useAuth();
+  const { showToast } = useToast();
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [type, setType] = useState('general');
   const [privacy, setPrivacy] = useState('public');
   const [dueDate, setDueDate] = useState('');
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
   const [unlockedBadge, setUnlockedBadge] = useState<any>(null);
   const [showBadgeModal, setShowBadgeModal] = useState(false);
 
@@ -64,13 +64,15 @@ export default function CreateWishlistScreen() {
     if (!user) return;
 
     if (!title.trim()) {
-      setError('Please enter a title');
+      showToast({
+        type: 'warning',
+        message: '📝 Please enter a title for your wishlist',
+      });
       return;
     }
 
     try {
       setLoading(true);
-      setError('');
 
       const accessCode =
         privacy === 'code_only'
@@ -107,18 +109,20 @@ export default function CreateWishlistScreen() {
           }
         }
 
-        Alert.alert('Success', 'Wishlist created successfully!', [
-          {
-            text: 'OK',
-            onPress: () => {
-              router.back();
-              router.push(`/wishlists/${data.id}`);
-            },
-          },
-        ]);
+        showToast({
+          type: 'success',
+          message: '🎉 Wishlist created successfully!',
+          duration: 2000,
+        });
+
+        router.back();
+        router.push(`/wishlists/${data.id}`);
       }
     } catch (err: any) {
-      setError(err.message || 'Failed to create wishlist');
+      showToast({
+        type: 'error',
+        message: err.message || '😕 Failed to create wishlist. Please try again.',
+      });
     } finally {
       setLoading(false);
     }
@@ -230,7 +234,7 @@ export default function CreateWishlistScreen() {
               icon={<Calendar size={20} color={COLORS.gray[400]} />}
             />
 
-            {error ? <Text style={styles.error}>{error}</Text> : null}
+
 
             <Button
               title="Create Wishlist"

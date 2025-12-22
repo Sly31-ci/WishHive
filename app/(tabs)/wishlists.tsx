@@ -18,6 +18,7 @@ import * as Haptics from 'expo-haptics';
 import { COLORS, SPACING, FONT_SIZES, BORDER_RADIUS } from '@/constants/theme';
 import { Database } from '@/types/database';
 import { useTheme } from '@/contexts/ThemeContext';
+import { WishlistListSkeleton } from '@/components/skeletons/WishlistCardSkeleton';
 
 type Wishlist = Database['public']['Tables']['wishlists']['Row'];
 
@@ -112,8 +113,17 @@ export default function WishlistsScreen() {
 
   if (loading) {
     return (
-      <View style={styles.centerContainer}>
-        <Text style={styles.loadingText}>Loading your wishlists...</Text>
+      <View style={styles.container}>
+        <View style={styles.header}>
+          <Text style={styles.headerTitle}>My Wishlists</Text>
+          <TouchableOpacity
+            style={styles.createButton}
+            onPress={() => router.push('/wishlists/create')}
+          >
+            <Plus size={24} color={COLORS.white} />
+          </TouchableOpacity>
+        </View>
+        <WishlistListSkeleton count={3} />
       </View>
     );
   }

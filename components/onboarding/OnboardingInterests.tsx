@@ -20,7 +20,7 @@ import {
     Heart,
     Sparkles,
 } from 'lucide-react-native';
-import { Colors } from '@/constants/Colors';
+import { COLORS } from '@/constants/theme';
 import { Button } from '../Button';
 
 interface OnboardingInterestsProps {
@@ -87,7 +87,7 @@ export default function OnboardingInterests({ onNext, onBack }: OnboardingIntere
                                 activeOpacity={0.7}
                             >
                                 <Icon
-                                    color={active ? Colors.light : Colors.primary}
+                                    color={active ? COLORS.white : COLORS.primary}
                                     size={32}
                                 />
                                 <Text
@@ -118,19 +118,17 @@ export default function OnboardingInterests({ onNext, onBack }: OnboardingIntere
             {/* Footer */}
             <View style={styles.footer}>
                 <Button
+                    title="Back"
                     variant="outline"
                     onPress={onBack}
                     style={styles.halfButton}
-                >
-                    Back
-                </Button>
+                />
                 <Button
+                    title="Next"
                     onPress={handleNext}
                     style={styles.halfButton}
                     disabled={!canProceed}
-                >
-                    Next
-                </Button>
+                />
             </View>
         </View>
     );
@@ -139,7 +137,7 @@ export default function OnboardingInterests({ onNext, onBack }: OnboardingIntere
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: Colors.light,
+        backgroundColor: COLORS.light,
     },
     content: {
         flex: 1,
@@ -148,13 +146,13 @@ const styles = StyleSheet.create({
     title: {
         fontSize: 28,
         fontWeight: 'bold',
-        color: Colors.dark,
+        color: COLORS.dark,
         marginBottom: 8,
         marginTop: 20,
     },
     subtitle: {
         fontSize: 16,
-        color: Colors.gray,
+        color: COLORS.gray[500],
         marginBottom: 32,
         lineHeight: 24,
     },
@@ -167,27 +165,27 @@ const styles = StyleSheet.create({
     interestCard: {
         width: '47%',
         aspectRatio: 1.2,
-        backgroundColor: Colors.light,
+        backgroundColor: COLORS.light,
         borderRadius: 16,
         padding: 16,
         alignItems: 'center',
         justifyContent: 'center',
         gap: 8,
         borderWidth: 2,
-        borderColor: Colors.primary + '20',
+        borderColor: COLORS.primary + '20',
     },
     interestCardActive: {
-        backgroundColor: Colors.primary,
-        borderColor: Colors.primary,
+        backgroundColor: COLORS.primary,
+        borderColor: COLORS.primary,
     },
     interestLabel: {
         fontSize: 14,
         fontWeight: '600',
-        color: Colors.dark,
+        color: COLORS.dark,
         textAlign: 'center',
     },
     interestLabelActive: {
-        color: Colors.light,
+        color: COLORS.white,
     },
     progressContainer: {
         flexDirection: 'row',
@@ -199,14 +197,14 @@ const styles = StyleSheet.create({
         width: 8,
         height: 8,
         borderRadius: 4,
-        backgroundColor: Colors.primary,
+        backgroundColor: COLORS.primary,
     },
     progressDotInactive: {
-        backgroundColor: Colors.gray + '40',
+        backgroundColor: COLORS.gray[300],
     },
     step: {
         fontSize: 14,
-        color: Colors.gray,
+        color: COLORS.gray[500],
         textAlign: 'center',
         marginBottom: 16,
     },

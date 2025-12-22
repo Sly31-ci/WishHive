@@ -42,6 +42,7 @@ export interface Database {
           id: string;
           owner_id: string;
           title: string;
+          slug: string;
           description: string | null;
           type: string;
           privacy: 'public' | 'private' | 'code_only';
@@ -335,6 +336,45 @@ export interface Database {
             columns: ["product_id"];
             isOneToOne: false;
             referencedRelation: "products";
+            referencedColumns: ["id"];
+          }
+        ];
+      };
+      wishlist_shares: {
+        Row: {
+          id: string;
+          wishlist_id: string;
+          shared_by: string | null;
+          platform: string | null;
+          shared_at: string;
+        };
+        Insert: {
+          id?: string;
+          wishlist_id: string;
+          shared_by?: string | null;
+          platform?: string | null;
+          shared_at?: string;
+        };
+        Update: {
+          id?: string;
+          wishlist_id?: string;
+          shared_by?: string | null;
+          platform?: string | null;
+          shared_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "wishlist_shares_wishlist_id_fkey";
+            columns: ["wishlist_id"];
+            isOneToOne: false;
+            referencedRelation: "wishlists";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "wishlist_shares_shared_by_fkey";
+            columns: ["shared_by"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
             referencedColumns: ["id"];
           }
         ];

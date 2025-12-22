@@ -14,6 +14,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { Input } from '@/components/Input';
 import { Button } from '@/components/Button';
 import { COLORS, SPACING, FONT_SIZES } from '@/constants/theme';
+import { getErrorMessage } from '@/lib/errorMessages';
 
 export default function SignupScreen() {
   const { signUp } = useAuth();
@@ -21,31 +22,57 @@ export default function SignupScreen() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
+  const [success, setSuccess] = useState(false);
   const [error, setError] = useState('');
 
   const handleSignup = async () => {
-
     if (!username || !email || !password) {
-      setError('Please fill in all fields');
+      setError('Remplis tous les champs, petite abeille ! 🐝');
       return;
     }
 
     if (password.length < 6) {
-      setError('Password must be at least 6 characters');
+      setError('Ton mot de passe doit faire au moins 6 caractères. 🔒');
       return;
     }
 
     try {
       setLoading(true);
       setError('');
-      await signUp(email, password, username);
-      router.replace('/(tabs)');
+      const response = await signUp(email, password, username);
+
+      // If email confirmation is enabled, session will be null
+      if (!response.data.session) {
+        setSuccess(true);
+      } else {
+        router.replace('/(tabs)');
+      }
     } catch (err: any) {
-      setError(err.message || 'Signup failed');
+      setError(getErrorMessage(err));
     } finally {
       setLoading(false);
     }
   };
+
+  if (success) {
+    return (
+      <View style={styles.container}>
+        <View style={styles.scrollContent}>
+          <View style={styles.header}>
+            <Text style={styles.logo}>Vérifie tes emails ! 📧</Text>
+            <Text style={styles.tagline}>
+              Un lien magique t'attend pour activer ta ruche. Une fois cliqué, tu pourras te connecter ! 🍯
+            </Text>
+          </View>
+          <Button
+            title="Aller à la connexion"
+            onPress={() => router.replace('/(auth)/login')}
+            style={styles.button}
+          />
+        </View>
+      </View>
+    );
+  }
 
   return (
     <KeyboardAvoidingView

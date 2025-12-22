@@ -7,7 +7,7 @@
 import React from 'react';
 import { View, Text, StyleSheet, Image } from 'react-native';
 import { Gift, Users, Sparkles } from 'lucide-react-native';
-import { Colors } from '@/constants/Colors';
+import { COLORS, SPACING, FONT_SIZES } from '@/constants/theme';
 import { Button } from '../Button';
 import { Card } from '../Card';
 
@@ -18,17 +18,17 @@ interface OnboardingWelcomeProps {
 export default function OnboardingWelcome({ onNext }: OnboardingWelcomeProps) {
     const benefits = [
         {
-            icon: <Gift color={Colors.primary} size={32} />,
+            icon: <Gift color={COLORS.primary} size={32} />,
             title: 'Create Wishlists',
             description: 'For birthdays, weddings, holidays, and more',
         },
         {
-            icon: <Users color={Colors.accent} size={32} />,
+            icon: <Users color={COLORS.accent} size={32} />,
             title: 'Share with Loved Ones',
             description: 'Let family and friends know what you really want',
         },
         {
-            icon: <Sparkles color={Colors.secondary} size={32} />,
+            icon: <Sparkles color={COLORS.secondary} size={32} />,
             title: 'Earn Rewards',
             description: 'Get points and badges for creating and gifting',
         },
@@ -73,9 +73,7 @@ export default function OnboardingWelcome({ onNext }: OnboardingWelcomeProps) {
 
             {/* CTA */}
             <View style={styles.footer}>
-                <Button onPress={onNext} style={styles.button}>
-                    Get Started
-                </Button>
+                <Button title="Get Started" onPress={onNext} style={styles.button} />
             </View>
         </View>
     );
@@ -84,7 +82,7 @@ export default function OnboardingWelcome({ onNext }: OnboardingWelcomeProps) {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: Colors.light,
+        backgroundColor: COLORS.light,
     },
     content: {
         flex: 1,
@@ -103,12 +101,12 @@ const styles = StyleSheet.create({
     tagline: {
         fontSize: 24,
         fontWeight: 'bold',
-        color: Colors.primary,
+        color: COLORS.primary,
         marginBottom: 12,
     },
     subtitle: {
         fontSize: 16,
-        color: Colors.gray,
+        color: COLORS.gray[500],
         textAlign: 'center',
         lineHeight: 24,
         paddingHorizontal: 20,
@@ -126,7 +124,7 @@ const styles = StyleSheet.create({
         width: 56,
         height: 56,
         borderRadius: 28,
-        backgroundColor: Colors.light,
+        backgroundColor: COLORS.light,
         alignItems: 'center',
         justifyContent: 'center',
     },
@@ -137,12 +135,12 @@ const styles = StyleSheet.create({
     benefitTitle: {
         fontSize: 18,
         fontWeight: '600',
-        color: Colors.dark,
+        color: COLORS.dark,
         marginBottom: 4,
     },
     benefitDescription: {
         fontSize: 14,
-        color: Colors.gray,
+        color: COLORS.gray[500],
         lineHeight: 20,
     },
     progressContainer: {
@@ -155,14 +153,14 @@ const styles = StyleSheet.create({
         width: 8,
         height: 8,
         borderRadius: 4,
-        backgroundColor: Colors.primary,
+        backgroundColor: COLORS.primary,
     },
     progressDotInactive: {
-        backgroundColor: Colors.gray + '40',
+        backgroundColor: COLORS.gray[300],
     },
     step: {
         fontSize: 14,
-        color: Colors.gray,
+        color: COLORS.gray[500],
         textAlign: 'center',
     },
     footer: {

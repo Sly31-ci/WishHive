@@ -13,7 +13,7 @@ export async function shareWishlist(wishlistId: string, wishlistTitle: string): 
             .from('wishlists')
             .select('slug, privacy')
             .eq('id', wishlistId)
-            .single() as any;
+            .single();
 
         if (error || !wishlist) {
             throw new Error('Wishlist not found');
@@ -65,7 +65,7 @@ export async function copyShareLink(wishlistId: string): Promise<string | null> 
             .from('wishlists')
             .select('slug, privacy')
             .eq('id', wishlistId)
-            .single() as any;
+            .single();
 
         if (!wishlist || wishlist.privacy !== 'public') {
             Alert.alert('Erreur', 'Cette wishlist n\'est pas publique');
@@ -96,7 +96,7 @@ export async function generateQRCode(wishlistId: string): Promise<string | null>
             .from('wishlists')
             .select('slug')
             .eq('id', wishlistId)
-            .single() as any;
+            .single();
 
         if (!wishlist) return null;
 
@@ -118,7 +118,7 @@ export async function generateQRCode(wishlistId: string): Promise<string | null>
 async function trackShareEvent(wishlistId: string): Promise<void> {
     try {
         await (supabase
-            .from('wishlist_shares' as any)
+            .from('wishlist_shares')
             .insert({
                 wishlist_id: wishlistId,
                 shared_at: new Date().toISOString()
@@ -139,7 +139,7 @@ export async function getShareStats(wishlistId: string): Promise<{
     try {
         // Get share count
         const { count: shareCount } = await (supabase
-            .from('wishlist_shares' as any)
+            .from('wishlist_shares')
             .select('*', { count: 'exact', head: true })
             .eq('wishlist_id', wishlistId));
 

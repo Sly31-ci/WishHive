@@ -6,6 +6,7 @@ import {
     FlatList,
     Image,
     TouchableOpacity,
+    RefreshControl,
 } from 'react-native';
 import { router, Stack } from 'expo-router';
 import { ArrowLeft, Trophy, User, TrendingUp } from 'lucide-react-native';
@@ -18,6 +19,7 @@ type Profile = Database['public']['Tables']['profiles']['Row'];
 export default function LeaderboardScreen() {
     const [users, setUsers] = useState<Profile[]>([]);
     const [loading, setLoading] = useState(true);
+    const [refreshing, setRefreshing] = useState(false);
 
     useEffect(() => {
         loadLeaderboard();
@@ -37,7 +39,13 @@ export default function LeaderboardScreen() {
             console.error('Error loading leaderboard:', error);
         } finally {
             setLoading(false);
+            setRefreshing(false);
         }
+    };
+
+    const onRefresh = () => {
+        setRefreshing(true);
+        loadLeaderboard();
     };
 
     const renderItem = ({ item, index }: { item: Profile; index: number }) => {
@@ -121,6 +129,14 @@ export default function LeaderboardScreen() {
                         keyExtractor={(item) => item.id}
                         contentContainerStyle={styles.list}
                         showsVerticalScrollIndicator={false}
+                        refreshControl={
+                            <RefreshControl
+                                refreshing={refreshing}
+                                onRefresh={onRefresh}
+                                tintColor={COLORS.primary}
+                                colors={[COLORS.primary]}
+                            />
+                        }
                     />
                 )}
             </View>

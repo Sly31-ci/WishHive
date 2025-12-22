@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Image } from 'react-native';
 import { Heart, ShoppingCart } from 'lucide-react-native';
-import { Colors } from '@/constants/Colors';
+import { COLORS } from '@/constants/theme';
 
 interface ProductCardProps {
     id: string;
@@ -39,7 +39,7 @@ export function ProductCard({
                     <Image source={{ uri: imageUrl }} style={styles.image} />
                 ) : (
                     <View style={[styles.image, styles.placeholder]}>
-                        <ShoppingCart size={40} color={Colors.textSecondary} />
+                        <ShoppingCart size={40} color={COLORS.gray[500]} />
                     </View>
                 )}
                 {onAddToWishlist && (
@@ -47,7 +47,7 @@ export function ProductCard({
                         style={styles.wishlistButton}
                         onPress={onAddToWishlist}
                     >
-                        <Heart size={20} color={Colors.primary} />
+                        <Heart size={20} color={COLORS.primary} />
                     </TouchableOpacity>
                 )}
             </View>
@@ -90,7 +90,7 @@ const styles = StyleSheet.create({
         resizeMode: 'cover',
     },
     placeholder: {
-        backgroundColor: Colors.light,
+        backgroundColor: COLORS.light,
         justifyContent: 'center',
         alignItems: 'center',
     },
@@ -113,17 +113,17 @@ const styles = StyleSheet.create({
     title: {
         fontSize: 16,
         fontWeight: '600',
-        color: Colors.dark,
+        color: COLORS.dark,
         marginBottom: 4,
     },
     seller: {
         fontSize: 13,
-        color: Colors.textSecondary,
+        color: COLORS.gray[500],
         marginBottom: 8,
     },
     price: {
         fontSize: 18,
         fontWeight: '700',
-        color: Colors.primary,
+        color: COLORS.primary,
     },
 });
