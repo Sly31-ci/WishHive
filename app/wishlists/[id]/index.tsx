@@ -24,6 +24,7 @@ import {
     FlatList,
     ActivityIndicator,
 } from 'react-native';
+import DraggableFlatList, { RenderItemParams, ScaleDecorator } from 'react-native-draggable-flatlist';
 import { Image } from 'expo-image';
 import { useLocalSearchParams, router, Stack } from 'expo-router';
 import {
@@ -48,7 +49,7 @@ import * as Haptics from 'expo-haptics';
 import { wishlistEvents, EVENTS } from '@/lib/events';
 import { ConfirmDialog } from '@/components/ConfirmDialog';
 import { ReorganizeToolbar } from '@/components/ReorganizeToolbar';
-import { getPriorityLabel, getPriorityColor } from '@/constants/priorities';
+import { getPriorityLabel, getPriorityColor, getPriorityEmoji } from '@/constants/priorities';
 import { cache } from '@/lib/cache';
 
 type Wishlist = Database['public']['Tables']['wishlists']['Row'];
@@ -395,29 +396,36 @@ export default function WishlistDetailScreen() {
     };
 
 
-    const renderItem = ({ item, index }: { item: WishlistItem; index: number }) => (
-        <View style={{ paddingHorizontal: SPACING.lg }}>
-            <WishlistItemRow
-                title={item.custom_title || item.product?.title || 'Untitled Item'}
-                price={item.custom_price || item.product?.price}
-                currency={item.product?.currency}
-                imageUrl={item.custom_images?.[0] || item.product?.images?.[0]}
-                checked={item.is_purchased}
-                onToggle={() => handleTogglePurchase(item)}
-                onDelete={() => handleDeleteItem(item.id)}
-                isOwner={isOwner}
-                index={index}
-                priorityColor={getPriorityColor(item.priority)}
-                onEdit={() => router.push(`/wishlists/${id}/edit-item/${item.id}` as any)}
-                groupGift={item.group_gift}
-                isReordering={isReordering}
-                onMoveUp={() => handleMoveItem(index, 'up')}
-                onMoveDown={() => handleMoveItem(index, 'down')}
-                isFirst={index === 0}
-                isLast={index === items.length - 1}
-            />
-        </View>
-    );
+    const renderItem = ({ item, drag, isActive, getIndex }: RenderItemParams<WishlistItem>) => {
+        const index = getIndex() ?? 0;
+        return (
+            <ScaleDecorator>
+                <View style={[
+                    { paddingHorizontal: SPACING.lg },
+                    isActive && { opacity: 0.9, transform: [{ scale: 1.02 }] }
+                ]}>
+                    <WishlistItemRow
+                        title={item.custom_title || item.product?.title || 'Untitled Item'}
+                        price={item.custom_price || item.product?.price}
+                        currency={item.product?.currency}
+                        imageUrl={item.custom_images?.[0] || item.product?.images?.[0]}
+                        checked={item.is_purchased}
+                        onToggle={() => handleTogglePurchase(item)}
+                        onDelete={() => handleDeleteItem(item.id)}
+                        isOwner={isOwner}
+                        index={index}
+                        priorityColor={getPriorityColor(item.priority)}
+                        priorityEmoji={getPriorityEmoji(item.priority)}
+                        onEdit={() => router.push(`/wishlists/${id}/edit-item/${item.id}` as any)}
+                        groupGift={item.group_gift}
+                        isReordering={isReordering}
+                        drag={drag}
+                        isActive={isActive}
+                    />
+                </View>
+            </ScaleDecorator>
+        );
+    };
 
     const renderHeader = () => {
         const HeaderWrapper = ({ children }: { children: React.ReactNode }) => {
@@ -560,10 +568,16 @@ export default function WishlistDetailScreen() {
         <View style={styles.container}>
             <Stack.Screen options={{ headerShown: false }} />
 
-            <FlatList
+            <DraggableFlatList
                 data={items}
                 renderItem={renderItem}
-                keyExtractor={(item, index) => `${item.id}-${index}`}
+                keyExtractor={(item) => item.id}
+                onDragEnd={({ data }) => {
+                    setItems(data);
+                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                }}
+                dragItemOverflow={true}
+                activationDistance={20}
                 ListHeaderComponent={ListHeader}
                 ListEmptyComponent={renderEmpty}
                 contentContainerStyle={{ paddingBottom: 100 }}

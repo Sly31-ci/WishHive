@@ -16,6 +16,14 @@ export const getPriorityLabel = (priority: number) => {
     return 'Liste 💎';
 };
 
+export const getPriorityEmoji = (priority: number) => {
+    if (priority >= PRIORITY_LEVELS.URGENT) return '🔥';
+    if (priority >= PRIORITY_LEVELS.IMPORTANT) return '💖';
+    if (priority >= PRIORITY_LEVELS.DESIRED) return '🎯';
+    if (priority >= PRIORITY_LEVELS.BONUS) return '⭐';
+    return '💎';
+};
+
 export const getPriorityColor = (priority: number) => {
     if (priority >= PRIORITY_LEVELS.URGENT) return COLORS.error;
     if (priority >= PRIORITY_LEVELS.IMPORTANT) return COLORS.warning; // Or a specific pink/orange

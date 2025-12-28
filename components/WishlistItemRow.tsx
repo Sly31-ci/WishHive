@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { Image } from 'expo-image';
-import { CheckCircle, Circle, Trash2, Edit2, Gift, ChevronUp, ChevronDown } from 'lucide-react-native';
+import { CheckCircle, Circle, Trash2, Edit2, Gift, GripVertical } from 'lucide-react-native';
 import { COLORS, SPACING, FONT_SIZES, BORDER_RADIUS } from '@/constants/theme';
 import Animated, { FadeInRight } from 'react-native-reanimated';
 
@@ -17,15 +17,14 @@ interface WishlistItemRowProps {
     isOwner: boolean;
     index: number;
     priorityColor?: string;
+    priorityEmoji?: string;
     groupGift?: {
         current_amount: number;
         target_amount: number;
     } | null;
     isReordering?: boolean;
-    onMoveUp?: () => void;
-    onMoveDown?: () => void;
-    isFirst?: boolean;
-    isLast?: boolean;
+    drag?: () => void;
+    isActive?: boolean;
 }
 
 export function WishlistItemRow({
@@ -40,38 +39,33 @@ export function WishlistItemRow({
     isOwner,
     index,
     priorityColor,
+    priorityEmoji,
     groupGift,
     isReordering,
-    onMoveUp,
-    onMoveDown,
-    isFirst,
-    isLast
+    drag,
+    isActive
 }: WishlistItemRowProps) {
     const giftProgress = groupGift ? (groupGift.current_amount / groupGift.target_amount) * 100 : 0;
 
     return (
         <Animated.View
             entering={FadeInRight.delay(index * 50)}
-            style={[styles.container, checked && styles.checkedContainer]}
+            style={[
+                styles.container,
+                checked && styles.checkedContainer,
+                isActive && styles.activeContainer
+            ]}
         >
             <View style={styles.mainRow}>
                 {isReordering ? (
-                    <View style={styles.reorderControls}>
-                        <TouchableOpacity
-                            onPress={onMoveUp}
-                            disabled={isFirst}
-                            style={[styles.reorderButton, isFirst && { opacity: 0.2 }]}
-                        >
-                            <ChevronUp size={20} color={COLORS.primary} />
-                        </TouchableOpacity>
-                        <TouchableOpacity
-                            onPress={onMoveDown}
-                            disabled={isLast}
-                            style={[styles.reorderButton, isLast && { opacity: 0.2 }]}
-                        >
-                            <ChevronDown size={20} color={COLORS.primary} />
-                        </TouchableOpacity>
-                    </View>
+                    <TouchableOpacity
+                        onLongPress={drag}
+                        onPressIn={drag}
+                        style={styles.dragHandle}
+                        activeOpacity={0.8}
+                    >
+                        <GripVertical size={22} color={COLORS.gray[400]} />
+                    </TouchableOpacity>
                 ) : (
                     <TouchableOpacity
                         onPress={onToggle}
@@ -86,16 +80,20 @@ export function WishlistItemRow({
                     </TouchableOpacity>
                 )}
 
-                <View style={styles.imageContainer}>
-                    {imageUrl ? (
-                        <Image source={{ uri: imageUrl }} style={styles.image} contentFit="cover" />
-                    ) : (
-                        <View style={styles.placeholderImage}>
-                            <Gift size={20} color={COLORS.gray[400]} />
-                        </View>
-                    )}
+                <View style={styles.imageWrapper}>
+                    <View style={styles.imageContainer}>
+                        {imageUrl ? (
+                            <Image source={{ uri: imageUrl }} style={styles.image} contentFit="cover" />
+                        ) : (
+                            <View style={styles.placeholderImage}>
+                                <Gift size={24} color={COLORS.gray[400]} />
+                            </View>
+                        )}
+                    </View>
                     {priorityColor && (
-                        <View style={[styles.priorityIndicator, { backgroundColor: priorityColor }]} />
+                        <View style={[styles.priorityIndicator, { backgroundColor: priorityColor }]}>
+                            {priorityEmoji && <Text style={styles.priorityEmoji}>{priorityEmoji}</Text>}
+                        </View>
                     )}
                 </View>
 
@@ -173,16 +171,30 @@ const styles = StyleSheet.create({
         backgroundColor: COLORS.gray[50],
         borderColor: 'transparent',
     },
+    activeContainer: {
+        backgroundColor: COLORS.white,
+        borderColor: COLORS.primary,
+        shadowColor: COLORS.primary,
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.1,
+        shadowRadius: 8,
+        elevation: 4,
+        zIndex: 10,
+    },
     checkButton: {
         marginRight: SPACING.sm,
     },
+    imageWrapper: {
+        position: 'relative',
+        width: 60,
+        height: 60,
+    },
     imageContainer: {
-        width: 48,
-        height: 48,
-        borderRadius: BORDER_RADIUS.md,
+        width: '100%',
+        height: '100%',
+        borderRadius: BORDER_RADIUS.lg,
         backgroundColor: COLORS.gray[100],
         overflow: 'hidden',
-        position: 'relative',
     },
     image: {
         width: '100%',
@@ -195,22 +207,32 @@ const styles = StyleSheet.create({
     },
     priorityIndicator: {
         position: 'absolute',
-        top: 0,
-        right: 0,
-        width: 8,
-        height: 8,
-        borderRadius: 4,
-        margin: 2,
-        borderWidth: 1,
+        top: -6,
+        right: -6,
+        width: 24,
+        height: 24,
+        borderRadius: 12,
+        borderWidth: 2,
         borderColor: COLORS.white,
+        justifyContent: 'center',
+        alignItems: 'center',
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.15,
+        shadowRadius: 2,
+        elevation: 3,
+        zIndex: 100,
     },
-    reorderControls: {
-        flexDirection: 'column',
-        marginRight: SPACING.md,
-        gap: 2,
+    priorityEmoji: {
+        fontSize: 12,
+        textAlign: 'center',
+        paddingTop: 0,
     },
-    reorderButton: {
-        padding: 4,
+    dragHandle: {
+        paddingRight: SPACING.md,
+        justifyContent: 'center',
+        alignItems: 'center',
+        height: 48, // Match image height for better touch area
     },
     content: {
         flex: 1,
