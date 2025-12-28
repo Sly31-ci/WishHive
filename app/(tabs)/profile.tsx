@@ -26,7 +26,7 @@ import { LevelProgressBar } from '@/components/LevelProgressBar';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/lib/supabase';
 import { Card } from '@/components/Card';
-import { Button } from '@/components/Button';
+import Button from '@/components/Button';
 import { Input } from '@/components/Input';
 import { COLORS, SPACING, FONT_SIZES, BORDER_RADIUS } from '@/constants/theme';
 import { Database } from '@/types/database';

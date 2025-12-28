@@ -17,7 +17,7 @@ import * as Haptics from 'expo-haptics';
 import { useTheme } from '@/contexts/ThemeContext';
 import { COLORS, SPACING, BORDER_RADIUS, FONT_SIZES } from '@/constants/theme';
 import { DICEBEAR_STYLES, DiceBearStyle, getPresetAvatars, DiceBearAvatar } from '@/lib/dicebear';
-import { Button } from './Button';
+import Button from './Button';
 
 interface SimpleAvatarPickerProps {
     visible: boolean;

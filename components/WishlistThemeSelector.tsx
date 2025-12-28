@@ -14,7 +14,7 @@ import { COLORS, SPACING, FONT_SIZES, BORDER_RADIUS, SHADOWS } from '@/constants
 import { WishlistTheme, WISHLIST_TEMPLATES, DEFAULT_THEME } from '@/constants/wishlistThemes';
 import { ThemePreview } from './ThemePreview';
 import { ColorPicker } from './ColorPicker';
-import { Button } from './Button';
+import Button from './Button';
 import TypographyEditor from './TypographyEditor';
 import LiveThemePreview from './LiveThemePreview';
 import EditorActionBar from './EditorActionBar';

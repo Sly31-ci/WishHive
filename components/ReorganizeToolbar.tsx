@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, StyleSheet, Text } from 'react-native';
-import { Button } from './Button'; // Assuming we have a Button component
+import Button from './Button'; // Assuming we have a Button component
 import { COLORS, SPACING, BORDER_RADIUS } from '@/constants/theme';
 import { X, Check } from 'lucide-react-native';
 

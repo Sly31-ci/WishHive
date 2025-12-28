@@ -31,7 +31,7 @@ interface ButtonProps {
   accessibilityHint?: string;
 }
 
-export function Button({
+export default function Button({
   title,
   onPress,
   variant = 'primary',

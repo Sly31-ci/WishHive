@@ -21,7 +21,7 @@ import {
     Sparkles,
 } from 'lucide-react-native';
 import { COLORS } from '@/constants/theme';
-import { Button } from '../Button';
+import Button from '../Button';
 
 interface OnboardingInterestsProps {
     onNext: (interests: string[]) => void;

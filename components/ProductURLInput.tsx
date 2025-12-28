@@ -19,7 +19,7 @@ import {
 import { Link, AlertCircle, CheckCircle2 } from 'lucide-react-native';
 import { COLORS, SPACING, FONT_SIZES, BORDER_RADIUS } from '@/constants/theme';
 import { extractProductFromURL, ProductMetadata, isScrapableURL } from '@/lib/scraping-service';
-import { Button } from './Button';
+import Button from './Button';
 import { Card } from './Card';
 import { Input } from './Input';
 

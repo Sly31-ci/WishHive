@@ -22,7 +22,7 @@ import {
 } from 'lucide-react-native';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/contexts/AuthContext';
-import { Button } from '@/components/Button';
+import Button from '@/components/Button';
 import { Card } from '@/components/Card';
 import { Input } from '@/components/Input';
 import { COLORS, SPACING, FONT_SIZES, BORDER_RADIUS, PALETTE } from '@/constants/theme';

@@ -14,7 +14,7 @@ import { Plus, TrendingUp, Gift, Sparkles, Search, Bell, Trophy } from 'lucide-r
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/lib/supabase';
 import { Card } from '@/components/Card';
-import { Button } from '@/components/Button';
+import Button from '@/components/Button';
 import { COLORS, SPACING, FONT_SIZES, BORDER_RADIUS } from '@/constants/theme';
 import { Database } from '@/types/database';
 

@@ -8,7 +8,7 @@ import React, { useState } from 'react';
 import { View, Text, StyleSheet, ScrollView } from 'react-native';
 import { Cake, Heart, TreePine, Baby, Calendar, Sparkles } from 'lucide-react-native';
 import { COLORS } from '@/constants/theme';
-import { Button } from '../Button';
+import Button from '../Button';
 import { Input } from '../Input';
 import { Card } from '../Card';
 

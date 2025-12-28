@@ -10,6 +10,8 @@ Notifications.setNotificationHandler({
         shouldShowAlert: true,
         shouldPlaySound: true,
         shouldSetBadge: true,
+        shouldShowBanner: true,
+        shouldShowList: true,
     }),
 });
 
@@ -39,8 +41,11 @@ export async function registerForPushNotificationsAsync(): Promise<string | null
         Constants?.expoConfig?.extra?.eas?.projectId ??
         Constants?.easConfig?.projectId;
 
-    if (!projectId) {
-        console.log('Project ID not found in expo config');
+    if (!projectId || projectId === '00000000-0000-0000-0000-000000000000') {
+        if (__DEV__) {
+            console.log('Push Notifications: Skipping token fetch (No valid Project ID)');
+        }
+        return null;
     }
 
     try {

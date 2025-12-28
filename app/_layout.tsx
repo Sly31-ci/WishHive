@@ -10,8 +10,7 @@ import { ThemeProvider, useTheme } from '@/contexts/ThemeContext';
 import { ToastProvider } from '@/contexts/ToastContext';
 import { initSentry, Sentry } from '@/lib/sentry';
 
-// Initialize Sentry
-initSentry();
+const sentryInitialized = initSentry();
 
 function RootLayoutContent() {
   useFrameworkReady();
@@ -56,7 +55,7 @@ function RootLayoutContent() {
   );
 }
 
-const SentryWrappedRootLayoutContent = Sentry.wrap(RootLayoutContent);
+const SentryWrappedRootLayoutContent = sentryInitialized ? Sentry.wrap(RootLayoutContent) : RootLayoutContent;
 
 export default function RootLayout() {
   return (

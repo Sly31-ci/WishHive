@@ -147,17 +147,39 @@ export default function WishlistDetailScreen() {
 
             const { data: itemsData, error: itemsError } = await supabase
                 .from('wishlist_items')
-                .select('*, product:products(*), group_gift:group_gifts(*)')
+                .select('*, product:products(*)')
                 .eq('wishlist_id', id as string)
                 .order('priority', { ascending: false })
                 .range(start, end);
 
             if (itemsError) throw itemsError;
 
-            const newItems = (itemsData || []).map(item => ({
-                ...item,
-                group_gift: Array.isArray(item.group_gift) ? item.group_gift[0] : item.group_gift
-            }));
+            let newItems: WishlistItem[] = [];
+
+            if (itemsData && itemsData.length > 0) {
+                // Manually fetch group gifts to avoid missing relationship error
+                const itemIds = itemsData.map(i => i.id);
+                const { data: giftsData } = await supabase
+                    .from('group_gifts')
+                    .select('*')
+                    .in('item_id', itemIds);
+
+                const giftsMap = new Map();
+                if (giftsData) {
+                    giftsData.forEach(gift => {
+                        // If there are multiple, this will just take the last one, effectively same as picking one. 
+                        // To match previous '0' index logic, we might want to be careful but usually there's only one.
+                        if (!giftsMap.has(gift.item_id)) {
+                            giftsMap.set(gift.item_id, gift);
+                        }
+                    });
+                }
+
+                newItems = itemsData.map(item => ({
+                    ...item,
+                    group_gift: giftsMap.get(item.id) || null
+                }));
+            }
 
             if (isFirstLoad) {
                 setItems(newItems);

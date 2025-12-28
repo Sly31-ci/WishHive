@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { View, Text, StyleSheet, Modal, TextInput, TouchableOpacity, KeyboardAvoidingView, Platform } from 'react-native';
 import { X, Send, Heart, PartyPopper, ThumbsUp, Star } from 'lucide-react-native';
 import { COLORS, SPACING, BORDER_RADIUS, FONT_SIZES } from '@/constants/theme';
-import { Button } from './Button';
+import Button from './Button';
 
 interface AnonymousInteractionProps {
     visible: boolean;

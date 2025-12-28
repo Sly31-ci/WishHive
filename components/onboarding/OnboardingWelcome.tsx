@@ -8,7 +8,7 @@ import React from 'react';
 import { View, Text, StyleSheet, Image } from 'react-native';
 import { Gift, Users, Sparkles } from 'lucide-react-native';
 import { COLORS, SPACING, FONT_SIZES } from '@/constants/theme';
-import { Button } from '../Button';
+import Button from '../Button';
 import { Card } from '../Card';
 
 interface OnboardingWelcomeProps {

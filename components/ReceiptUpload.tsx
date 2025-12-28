@@ -19,7 +19,7 @@ import * as ImagePicker from 'expo-image-picker';
 import { Camera, Upload, CheckCircle2, AlertCircle } from 'lucide-react-native';
 import { COLORS } from '@/constants/theme';
 import { extractReceiptData, OCRResult } from '@/lib/ocr-service';
-import { Button } from './Button';
+import Button from './Button';
 import { Card } from './Card';
 
 interface ReceiptUploadProps {

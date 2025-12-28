@@ -10,7 +10,7 @@ import {
     Platform,
 } from 'react-native';
 import { X, Gift, Heart } from 'lucide-react-native';
-import { Button } from './Button';
+import Button from './Button';
 import { Input } from './Input';
 import { COLORS, SPACING, FONT_SIZES, BORDER_RADIUS } from '@/constants/theme';
 import * as Haptics from 'expo-haptics';

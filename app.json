@@ -32,7 +32,7 @@
     ],
     "extra": {
       "eas": {
-        "projectId": "YOUR_PROJECT_ID_HERE"
+        "projectId": "00000000-0000-0000-0000-000000000000"
       }
     }
   }

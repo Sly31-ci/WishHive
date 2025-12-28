@@ -12,7 +12,7 @@ import { router } from 'expo-router';
 import { Mail, Lock, User } from 'lucide-react-native';
 import { useAuth } from '@/contexts/AuthContext';
 import { Input } from '@/components/Input';
-import { Button } from '@/components/Button';
+import Button from '@/components/Button';
 import { COLORS, SPACING, FONT_SIZES } from '@/constants/theme';
 import { getErrorMessage } from '@/lib/errorMessages';
 

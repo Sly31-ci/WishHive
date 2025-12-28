@@ -12,7 +12,7 @@ import { router } from 'expo-router';
 import { Plus, Calendar, Eye, Trash2 } from 'lucide-react-native';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/lib/supabase';
-import { Button } from '@/components/Button';
+import Button from '@/components/Button';
 import { WishlistCard } from '@/components/WishlistCard';
 import { ConfirmDialog } from '@/components/ConfirmDialog';
 import * as Haptics from 'expo-haptics';

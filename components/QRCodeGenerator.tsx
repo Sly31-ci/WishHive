@@ -10,7 +10,7 @@ import { View, Text, StyleSheet, Share, TouchableOpacity } from 'react-native';
 import QRCode from 'react-native-qrcode-svg';
 import { Download, Share2 } from 'lucide-react-native';
 import { COLORS } from '@/constants/theme';
-import { Button } from './Button';
+import Button from './Button';
 import { Card } from './Card';
 
 interface QRCodeGeneratorProps {

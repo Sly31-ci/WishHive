@@ -10,11 +10,11 @@ import {
     Alert,
 } from 'react-native';
 import { useLocalSearchParams, router, Stack } from 'expo-router';
-import { ArrowLeft, Search, Plus, Link as LinkIcon } from 'lucide-react-native';
+import { ArrowLeft, Search, Plus, Link as LinkIcon, Wand2 } from 'lucide-react-native';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/lib/supabase';
 import { Input } from '@/components/Input';
-import { Button } from '@/components/Button';
+import Button from '@/components/Button';
 import { Card } from '@/components/Card';
 import { COLORS, SPACING, FONT_SIZES, BORDER_RADIUS } from '@/constants/theme';
 import { Database } from '@/types/database';
@@ -22,6 +22,8 @@ import { useProducts } from '@/hooks/useProducts';
 import { emitItemAdded } from '@/lib/events';
 import { getRandomSuccessMessage, getErrorMessage } from '@/lib/messages';
 import * as Haptics from 'expo-haptics';
+import { extractMetadata } from '@/lib/scraping-service';
+
 
 type Product = Database['public']['Tables']['products']['Row'];
 
@@ -37,7 +39,10 @@ export default function AddItemScreen() {
     const [customUrl, setCustomUrl] = useState('');
     const [customPrice, setCustomPrice] = useState('');
     const [customNote, setCustomNote] = useState('');
+    const [customImage, setCustomImage] = useState('');
     const [adding, setAdding] = useState(false);
+    const [analyzingLink, setAnalyzingLink] = useState(false);
+
 
     const handleSearch = (text: string) => {
         setSearchQuery(text);
@@ -76,6 +81,44 @@ export default function AddItemScreen() {
         }
     };
 
+    const handleAutoFill = async () => {
+        if (!customUrl) {
+            Alert.alert('Missing Link', 'Please enter a URL to analyze.');
+            return;
+        }
+
+        try {
+            setAnalyzingLink(true);
+
+            // Provide feedback
+            await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+
+            const result = await extractMetadata(customUrl);
+
+            if (result.success && result.data) {
+                const { title, description, image, price } = result.data;
+
+                if (title) setCustomTitle(title);
+                // For description, we might want to be careful about length as it goes into a note
+                if (description) setCustomNote(description.slice(0, 200) + (description.length > 200 ? '...' : ''));
+                if (image) setCustomImage(image);
+                if (price) setCustomPrice(price.toString());
+
+                await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+            } else {
+                Alert.alert('Scraping Failed', 'Could not extract details from this link. Please fill them in manually.');
+                await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
+            }
+        } catch (error) {
+            console.error('Auto-fill error:', error);
+            Alert.alert('Error', 'An error occurred while analyzing the link.');
+            await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+        } finally {
+            setAnalyzingLink(false);
+        }
+    };
+
+
     const handleAddCustomItem = async () => {
         if (!customTitle.trim()) {
             Alert.alert('Error', 'Please enter a title');
@@ -89,6 +132,7 @@ export default function AddItemScreen() {
                 wishlist_id: wishlistId as string,
                 custom_title: customTitle.trim(),
                 custom_url: customUrl.trim() || null,
+                custom_images: customImage ? [customImage] : null,
                 custom_price: customPrice ? parseFloat(customPrice) : null,
                 note: customNote.trim() || null,
                 priority: 3,
@@ -177,6 +221,70 @@ export default function AddItemScreen() {
                     keyboardType="url"
                     icon={<LinkIcon size={20} color={COLORS.gray[400]} />}
                 />
+
+                {/* Auto Fill Button */}
+                {customUrl.length > 0 && (
+                    <View style={{ marginTop: -SPACING.sm, marginBottom: SPACING.md, alignItems: 'flex-end' }}>
+                        <TouchableOpacity
+                            onPress={handleAutoFill}
+                            disabled={analyzingLink}
+                            style={{
+                                flexDirection: 'row',
+                                alignItems: 'center',
+                                paddingVertical: 6,
+                                paddingHorizontal: 12,
+                                backgroundColor: COLORS.secondary + '20',
+                                borderRadius: BORDER_RADIUS.full,
+                            }}
+                        >
+                            <Wand2 size={14} color={COLORS.secondary} style={{ marginRight: 6 }} />
+                            <Text style={{
+                                fontSize: FONT_SIZES.xs,
+                                fontWeight: '600',
+                                color: COLORS.secondary
+                            }}>
+                                {analyzingLink ? 'Analyzing...' : 'Auto-Fill Details'}
+                            </Text>
+                        </TouchableOpacity>
+                    </View>
+                )}
+
+                {customImage ? (
+                    <View style={{ marginBottom: SPACING.md }}>
+                        <Text style={{
+                            fontSize: FONT_SIZES.sm,
+                            fontWeight: '600',
+                            color: COLORS.gray[700],
+                            marginBottom: SPACING.xs
+                        }}>
+                            Preview Image
+                        </Text>
+                        <Image
+                            source={{ uri: customImage }}
+                            style={{
+                                width: '100%',
+                                height: 200,
+                                borderRadius: BORDER_RADIUS.md,
+                                backgroundColor: COLORS.gray[100],
+                                resizeMode: 'cover'
+                            }}
+                        />
+                        <TouchableOpacity
+                            onPress={() => setCustomImage('')}
+                            style={{
+                                position: 'absolute',
+                                top: 8,
+                                right: 8,
+                                backgroundColor: 'rgba(0,0,0,0.5)',
+                                padding: 4,
+                                borderRadius: BORDER_RADIUS.full
+                            }}
+                        >
+                            <Plus size={16} color="#FFF" style={{ transform: [{ rotate: '45deg' }] }} />
+                        </TouchableOpacity>
+                    </View>
+                ) : null}
+
 
                 <Input
                     label="Price Estimate (Optional)"

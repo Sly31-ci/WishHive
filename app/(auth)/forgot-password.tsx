@@ -13,7 +13,7 @@ import { ArrowLeft, Mail, Send } from 'lucide-react-native';
 import { supabase } from '@/lib/supabase';
 import { useToast } from '@/contexts/ToastContext';
 import { Input } from '@/components/Input';
-import { Button } from '@/components/Button';
+import Button from '@/components/Button';
 import { Card } from '@/components/Card';
 import { COLORS, SPACING, FONT_SIZES, BORDER_RADIUS } from '@/constants/theme';
 
