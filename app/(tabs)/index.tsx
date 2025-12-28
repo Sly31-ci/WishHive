@@ -15,6 +15,8 @@ import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/lib/supabase';
 import Button from '@/components/Button';
 import { Card } from '@/components/Card';
+import { WishlistCard } from '@/components/WishlistCard';
+import { EmptyState } from '@/components/EmptyState';
 import {
   COLORS,
   SPACING,
@@ -42,14 +44,28 @@ export default function HomeScreen() {
     try {
       const { data, error } = await supabase
         .from('wishlists')
-        .select('*')
+        .select(`
+          *,
+          items:wishlist_items(id, is_purchased)
+        `)
         .eq('privacy', 'public')
         .eq('is_active', true)
         .order('view_count', { ascending: false })
-        .limit(6); // Réduit de 10 à 6 pour moins de surcharge
+        .limit(6);
 
       if (error) throw error;
-      setTrendingWishlists(data || []);
+
+      // Transform data to include stats
+      const wishlistsWithStats = (data || []).map(w => {
+        const items = (w as any).items || [];
+        return {
+          ...w,
+          total_items: items.length,
+          purchased_items: items.filter((i: any) => i.is_purchased).length
+        };
+      });
+
+      setTrendingWishlists(wishlistsWithStats);
     } catch (error) {
       console.error('Error loading trending wishlists:', error);
     } finally {
@@ -153,51 +169,44 @@ export default function HomeScreen() {
               <View style={styles.loadingContainer}>
                 <Text style={styles.loadingText}>Loading...</Text>
               </View>
-            ) : trendingWishlists.length > 0 ? (
-              <ScrollView
-                horizontal
-                showsHorizontalScrollIndicator={false}
-                contentContainerStyle={styles.trendingList}
+            ) : trendingWishlists.length === 0 ? (
+              <EmptyState
+                emoji="✨"
+                title="No wishlists yet"
+                description="Create your first wishlist and start adding items you love"
+                actionLabel="Create Wishlist"
+                onAction={() => router.push('/wishlists/create')}
+              />
+            ) : (
+              <Animated.View
+                style={styles.trendingListVertical}
+                entering={FadeIn.delay(300)}
               >
-                {trendingWishlists.map((item, index) => (
+                {trendingWishlists.map((wishlist, index) => (
                   <Animated.View
-                    key={item.id}
-                    entering={FadeInDown.delay(400 + index * 50).springify()}
+                    key={wishlist.id}
+                    entering={FadeInDown.delay(index * 100).springify()}
                   >
-                    <Card
-                      onPress={() => router.push(`/wishlists/${item.id}`)}
-                      style={styles.trendingCard}
-                      padding="md"
-                    >
-                      {/* Image placeholder */}
-                      <View style={styles.trendingImage}>
-                        <Text style={styles.trendingEmoji}>
-                          {item.type === 'birthday' ? '🎂' :
-                            item.type === 'wedding' ? '💒' :
-                              item.type === 'baby' ? '👶' :
-                                item.type === 'holiday' ? '🎄' : '🎁'}
-                        </Text>
-                      </View>
-                      <Text style={styles.trendingTitle} numberOfLines={2}>
-                        {item.title}
-                      </Text>
-                      <Text style={styles.trendingViews}>
-                        {item.view_count} views
-                      </Text>
-                    </Card>
+                    <WishlistCard
+                      wishlist={wishlist}
+                      onPress={() => router.push(`/wishlists/${wishlist.id}`)}
+                    />
                   </Animated.View>
                 ))}
-              </ScrollView>
-            ) : (
-              <Card style={styles.emptyCard} padding="xl">
-                <Text style={styles.emptyText}>
-                  No trending wishlists yet.{'\n'}Be the first to create one! 🚀
-                </Text>
-              </Card>
+              </Animated.View>
             )}
           </View>
         </Animated.View>
       </ScrollView>
+
+      {/* Floating Action Button */}
+      <TouchableOpacity
+        style={styles.fab}
+        onPress={() => router.push('/wishlists/create')}
+        activeOpacity={0.8}
+      >
+        <Plus size={28} color="#FFFFFF" />
+      </TouchableOpacity>
     </View>
   );
 }
@@ -321,36 +330,13 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: COLORS.dark,
   },
-  trendingList: {
+  trendingListVertical: {
     paddingHorizontal: SPACING.lg,
-    gap: SPACING.md,
-  },
-  trendingCard: {
-    width: width * 0.42, // ~40% de la largeur d'écran
-    minWidth: 160,
-  },
-  trendingImage: {
+    paddingTop: SPACING.lg,
+    gap: SPACING.sm,
+    maxWidth: 480,
     width: '100%',
-    aspectRatio: 1,
-    backgroundColor: COLORS.gray[50],
-    borderRadius: BORDER_RADIUS.md,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: SPACING.sm,
-  },
-  trendingEmoji: {
-    fontSize: 48,
-  },
-  trendingTitle: {
-    fontSize: FONT_SIZES.sm,
-    fontWeight: '600',
-    color: COLORS.dark,
-    marginBottom: SPACING.xs,
-    lineHeight: 18,
-  },
-  trendingViews: {
-    fontSize: FONT_SIZES.xs,
-    color: COLORS.gray[500],
+    alignSelf: 'center',
   },
   loadingContainer: {
     paddingHorizontal: SPACING.lg,
@@ -360,6 +346,22 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     color: COLORS.gray[500],
     fontSize: FONT_SIZES.sm,
+  },
+  fab: {
+    position: 'absolute',
+    bottom: SPACING.xl,
+    right: SPACING.lg,
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    backgroundColor: COLORS.primary,
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 8,
   },
   emptyCard: {
     marginHorizontal: SPACING.lg,

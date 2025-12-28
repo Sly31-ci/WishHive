@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import { Calendar, Eye, Trash2 } from 'lucide-react-native';
+import { Calendar, Eye, Trash2, Package } from 'lucide-react-native';
 import { Card } from './Card';
 import { COLORS, SPACING, FONT_SIZES, BORDER_RADIUS } from '@/constants/theme';
 import { Database } from '@/types/database';
@@ -87,12 +87,17 @@ export const WishlistCard = React.memo(({ wishlist, onPress, onLongPress, onDele
                         </Text>
                     )}
 
-                    {/* Progress Bar Section */}
-                    <View style={styles.progressSection}>
-                        <View style={styles.progressHeader}>
-                            <Text style={styles.progressLabel}>Progress</Text>
+                    {/* Progress & Item Count Section */}
+                    <View style={styles.statsSection}>
+                        <View style={styles.statsRow}>
+                            <View style={styles.itemBadge}>
+                                <Package size={14} color={wishlistTheme.primaryColor} />
+                                <Text style={[styles.itemBadgeText, { color: wishlistTheme.primaryColor }]}>
+                                    {totalItems} souhait{totalItems > 1 ? 's' : ''}
+                                </Text>
+                            </View>
                             <Text style={[styles.progressValue, { color: wishlistTheme.primaryColor }]}>
-                                {Math.round(progress)}%
+                                {purchasedItems}/{totalItems} ({Math.round(progress)}%)
                             </Text>
                         </View>
                         <View style={styles.progressBarContainer}>
@@ -211,19 +216,27 @@ const styles = StyleSheet.create({
         color: COLORS.gray[600],
         marginBottom: SPACING.md,
     },
-    progressSection: {
+    statsSection: {
         marginBottom: SPACING.md,
     },
-    progressHeader: {
+    statsRow: {
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'center',
-        marginBottom: 6,
+        marginBottom: 8,
     },
-    progressLabel: {
+    itemBadge: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 6,
+        backgroundColor: COLORS.gray[50],
+        paddingHorizontal: 8,
+        paddingVertical: 4,
+        borderRadius: BORDER_RADIUS.sm,
+    },
+    itemBadgeText: {
         fontSize: FONT_SIZES.xs,
-        color: COLORS.gray[500],
-        fontWeight: '600',
+        fontWeight: '700',
     },
     progressValue: {
         fontSize: FONT_SIZES.xs,

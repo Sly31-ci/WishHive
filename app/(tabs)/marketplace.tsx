@@ -12,7 +12,7 @@ import {
 } from 'react-native';
 import { Image } from 'expo-image';
 import { router } from 'expo-router';
-import { Search, Store, X } from 'lucide-react-native';
+import { Search, Store, X, Heart } from 'lucide-react-native';
 import Animated, { FadeInDown, FadeIn } from 'react-native-reanimated';
 import { supabase } from '@/lib/supabase';
 import { FilterChip } from '@/components/FilterChip';
@@ -147,6 +147,10 @@ export default function MarketplaceScreen() {
               <Store size={32} color={COLORS.gray[400]} />
             </View>
           )}
+          <View style={styles.heartBadge}>
+            <Heart size={12} color={COLORS.error} fill={COLORS.error} />
+            <Text style={styles.heartText}>{(item as any).times_added || 0}</Text>
+          </View>
         </View>
         <Text style={styles.productTitle} numberOfLines={2}>
           {item.title}
@@ -344,6 +348,24 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.gray[100],
     justifyContent: 'center',
     alignItems: 'center',
+  },
+  heartBadge: {
+    position: 'absolute',
+    bottom: 8,
+    right: 8,
+    backgroundColor: 'rgba(255,255,255,0.9)',
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    paddingHorizontal: 6,
+    paddingVertical: 3,
+    borderRadius: BORDER_RADIUS.full,
+    ...SHADOWS.xs,
+  },
+  heartText: {
+    fontSize: 10,
+    fontWeight: '700',
+    color: COLORS.dark,
   },
   productTitle: {
     fontSize: FONT_SIZES.sm,

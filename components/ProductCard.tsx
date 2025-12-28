@@ -12,6 +12,7 @@ interface ProductCardProps {
     sellerName: string;
     onPress: () => void;
     onAddToWishlist?: () => void;
+    timesAdded?: number;
 }
 
 export function ProductCard({
@@ -22,6 +23,7 @@ export function ProductCard({
     sellerName,
     onPress,
     onAddToWishlist,
+    timesAdded = 0,
 }: ProductCardProps) {
     const formatPrice = (price: number, currency: string) => {
         const symbols: Record<string, string> = {
@@ -50,6 +52,10 @@ export function ProductCard({
                         <Heart size={20} color={COLORS.primary} />
                     </TouchableOpacity>
                 )}
+                <View style={styles.heartBadge}>
+                    <Heart size={12} color={COLORS.error} fill={COLORS.error} />
+                    <Text style={styles.heartText}>{timesAdded}</Text>
+                </View>
             </View>
 
             <View style={styles.content}>
@@ -106,6 +112,24 @@ const styles = StyleSheet.create({
         shadowOpacity: 0.1,
         shadowRadius: 4,
         elevation: 3,
+        zIndex: 10,
+    },
+    heartBadge: {
+        position: 'absolute',
+        bottom: 12,
+        right: 12,
+        backgroundColor: 'rgba(255,255,255,0.9)',
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 4,
+        paddingHorizontal: 8,
+        paddingVertical: 4,
+        borderRadius: 20,
+    },
+    heartText: {
+        fontSize: 12,
+        fontWeight: '700',
+        color: COLORS.dark,
     },
     content: {
         padding: 12,

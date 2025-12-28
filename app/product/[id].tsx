@@ -67,7 +67,7 @@ export default function ProductDetailScreen() {
 
             const { data, error: productError } = await supabase
                 .from('products')
-                .select('*')
+                .select('*, wishlist_items(id)')
                 .eq('id', productId)
                 .single();
 
@@ -213,7 +213,15 @@ export default function ProductDetailScreen() {
                     <Animated.View entering={FadeInDown.delay(100).springify()} style={styles.content}>
                         {/* Title & Price */}
                         <View style={styles.headerSection}>
-                            <Text style={styles.title}>{product.title}</Text>
+                            <View style={styles.titleRow}>
+                                <Text style={styles.title}>{product.title}</Text>
+                                <View style={styles.popularityBadge}>
+                                    <Heart size={14} color={COLORS.error} fill={COLORS.error} />
+                                    <Text style={styles.popularityText}>
+                                        {((product as any).wishlist_items?.length || 0)}
+                                    </Text>
+                                </View>
+                            </View>
                             <Text style={styles.price}>
                                 {product.currency} {product.price.toFixed(2)}
                             </Text>
@@ -386,12 +394,33 @@ const styles = StyleSheet.create({
     headerSection: {
         marginBottom: SPACING.lg,
     },
+    titleRow: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'flex-start',
+        gap: SPACING.md,
+    },
     title: {
         fontSize: FONT_SIZES.xxl,
         fontWeight: '700',
         color: COLORS.dark,
         marginBottom: SPACING.sm,
         lineHeight: 32,
+        flex: 1,
+    },
+    popularityBadge: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 4,
+        backgroundColor: COLORS.gray[50],
+        paddingHorizontal: 8,
+        paddingVertical: 6,
+        borderRadius: BORDER_RADIUS.full,
+    },
+    popularityText: {
+        fontSize: FONT_SIZES.sm,
+        fontWeight: '700',
+        color: COLORS.dark,
     },
     price: {
         fontSize: FONT_SIZES.xl,

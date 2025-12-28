@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, Text, FlatList, Image, TouchableOpacity, StyleSheet } from 'react-native';
-import { Store, TrendingUp } from 'lucide-react-native';
+import { Store, TrendingUp, Heart } from 'lucide-react-native';
 import { router } from 'expo-router';
 import { COLORS, SPACING, FONT_SIZES, BORDER_RADIUS } from '@/constants/theme';
 import { useTheme } from '@/contexts/ThemeContext';
@@ -38,6 +38,10 @@ export const TrendingSection: React.FC<TrendingSectionProps> = ({ products, load
                     )}
                     <View style={[styles.badge, { backgroundColor: theme.error }]}>
                         <Text style={styles.badgeText}>🔥 Trending</Text>
+                    </View>
+                    <View style={styles.heartBadge}>
+                        <Heart size={10} color={COLORS.error} fill={COLORS.error} />
+                        <Text style={styles.heartText}>{item.times_added || 0}</Text>
                     </View>
                 </View>
 
@@ -137,6 +141,23 @@ const styles = StyleSheet.create({
         fontWeight: '600',
         marginBottom: 4,
         height: 36, // limit lines
+    },
+    heartBadge: {
+        position: 'absolute',
+        bottom: 4,
+        right: 4,
+        backgroundColor: 'rgba(255,255,255,0.9)',
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 3,
+        paddingHorizontal: 4,
+        paddingVertical: 2,
+        borderRadius: BORDER_RADIUS.full,
+    },
+    heartText: {
+        fontSize: 9,
+        fontWeight: '700',
+        color: COLORS.dark,
     },
     price: {
         fontSize: FONT_SIZES.sm,
