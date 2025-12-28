@@ -69,14 +69,25 @@ export default function WishlistsScreen() {
 
       const { data, error } = await supabase
         .from('wishlists')
-        .select('*')
+        .select(`
+          *,
+          items:wishlist_items(id, is_purchased)
+        `)
         .eq('owner_id', user.id)
         .order('created_at', { ascending: false })
         .range(start, end);
 
       if (error) throw error;
 
-      const newWishlists = data || [];
+      // Transform data to include stats
+      const newWishlists = (data || []).map(w => {
+        const items = (w as any).items || [];
+        return {
+          ...w,
+          total_items: items.length,
+          purchased_items: items.filter((i: any) => i.is_purchased).length
+        };
+      });
 
       if (isRefresh) {
         setWishlists(newWishlists);

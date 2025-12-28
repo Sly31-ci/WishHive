@@ -33,8 +33,6 @@ import {
     Gift,
     CheckCircle,
     Clock,
-    ArrowUpDown,
-    Palette,
     Plus,
 } from 'lucide-react-native';
 import { WishlistThemeSelector } from '@/components/WishlistThemeSelector';
@@ -59,8 +57,13 @@ type WishlistItem = Database['public']['Tables']['wishlist_items']['Row'] & {
     group_gift?: Database['public']['Tables']['group_gifts']['Row'] | null;
 };
 
-import { ChevronUp, ChevronDown } from 'lucide-react-native';
+import { ChevronUp, ChevronDown, MoreVertical, ArrowUpDown, Palette } from 'lucide-react-native';
 import { PRIORITY_OPTIONS } from '@/constants/priorities';
+import { StatusBadge } from '@/components/StatusBadge';
+import { WishlistItemRow } from '@/components/WishlistItemRow';
+import { EmptyState } from '@/components/EmptyState';
+import Button from '@/components/Button';
+import Animated, { FadeInUp, Layout } from 'react-native-reanimated';
 
 export default function WishlistDetailScreen() {
     const { id } = useLocalSearchParams<{ id: string }>();
@@ -296,6 +299,30 @@ export default function WishlistDetailScreen() {
         }
     };
 
+    const handleTogglePurchase = async (item: WishlistItem) => {
+        try {
+            const newStatus = !item.is_purchased;
+            const { error } = await supabase
+                .from('wishlist_items')
+                .update({
+                    is_purchased: newStatus,
+                    purchased_at: newStatus ? new Date().toISOString() : null
+                })
+                .eq('id', item.id);
+
+            if (error) throw error;
+
+            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+
+            // Optimistic update
+            setItems(prev => prev.map(i => i.id === item.id ? { ...i, is_purchased: newStatus } : i));
+
+        } catch (error) {
+            console.error('Error toggling purchase:', error);
+            Alert.alert('Erreur', 'Impossible de modifier le statut.');
+        }
+    };
+
     const handleSaveOrder = async () => {
         setSavingOrder(true);
 
@@ -367,161 +394,29 @@ export default function WishlistDetailScreen() {
         }
     };
 
-    const WishlistItemCard = React.memo(({
-        item,
-        isOwner,
-        isReordering,
-        onDelete,
-        onMoveUp,
-        onMoveDown,
-        isFirst,
-        isLast,
-        onPriorityPress
-    }: {
-        item: WishlistItem;
-        isOwner: boolean;
-        isReordering: boolean;
-        onDelete: (id: string) => void;
-        onMoveUp: () => void;
-        onMoveDown: () => void;
-        isFirst: boolean;
-        isLast: boolean;
-        onPriorityPress: () => void;
-    }) => {
-        const title = item.custom_title || item.product?.title || 'Untitled Item';
-        const price = item.custom_price || item.product?.price;
-        const currency = item.product?.currency || 'USD';
-        const imageUrl = item.custom_images?.[0] || item.product?.images?.[0];
-
-        const content = (
-            <Card style={styles.itemCard}>
-                <View style={styles.itemContent}>
-                    {isReordering && (
-                        <View style={styles.reorderControls}>
-                            <TouchableOpacity
-                                onPress={onMoveUp}
-                                disabled={isFirst}
-                                style={[styles.reorderButton, isFirst && { opacity: 0.3 }]}
-                            >
-                                <ChevronUp size={24} color={COLORS.primary} />
-                            </TouchableOpacity>
-                            <TouchableOpacity
-                                onPress={onMoveDown}
-                                disabled={isLast}
-                                style={[styles.reorderButton, isLast && { opacity: 0.3 }]}
-                            >
-                                <ChevronDown size={24} color={COLORS.primary} />
-                            </TouchableOpacity>
-                        </View>
-                    )}
-
-                    <View style={styles.itemImageContainer}>
-                        {imageUrl ? (
-                            <Image
-                                source={{ uri: imageUrl }}
-                                style={styles.itemImage}
-                                contentFit="cover"
-                                transition={200}
-                                cachePolicy="memory-disk"
-                            />
-                        ) : (
-                            <View style={styles.placeholderImage}>
-                                <Gift size={24} color={COLORS.gray[400]} />
-                            </View>
-                        )}
-                    </View>
-
-                    <View style={styles.itemDetails}>
-                        <Text style={styles.itemTitle} numberOfLines={2}>
-                            {title}
-                        </Text>
-
-                        {price !== undefined && price !== null && (
-                            <Text style={styles.itemPrice}>
-                                {currency} {price.toFixed(2)}
-                            </Text>
-                        )}
-
-                        <View style={styles.itemsRow}>
-                            <View style={styles.itemMeta}>
-                                <TouchableOpacity
-                                    onPress={onPriorityPress}
-                                    disabled={!isOwner || isReordering}
-                                    style={[
-                                        styles.priorityBadge,
-                                        { backgroundColor: getPriorityColor(item.priority) + '20' }
-                                    ]}
-                                >
-                                    <Text style={[
-                                        styles.priorityText,
-                                        { color: getPriorityColor(item.priority) }
-                                    ]}>
-                                        {getPriorityLabel(item.priority)}
-                                    </Text>
-                                </TouchableOpacity>
-
-                                {item.is_purchased && !item.group_gift && (
-                                    <View style={styles.purchasedBadge}>
-                                        <CheckCircle size={12} color={COLORS.success} />
-                                        <Text style={styles.purchasedText}>Purchased</Text>
-                                    </View>
-                                )}
-
-                                {item.group_gift && (
-                                    <View style={styles.cagnotteBadge}>
-                                        <Gift size={12} color={COLORS.primary} />
-                                        <Text style={styles.cagnotteBadgeText}>Cagnotte</Text>
-                                    </View>
-                                )}
-                            </View>
-
-                            {isOwner && !isReordering && (
-                                <TouchableOpacity onPress={() => onDelete(item.id)} style={styles.deleteIconButton}>
-                                    <Trash2 size={18} color={COLORS.error} />
-                                </TouchableOpacity>
-                            )}
-                        </View>
-
-                        {item.group_gift && (
-                            <View style={styles.cagnotteContainer}>
-                                <View style={styles.progressBarBackground}>
-                                    <View
-                                        style={[
-                                            styles.progressBarFill,
-                                            { width: `${Math.min(100, (item.group_gift.current_amount / item.group_gift.target_amount) * 100)}%` }
-                                        ]}
-                                    />
-                                </View>
-                                <View style={styles.cagnotteDetails}>
-                                    <Text style={styles.cagnotteAmount}>
-                                        {currency} {item.group_gift.current_amount.toFixed(2)} / {item.group_gift.target_amount.toFixed(2)}
-                                    </Text>
-                                    <Text style={styles.cagnottePercent}>
-                                        {Math.round((item.group_gift.current_amount / item.group_gift.target_amount) * 100)}%
-                                    </Text>
-                                </View>
-                            </View>
-                        )}
-                    </View>
-                </View>
-            </Card>
-        );
-
-        return content;
-    });
 
     const renderItem = ({ item, index }: { item: WishlistItem; index: number }) => (
-        <WishlistItemCard
-            item={item}
-            isOwner={isOwner}
-            isReordering={isReordering}
-            onDelete={handleDeleteItem}
-            onMoveUp={() => handleMoveItem(index, 'up')}
-            onMoveDown={() => handleMoveItem(index, 'down')}
-            isFirst={index === 0}
-            isLast={index === items.length - 1}
-            onPriorityPress={() => changePriority(item)}
-        />
+        <View style={{ paddingHorizontal: SPACING.lg }}>
+            <WishlistItemRow
+                title={item.custom_title || item.product?.title || 'Untitled Item'}
+                price={item.custom_price || item.product?.price}
+                currency={item.product?.currency}
+                imageUrl={item.custom_images?.[0] || item.product?.images?.[0]}
+                checked={item.is_purchased}
+                onToggle={() => handleTogglePurchase(item)}
+                onDelete={() => handleDeleteItem(item.id)}
+                isOwner={isOwner}
+                index={index}
+                priorityColor={getPriorityColor(item.priority)}
+                onEdit={() => router.push(`/wishlists/${id}/edit-item/${item.id}` as any)}
+                groupGift={item.group_gift}
+                isReordering={isReordering}
+                onMoveUp={() => handleMoveItem(index, 'up')}
+                onMoveDown={() => handleMoveItem(index, 'down')}
+                isFirst={index === 0}
+                isLast={index === items.length - 1}
+            />
+        </View>
     );
 
     const renderHeader = () => {
@@ -551,95 +446,113 @@ export default function WishlistDetailScreen() {
         const textColor = currentTheme.template === 'minimal' ? COLORS.dark : COLORS.white;
         const subTextColor = currentTheme.template === 'minimal' ? COLORS.gray[600] : 'rgba(255,255,255,0.8)';
 
+        const completedItems = items.filter(item => item.is_purchased).length;
+        const totalItems = items.length;
+        const progress = totalItems > 0 ? (completedItems / totalItems) * 100 : 0;
+
         return (
             <HeaderWrapper>
                 <View style={styles.headerActions}>
                     <TouchableOpacity style={styles.headerButton} onPress={() => router.back()}>
-                        <ArrowLeft size={24} color={COLORS.dark} />
+                        <ArrowLeft size={24} color={textColor} />
                     </TouchableOpacity>
 
                     <View style={{ flex: 1 }} />
 
-                    {wishlist && (
-                        <ShareWishlistButton
-                            wishlistId={wishlist.id}
-                            wishlistTitle={wishlist.title}
-                            variant="icon"
-                        />
-                    )}
+                    <View style={styles.actionGroup}>
+                        {wishlist && (
+                            <ShareWishlistButton
+                                wishlistId={wishlist.id}
+                                wishlistTitle={wishlist.title}
+                                variant="icon"
+                            />
+                        )}
 
-                    {isOwner && (
-                        <>
-                            <TouchableOpacity
-                                style={[styles.headerButton, isReordering && styles.activeButton]}
-                                onPress={toggleReorder}
-                            >
-                                <ArrowUpDown size={24} color={isReordering ? COLORS.primary : COLORS.dark} />
-                            </TouchableOpacity>
+                        {isOwner && (
+                            <>
+                                <TouchableOpacity
+                                    style={[styles.headerButton, isReordering && styles.activeButton]}
+                                    onPress={toggleReorder}
+                                >
+                                    <ArrowUpDown size={22} color={isReordering ? COLORS.primary : textColor} />
+                                </TouchableOpacity>
 
-                            <TouchableOpacity
-                                style={styles.headerButton}
-                                onPress={() => setShowThemeSelector(true)}
-                            >
-                                <Palette size={24} color={COLORS.dark} />
-                            </TouchableOpacity>
+                                <TouchableOpacity
+                                    style={styles.headerButton}
+                                    onPress={() => setShowThemeSelector(true)}
+                                >
+                                    <Palette size={22} color={textColor} />
+                                </TouchableOpacity>
 
-                            <TouchableOpacity
-                                style={[styles.headerButton, { backgroundColor: COLORS.error + '10' }]}
-                                onPress={() => setWishlistDeleteDialogVisible(true)}
-                            >
-                                <Trash2 size={24} color={COLORS.error} />
-                            </TouchableOpacity>
-                        </>
-                    )}
-                </View>
-
-                <View style={styles.titleContainer}>
-                    <Text style={[styles.title, { color: textColor }]}>
-                        {currentTheme.emoji} {wishlist?.title}
-                    </Text>
-
-                    <View style={styles.badges}>
-                        <View style={[styles.badge, { backgroundColor: 'rgba(255,255,255,0.2)' }]}>
-                            <Text style={[styles.badgeText, { color: textColor }]}>{wishlist?.type}</Text>
-                        </View>
-
-                        <View style={[styles.badge, { backgroundColor: 'rgba(255,255,255,0.2)' }]}>
-                            <Text style={[styles.badgeText, { color: textColor }]}>{wishlist?.privacy}</Text>
-                        </View>
+                                <TouchableOpacity
+                                    style={[styles.headerButton, { backgroundColor: 'rgba(239, 68, 68, 0.2)' }]}
+                                    onPress={() => setWishlistDeleteDialogVisible(true)}
+                                >
+                                    <Trash2 size={22} color={COLORS.error} />
+                                </TouchableOpacity>
+                            </>
+                        )}
                     </View>
                 </View>
 
-                {wishlist?.description && (
-                    <Text style={[styles.description, { color: subTextColor }]}>{wishlist.description}</Text>
-                )}
-
-                {wishlist?.due_date && (
-                    <View style={styles.dateContainer}>
-                        <Clock size={14} color={subTextColor} />
-                        <Text style={[styles.dateText, { color: subTextColor }]}>
-                            {new Date(wishlist.due_date).toLocaleDateString()}
+                <View style={styles.cleanHeaderContent}>
+                    <View style={styles.emojiContainer}>
+                        <Text style={styles.bigEmoji}>{currentTheme.emoji}</Text>
+                    </View>
+                    <View style={styles.titleInfo}>
+                        <Text style={[styles.cleanTitle, { color: textColor }]}>
+                            {wishlist?.title}
                         </Text>
+                        {wishlist?.description && (
+                            <Text style={[styles.cleanDescription, { color: subTextColor }]} numberOfLines={2}>
+                                {wishlist.description}
+                            </Text>
+                        )}
                     </View>
-                )}
+                </View>
+
+                {/* Progress Card Section */}
+                <View style={[styles.progressCard, { backgroundColor: currentTheme.template === 'minimal' ? COLORS.gray[50] : 'rgba(255,255,255,0.15)' }]}>
+                    <View style={styles.progressHeader}>
+                        <Text style={[styles.progressLabel, { color: subTextColor }]}>Progress</Text>
+                        <StatusBadge
+                            label={`${completedItems}/${totalItems} items`}
+                            variant={progress === 100 ? "success" : "purple"}
+                        />
+                    </View>
+                    <View style={[styles.cleanProgressBarContainer, { backgroundColor: currentTheme.template === 'minimal' ? COLORS.white : 'rgba(255,255,255,0.2)' }]}>
+                        <View
+                            style={[
+                                styles.cleanProgressBarFill,
+                                {
+                                    width: `${progress}%`,
+                                    backgroundColor: currentTheme.template === 'minimal' ? currentTheme.primaryColor : COLORS.white,
+                                }
+                            ]}
+                        />
+                    </View>
+                </View>
             </HeaderWrapper>
         );
     };
+
+    const ListHeader = () => (
+        <View style={styles.listHeader}>
+            {renderHeader()}
+        </View>
+    );
 
     const renderEmpty = () => {
         if (loading) return null;
 
         return (
-            <View style={styles.emptyState}>
-                <Gift size={48} color={COLORS.gray[300]} />
-                <Text style={styles.emptyText}>No wishes yet</Text>
-
-                {isOwner && (
-                    <Text style={styles.emptySubtext}>
-                        Start adding items to your wishlist!
-                    </Text>
-                )}
-            </View>
+            <EmptyState
+                emoji="🎁"
+                title="No items yet"
+                description="Start adding items to your wishlist to share it with friends!"
+                actionLabel={isOwner ? "Add Item" : undefined}
+                onAction={isOwner ? () => router.push(`/wishlists/${id}/add-item`) : undefined}
+            />
         );
     };
 
@@ -651,7 +564,7 @@ export default function WishlistDetailScreen() {
                 data={items}
                 renderItem={renderItem}
                 keyExtractor={(item, index) => `${item.id}-${index}`}
-                ListHeaderComponent={renderHeader}
+                ListHeaderComponent={ListHeader}
                 ListEmptyComponent={renderEmpty}
                 contentContainerStyle={{ paddingBottom: 100 }}
                 onEndReached={handleLoadMore}
@@ -725,224 +638,107 @@ const styles = StyleSheet.create({
         width: 40,
         height: 40,
         borderRadius: 20,
-        backgroundColor: COLORS.white,
+        backgroundColor: 'rgba(255,255,255,0.2)',
         justifyContent: 'center',
         alignItems: 'center',
-        marginLeft: SPACING.md,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.1,
-        shadowRadius: 4,
-        elevation: 3,
+    },
+    actionGroup: {
+        flexDirection: 'row',
+        gap: SPACING.sm,
+        alignItems: 'center',
+    },
+    headerActions: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        paddingHorizontal: SPACING.lg,
+        paddingTop: 60,
+        paddingBottom: SPACING.md,
+    },
+    headerContent: {
+        paddingBottom: SPACING.xl,
+    },
+    cleanHeaderContent: {
+        flexDirection: 'row',
+        paddingHorizontal: SPACING.xl,
+        paddingVertical: SPACING.xl,
+        alignItems: 'center',
+        gap: SPACING.lg,
+    },
+    emojiContainer: {
+        width: 80,
+        height: 80,
+        borderRadius: BORDER_RADIUS.xxl,
+        backgroundColor: 'rgba(255,255,255,0.2)',
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    bigEmoji: {
+        fontSize: 48,
+    },
+    titleInfo: {
+        flex: 1,
+    },
+    cleanTitle: {
+        fontSize: FONT_SIZES.xxxl,
+        fontWeight: '800',
+        marginBottom: 4,
+    },
+    cleanDescription: {
+        fontSize: FONT_SIZES.md,
+        opacity: 0.9,
+    },
+    progressCard: {
+        marginHorizontal: SPACING.lg,
+        padding: SPACING.lg,
+        borderRadius: BORDER_RADIUS.xxl,
+        marginBottom: SPACING.xl,
+    },
+    progressHeader: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        marginBottom: 12,
+    },
+    progressLabel: {
+        fontSize: FONT_SIZES.sm,
+        fontWeight: '600',
+    },
+    progressValue: {
+        fontSize: FONT_SIZES.sm,
+        fontWeight: '700',
+    },
+    cleanProgressBarContainer: {
+        height: 10,
+        borderRadius: 5,
+        overflow: 'hidden',
+    },
+    cleanProgressBarFill: {
+        height: '100%',
+        borderRadius: 5,
+    },
+    listHeader: {
+        backgroundColor: 'transparent',
+    },
+    itemsToolbar: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        paddingHorizontal: SPACING.xl,
+        paddingVertical: SPACING.md,
+        backgroundColor: COLORS.light,
+        borderTopLeftRadius: BORDER_RADIUS.xxl,
+        borderTopRightRadius: BORDER_RADIUS.xxl,
+        marginTop: -BORDER_RADIUS.xxl,
+    },
+    itemsTitle: {
+        fontSize: FONT_SIZES.lg,
+        fontWeight: '700',
+        color: COLORS.dark,
     },
     activeButton: {
         backgroundColor: COLORS.primary + '20',
         borderColor: COLORS.primary,
         borderWidth: 1,
-    },
-    headerActions: {
-        flexDirection: 'row',
-        gap: SPACING.sm,
-        marginRight: SPACING.md,
-    },
-    headerContent: {
-        padding: SPACING.lg,
-        paddingTop: 60,
-        backgroundColor: COLORS.white,
-        borderBottomLeftRadius: BORDER_RADIUS.xl,
-        borderBottomRightRadius: BORDER_RADIUS.xl,
-        marginBottom: SPACING.md,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.05,
-        shadowRadius: 8,
-        elevation: 2,
-    },
-    titleContainer: {
-        marginBottom: SPACING.sm,
-    },
-    title: {
-        fontSize: FONT_SIZES.xxxl,
-        fontWeight: '700',
-        marginBottom: SPACING.sm,
-    },
-    badges: {
-        flexDirection: 'row',
-        gap: SPACING.sm,
-        marginRight: SPACING.md,
-    },
-    badge: {
-        backgroundColor: COLORS.primary + '20',
-        paddingHorizontal: SPACING.md,
-        paddingVertical: 4,
-        borderRadius: BORDER_RADIUS.full,
-    },
-    badgeText: {
-        fontSize: FONT_SIZES.xs,
-        fontWeight: '600',
-        textTransform: 'capitalize',
-    },
-    description: {
-        fontSize: FONT_SIZES.md,
-        color: COLORS.gray[600],
-        lineHeight: 24,
-        marginBottom: SPACING.md,
-    },
-    dateContainer: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: SPACING.xs,
-    },
-    dateText: {
-        fontSize: FONT_SIZES.sm,
-        color: COLORS.gray[500],
-    },
-    list: {
-        gap: SPACING.md,
-    },
-    itemCard: {
-        padding: SPACING.md,
-        marginHorizontal: SPACING.lg,
-        marginBottom: SPACING.md,
-    },
-    itemContent: {
-        flexDirection: 'row',
-        gap: SPACING.md,
-    },
-    itemImageContainer: {
-        width: 80,
-        height: 80,
-        borderRadius: BORDER_RADIUS.md,
-        overflow: 'hidden',
-        backgroundColor: COLORS.gray[100],
-    },
-    itemImage: {
-        width: '100%',
-        height: '100%',
-    },
-    placeholderImage: {
-        flex: 1,
-        justifyContent: 'center',
-        alignItems: 'center',
-    },
-    itemDetails: {
-        flex: 1,
-        justifyContent: 'center',
-    },
-    itemTitle: {
-        fontSize: FONT_SIZES.md,
-        fontWeight: '600',
-        color: COLORS.dark,
-        marginBottom: 4,
-    },
-    itemPrice: {
-        fontSize: FONT_SIZES.md,
-        fontWeight: '700',
-        color: COLORS.primary,
-        marginBottom: 8,
-    },
-    itemMeta: {
-        flexDirection: 'row',
-        gap: SPACING.sm,
-    },
-    priorityBadge: {
-        paddingHorizontal: 8,
-        paddingVertical: 2,
-        borderRadius: 4,
-    },
-    priorityText: {
-        fontSize: 10,
-        fontWeight: '600',
-        textTransform: 'capitalize',
-    },
-    purchasedBadge: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: 4,
-        backgroundColor: COLORS.success + '20',
-        paddingHorizontal: 8,
-        paddingVertical: 2,
-        borderRadius: 4,
-    },
-    purchasedText: {
-        fontSize: 10,
-        fontWeight: '600',
-        color: COLORS.success,
-    },
-    emptyState: {
-        alignItems: 'center',
-        padding: SPACING.xxl,
-        gap: SPACING.md,
-    },
-    emptyText: {
-        fontSize: FONT_SIZES.lg,
-        fontWeight: '600',
-        color: COLORS.gray[400],
-    },
-    emptySubtext: {
-        fontSize: FONT_SIZES.sm,
-        color: COLORS.gray[400],
-    },
-    itemsRow: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        marginTop: SPACING.sm,
-    },
-    deleteIconButton: {
-        padding: 4,
-    },
-    reorderControls: {
-        justifyContent: 'center',
-        paddingRight: SPACING.sm,
-        gap: SPACING.xs,
-    },
-    reorderButton: {
-        padding: 4,
-    },
-    cagnotteBadge: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: 4,
-        backgroundColor: COLORS.primary + '20',
-        paddingHorizontal: 8,
-        paddingVertical: 2,
-        borderRadius: 4,
-    },
-    cagnotteBadgeText: {
-        fontSize: 10,
-        fontWeight: '600',
-        color: COLORS.primary,
-    },
-    cagnotteContainer: {
-        marginTop: SPACING.md,
-        padding: SPACING.sm,
-        backgroundColor: COLORS.gray[50],
-        borderRadius: BORDER_RADIUS.sm,
-    },
-    progressBarBackground: {
-        height: 8,
-        backgroundColor: COLORS.gray[200],
-        borderRadius: 4,
-        overflow: 'hidden',
-        marginBottom: SPACING.xs,
-    },
-    progressBarFill: {
-        height: '100%',
-        backgroundColor: COLORS.primary,
-    },
-    cagnotteDetails: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-    },
-    cagnotteAmount: {
-        fontSize: FONT_SIZES.xs,
-        color: COLORS.gray[600],
-    },
-    cagnottePercent: {
-        fontSize: FONT_SIZES.xs,
-        fontWeight: '700',
-        color: COLORS.primary,
     },
     fab: {
         position: 'absolute',

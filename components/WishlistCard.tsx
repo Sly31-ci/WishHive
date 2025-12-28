@@ -26,6 +26,10 @@ export const WishlistCard = React.memo(({ wishlist, onPress, onLongPress, onDele
         ? (wishlist.theme as unknown as WishlistTheme)
         : DEFAULT_THEME;
 
+    const totalItems = (wishlist as any).total_items || 0;
+    const purchasedItems = (wishlist as any).purchased_items || 0;
+    const progress = totalItems > 0 ? (purchasedItems / totalItems) * 100 : 0;
+
     const HeaderBackground = ({ children }: { children: React.ReactNode }) => {
         if (wishlistTheme.gradient) {
             return (
@@ -58,9 +62,14 @@ export const WishlistCard = React.memo(({ wishlist, onPress, onLongPress, onDele
                     <HeaderBackground>
                         <View style={styles.headerContent}>
                             <Text style={styles.emoji}>{wishlistTheme.emoji}</Text>
-                            <Text style={styles.title} numberOfLines={1}>
-                                {wishlist.title}
-                            </Text>
+                            <View style={styles.titleContainer}>
+                                <Text style={styles.title} numberOfLines={1}>
+                                    {wishlist.title}
+                                </Text>
+                                <Text style={styles.itemCountText}>
+                                    {totalItems} item{totalItems > 1 ? 's' : ''}
+                                </Text>
+                            </View>
                         </View>
                     </HeaderBackground>
 
@@ -73,10 +82,31 @@ export const WishlistCard = React.memo(({ wishlist, onPress, onLongPress, onDele
 
                 <View style={styles.body}>
                     {wishlist.description && (
-                        <Text style={styles.description} numberOfLines={2}>
+                        <Text style={styles.description} numberOfLines={1}>
                             {wishlist.description}
                         </Text>
                     )}
+
+                    {/* Progress Bar Section */}
+                    <View style={styles.progressSection}>
+                        <View style={styles.progressHeader}>
+                            <Text style={styles.progressLabel}>Progress</Text>
+                            <Text style={[styles.progressValue, { color: wishlistTheme.primaryColor }]}>
+                                {Math.round(progress)}%
+                            </Text>
+                        </View>
+                        <View style={styles.progressBarContainer}>
+                            <View
+                                style={[
+                                    styles.progressBarFill,
+                                    {
+                                        width: `${progress}%`,
+                                        backgroundColor: wishlistTheme.primaryColor,
+                                    }
+                                ]}
+                            />
+                        </View>
+                    </View>
 
                     <View style={styles.footer}>
                         <View style={styles.infoRow}>
@@ -132,10 +162,13 @@ const styles = StyleSheet.create({
     headerContent: {
         flexDirection: 'row',
         alignItems: 'center',
-        gap: SPACING.sm,
+        gap: SPACING.md,
     },
     emoji: {
-        fontSize: 24,
+        fontSize: 32,
+    },
+    titleContainer: {
+        flex: 1,
     },
     title: {
         fontSize: FONT_SIZES.lg,
@@ -144,7 +177,12 @@ const styles = StyleSheet.create({
         textShadowColor: 'rgba(0,0,0,0.3)',
         textShadowOffset: { width: 0, height: 1 },
         textShadowRadius: 2,
-        flex: 1,
+    },
+    itemCountText: {
+        fontSize: FONT_SIZES.xs,
+        color: 'rgba(255,255,255,0.8)',
+        fontWeight: '500',
+        marginTop: 2,
     },
     badgesOverlay: {
         position: 'absolute',
@@ -172,6 +210,34 @@ const styles = StyleSheet.create({
         fontSize: FONT_SIZES.sm,
         color: COLORS.gray[600],
         marginBottom: SPACING.md,
+    },
+    progressSection: {
+        marginBottom: SPACING.md,
+    },
+    progressHeader: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        marginBottom: 6,
+    },
+    progressLabel: {
+        fontSize: FONT_SIZES.xs,
+        color: COLORS.gray[500],
+        fontWeight: '600',
+    },
+    progressValue: {
+        fontSize: FONT_SIZES.xs,
+        fontWeight: '700',
+    },
+    progressBarContainer: {
+        height: 8,
+        backgroundColor: COLORS.gray[100],
+        borderRadius: 4,
+        overflow: 'hidden',
+    },
+    progressBarFill: {
+        height: '100%',
+        borderRadius: 4,
     },
     footer: {
         flexDirection: 'row',
