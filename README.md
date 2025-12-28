@@ -19,6 +19,8 @@ Become the reference social app for creating, sharing, and purchasing wishlists 
 - **SEO & Social Previews**: Rich OG meta-tags for beautiful social sharing
 - Purchase verification system to prevent spoiling
 - Anonymous viewing and messaging options
+- **Live Interactions**: Real-time reactions and messages
+- **Real-time Notifications**: Instant alerts for views and interactions
 - Marketplace with seller integration
 - Gamification with points, badges, and levels
 
@@ -175,7 +177,7 @@ This creates an optimized build in the `dist/` directory.
 3. Add products from marketplace or custom items
 4. **Collaborate**: Chat with friends or set up a Group Gift (Cagnotte)
 5. Share wishlist via link/QR code
-6. Monitor views, reactions, and purchases
+6. Monitor views, reactions, and purchases with **Live Notifications**
 7. Earn rewards and unlock badges
 
 ### Buyer

@@ -55,6 +55,7 @@ Ce document trace la feuille de route du développement de WishHive, de la conce
 ## 🔵 Phase 7 : Intelligence & Scale (Futur)
 - [ ] **AI Gift Stylist** : Suggestions de cadeaux basées sur le profil
 - [ ] **Browser Extension** : Ajouter des items depuis n'importe quel site
+- [x] **Alertes Temps-Réel** : Notifications in-app pour vues et interactions
 - [ ] **Notifications Push** : Firebase Cloud Messaging (FCM) integration
 - [ ] **App Stores** : Soumission finale (App Store & Play Store)
 

@@ -25,7 +25,7 @@ WishHive est une application hybride composée d'une application mobile cross-pl
 - **Database** : PostgreSQL (15+ tables)
 - **Authentication** : Supabase Auth (OTP, Email, Social)
 - **Storage** : Supabase Storage (Produits, Avatars)
-- **Real-time** : Supabase Realsync (Chat, Cagnotte)
+- **Real-time** : Supabase Realtime (Chat, Cagnotte, Live Interactions, Notifications)
 
 ### Sécurité
 - Row Level Security (RLS) sur TOUTES les tables (Public read-only pour wishlists publiques)
