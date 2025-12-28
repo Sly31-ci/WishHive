@@ -1,12 +1,25 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { View, Text as RNText, StyleSheet, TouchableOpacity } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import { Calendar, Eye, Trash2, Package, Heart } from 'lucide-react-native';
 import { Card } from './Card';
-import { COLORS, SPACING, FONT_SIZES, BORDER_RADIUS } from '@/constants/theme';
+import { theme } from '@/theme';
+import { Body, Caption } from './Text';
+import Icon from './Icon';
 import { Database } from '@/types/database';
 import { WishlistTheme, DEFAULT_THEME } from '@/constants/wishlistThemes';
 import { useTheme } from '@/contexts/ThemeContext';
+import Colors from '@/theme/colors';
+
+// Backward compatibility
+const COLORS = {
+    ...Colors.light,
+    white: Colors.brand.pureWhite,
+    gray: Colors.gray,
+    dark: Colors.light.textPrimary,
+};
+const SPACING = theme.spacing;
+const FONT_SIZES = theme.typography.sizes;
+const BORDER_RADIUS = theme.borderRadius;
 
 type Wishlist = Database['public']['Tables']['wishlists']['Row'];
 
@@ -63,44 +76,44 @@ export const WishlistCard = React.memo(({ wishlist, onPress, onLongPress, onDele
                 <View style={styles.headerContainer}>
                     <HeaderBackground>
                         <View style={styles.headerContent}>
-                            <Text style={styles.emoji}>{wishlistTheme.emoji}</Text>
+                            <RNText style={styles.emoji}>{wishlistTheme.emoji}</RNText>
                             <View style={styles.titleContainer}>
-                                <Text style={styles.title} numberOfLines={1}>
+                                <RNText style={styles.title} numberOfLines={1}>
                                     {wishlist.title}
-                                </Text>
-                                <Text style={styles.itemCountText}>
+                                </RNText>
+                                <Caption color="tertiary" numberOfLines={1}>
                                     {totalItems} item{totalItems > 1 ? 's' : ''}
-                                </Text>
+                                </Caption>
                             </View>
                         </View>
                     </HeaderBackground>
 
                     <View style={styles.badgesOverlay}>
                         <View style={styles.badge}>
-                            <Text style={styles.badgeText}>{wishlist.privacy}</Text>
+                            <Caption style={styles.badgeText}>{wishlist.privacy}</Caption>
                         </View>
                     </View>
                 </View>
 
                 <View style={styles.body}>
                     {wishlist.description && (
-                        <Text style={styles.description} numberOfLines={1}>
+                        <Body color="secondary" numberOfLines={1} style={styles.description}>
                             {wishlist.description}
-                        </Text>
+                        </Body>
                     )}
 
                     {/* Progress & Item Count Section */}
                     <View style={styles.statsSection}>
                         <View style={styles.statsRow}>
                             <View style={styles.itemBadge}>
-                                <Package size={14} color={wishlistTheme.primaryColor} />
-                                <Text style={[styles.itemBadgeText, { color: wishlistTheme.primaryColor }]}>
+                                <Icon name="Package" size={14} customColor={wishlistTheme.primaryColor} />
+                                <Caption customColor={wishlistTheme.primaryColor}>
                                     {totalItems} souhait{totalItems > 1 ? 's' : ''}
-                                </Text>
+                                </Caption>
                             </View>
-                            <Text style={[styles.progressValue, { color: wishlistTheme.primaryColor }]}>
+                            <Caption customColor={wishlistTheme.primaryColor}>
                                 {purchasedItems}/{totalItems} ({Math.round(progress)}%)
-                            </Text>
+                            </Caption>
                         </View>
                         <View style={styles.progressBarContainer}>
                             <View
@@ -119,22 +132,22 @@ export const WishlistCard = React.memo(({ wishlist, onPress, onLongPress, onDele
                         <View style={styles.infoRow}>
                             {wishlist.due_date && (
                                 <View style={styles.infoItem}>
-                                    <Calendar size={14} color={COLORS.gray[500]} />
-                                    <Text style={styles.infoText}>
+                                    <Icon name="Calendar" size={14} variant="subtle" />
+                                    <Caption color="tertiary">
                                         {new Date(wishlist.due_date).toLocaleDateString()}
-                                    </Text>
+                                    </Caption>
                                 </View>
                             )}
                             <View style={styles.infoItem}>
-                                <Eye size={14} color={COLORS.gray[500]} />
-                                <Text style={styles.infoText}>{wishlist.view_count}</Text>
+                                <Icon name="Eye" size={14} variant="subtle" />
+                                <Caption color="tertiary">{wishlist.view_count}</Caption>
                             </View>
                             {(wishlist as any).reactions_summary && Object.entries((wishlist as any).reactions_summary).length > 0 && (
                                 <View style={styles.reactionsContainer}>
                                     {Object.entries((wishlist as any).reactions_summary).map(([emoji, count]) => (
                                         <View key={emoji} style={styles.reactionBadge}>
-                                            <Text style={styles.reactionEmoji}>{emoji}</Text>
-                                            <Text style={styles.reactionCount}>{count as number}</Text>
+                                            <RNText style={styles.reactionEmoji}>{emoji}</RNText>
+                                            <Caption color="tertiary">{count as number}</Caption>
                                         </View>
                                     ))}
                                 </View>
@@ -149,9 +162,9 @@ export const WishlistCard = React.memo(({ wishlist, onPress, onLongPress, onDele
                                     hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
                                 >
                                     {currentUserReaction ? (
-                                        <Text style={styles.userReactionEmoji}>{currentUserReaction}</Text>
+                                        <RNText style={styles.userReactionEmoji}>{currentUserReaction}</RNText>
                                     ) : (
-                                        <Heart size={16} color={wishlistTheme.primaryColor} />
+                                        <Icon name="Heart" size={16} customColor={wishlistTheme.primaryColor} />
                                     )}
                                 </TouchableOpacity>
                             )}
@@ -162,7 +175,7 @@ export const WishlistCard = React.memo(({ wishlist, onPress, onLongPress, onDele
                                     onPress={onDelete}
                                     hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
                                 >
-                                    <Trash2 size={16} color={appTheme.error} />
+                                    <Icon name="Trash2" size={16} variant="error" />
                                 </TouchableOpacity>
                             )}
                         </View>

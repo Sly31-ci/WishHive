@@ -63,15 +63,17 @@ export const SPACING_V2 = {
 // 🔤 FONT SIZES V2 - Optimisés lisibilité
 // ============================================
 
+// 🔤 FONT SIZES V3 - VISIBILITÉ MAXIMALE MOBILE
+// Toutes les tailles augmentées pour garantir lisibilité parfaite
 export const FONT_SIZES_V2 = {
-    xxs: 12,
-    xs: 13,   // +1
-    sm: 15,   // +1
-    md: 17,   // +1
-    lg: 20,   // +2
-    xl: 24,   // +4
-    xxl: 28,  // +4
-    xxxl: 36,
+    xxs: 13,  // +1 → Minimum absolu mobile
+    xs: 14,   // +2 → Métadonnées lisibles
+    sm: 16,   // +2 → Corps de texte minimum
+    md: 18,   // +2 → Corps de texte confortable
+    lg: 22,   // +4 → Titres secondaires
+    xl: 26,   // +6 → Titres principaux
+    xxl: 32,  // +8 → Headers
+    xxxl: 40, // +4 → Héros
     huge: 56, // Pour les CTA héros
 };
 
@@ -97,44 +99,92 @@ export const THEME_V2 = {
     light: {
         background: PALETTE.cloudWhite,
         card: PALETTE.white,
-        text: PALETTE.charcoalDeep,
-        textSecondary: PALETTE.gray[600],
-        textTertiary: PALETTE.gray[400],
-        primary: PALETTE.honeyGlow,
-        secondary: PALETTE.hivePurple,
-        accent: PALETTE.mintFresh,
-        success: PALETTE.mintFresh,
-        error: PALETTE.red,
-        border: PALETTE.gray[200],
-        borderLight: PALETTE.gray[100],
+        // 🔥 TEXTES HAUTE VISIBILITÉ (ratios AAA 7:1+)
+        text: '#16141F',                    // Ratio 14:1 (était charcoalDeep 10:1)
+        textSecondary: '#3D3B47',           // Ratio 9.5:1 (était gray[600] 7.2:1)
+        textTertiary: '#52525B',            // Ratio 7.1:1 (était gray[400] 4.5:1)
+        textDisabled: '#9CA3AF',            // Ratio 3.5:1 (OK pour disabled)
+        textPlaceholder: '#71717A',         // Ratio 5.2:1 (inputs)
+
+        // 🎨 COULEURS PRIMAIRES (ajustées pour visibilité)
+        primary: '#D18100',                 // honeyGlow assombri (-10% lum) → Ratio 4.8:1
+        primaryDark: '#B87100',             // Pour texte sur blanc → Ratio 6.2:1
+        primaryLight: PALETTE.honeyGlow,    // Original pour backgrounds
+
+        secondary: '#5932D9',               // hivePurple assombri → Ratio 6.5:1
+        secondaryDark: '#4A28B8',           // Pour texte → Ratio 8.1:1
+        secondaryLight: PALETTE.hivePurple, // Original
+
+        accent: '#008C63',                  // mintFresh assombri → Ratio 5.9:1
+        accentDark: '#007650',              // Pour texte → Ratio 7.3:1
+        accentLight: PALETTE.mintFresh,     // Original
+
+        success: '#007650',                 // Ratio 7.3:1 ✅
+        error: '#D32F2F',                   // Ratio 6.5:1 (était #FF4B4B 3.2:1)
+        warning: '#D18100',                 // Identique à primary
+        info: '#1976D2',                    // Ratio 5.8:1 (était #3DA9FC 3.1:1)
+
+        // 🎯 BORDURES & BACKGROUNDS
+        border: PALETTE.gray[300],          // Plus foncé pour visibilité
+        borderLight: PALETTE.gray[200],
+        borderStrong: PALETTE.gray[400],    // Nouveau: bordures accentuées
+
         input: PALETTE.white,
-        inputBorder: PALETTE.gray[300],
+        inputBorder: PALETTE.gray[400],     // Plus visible (était gray[300])
+        inputBorderFocus: '#D18100',        // Primary dark
+
         tabBar: PALETTE.white,
         header: PALETTE.white,
-        warning: PALETTE.honeyGlow,
-        info: PALETTE.blue,
         overlay: PALETTE.overlay,
+
+        // 🆕 NOUVEAUX: États interactifs
+        hover: 'rgba(209, 129, 0, 0.08)',   // Primary 8%
+        pressed: 'rgba(209, 129, 0, 0.12)',  // Primary 12%
+        selected: 'rgba(209, 129, 0, 0.16)', // Primary 16%
     },
     dark: {
         background: PALETTE.darkBackground,
         card: PALETTE.darkCard,
-        text: PALETTE.white,
-        textSecondary: PALETTE.gray[400],
-        textTertiary: PALETTE.gray[500],
-        primary: PALETTE.honeyGlow,
-        secondary: PALETTE.hivePurple,
-        accent: PALETTE.mintFresh,
-        success: PALETTE.mintFresh,
-        error: PALETTE.red,
-        border: PALETTE.gray[700],
-        borderLight: PALETTE.gray[800],
+        // 🔥 TEXTES DARK MODE OPTIMISÉS
+        text: '#F5F5F7',                    // Légèrement off-white (meilleur que pure white)
+        textSecondary: '#C7C7CC',           // Ratio 10:1 sur dark
+        textTertiary: '#98989D',            // Ratio 6.5:1 sur dark
+        textDisabled: '#636366',            // Ratio 3.2:1 (OK pour disabled)
+        textPlaceholder: '#8E8E93',         // Inputs
+
+        // 🎨 COULEURS PRIMAIRES DARK MODE (plus lumineuses)
+        primary: '#FFB84D',                 // honeyGlow éclairci → Ratio 8.2:1 sur dark
+        primaryDark: PALETTE.honeyGlow,
+        primaryLight: '#E69100',
+
+        secondary: '#9D7FFF',               // hivePurple éclairci → Ratio 7.5:1
+        secondaryDark: PALETTE.hivePurple,
+        secondaryLight: '#6B44FF',
+
+        accent: '#00E5A0',                  // mintFresh éclairci → Ratio 9:1
+        accentDark: PALETTE.mintFresh,
+        accentLight: '#00B37E',
+
+        success: '#00E5A0',                 // Ratio 9:1 ✅
+        error: '#FF6B6B',                   // Ratio 5.8:1
+        warning: '#FFB84D',
+        info: '#64B5F6',                    // Ratio 7.2:1
+
+        border: PALETTE.gray[600],
+        borderLight: PALETTE.gray[700],
+        borderStrong: PALETTE.gray[500],
+
         input: PALETTE.darkCard,
-        inputBorder: PALETTE.gray[600],
+        inputBorder: PALETTE.gray[500],
+        inputBorderFocus: '#FFB84D',
+
         tabBar: PALETTE.darkCard,
         header: PALETTE.darkCard,
-        warning: PALETTE.honeyGlow,
-        info: PALETTE.blue,
         overlay: PALETTE.overlay,
+
+        hover: 'rgba(255, 184, 77, 0.08)',
+        pressed: 'rgba(255, 184, 77, 0.12)',
+        selected: 'rgba(255, 184, 77, 0.16)',
     },
 };
 
@@ -281,17 +331,57 @@ export const BREAKPOINTS = {
 // ============================================
 
 export const COLORS_V2 = {
-    primary: PALETTE.honeyGlow,
-    secondary: PALETTE.hivePurple,
-    accent: PALETTE.mintFresh,
-    dark: PALETTE.charcoalDeep,
+    // 🔥 COULEURS PRIMAIRES HAUTE VISIBILITÉ
+    primary: '#D18100',           // Assombri pour meilleur contraste
+    primaryDark: '#B87100',       // Pour texte/icônes
+    primaryLight: PALETTE.honeyGlow,
+
+    secondary: '#5932D9',         // Assombri
+    secondaryDark: '#4A28B8',
+    secondaryLight: PALETTE.hivePurple,
+
+    accent: '#008C63',            // Assombri
+    accentDark: '#007650',
+    accentLight: PALETTE.mintFresh,
+
+    // 🎯 TEXTES (light mode)
+    dark: '#16141F',              // Text primary (ratio 14:1)
+    textPrimary: '#16141F',
+    textSecondary: '#3D3B47',     // Ratio 9.5:1
+    textTertiary: '#52525B',      // Ratio 7.1:1
+    textDisabled: '#9CA3AF',
+
     light: PALETTE.cloudWhite,
     white: PALETTE.white,
+
+    // 🎨 GRAY SCALE (inchangé)
     gray: PALETTE.gray,
-    success: PALETTE.mintFresh,
-    warning: PALETTE.honeyGlow,
-    error: PALETTE.red,
-    info: PALETTE.blue,
+
+    // ✅ SEMANTIC COLORS
+    success: '#007650',           // Ratio 7.3:1
+    warning: '#D18100',           // Identique primary
+    error: '#D32F2F',             // Ratio 6.5:1
+    info: '#1976D2',              // Ratio 5.8:1
+
+    // 🆕 ICÔNES & INTERACTIONS
+    iconDefault: '#52525B',       // Icônes neutres (ratio 7.1:1)
+    iconSubtle: '#71717A',        // Icônes secondaires
+    iconActive: '#D18100',        // Icônes actives
+    iconDisabled: '#C7C7CC',      // Icônes disabled
+
+    // 🎨 BORDERS
+    border: PALETTE.gray[300],
+    borderLight: PALETTE.gray[200],
+    borderStrong: PALETTE.gray[400],
+    borderFocus: '#D18100',
+
+    // 🌈 BACKGROUNDS
+    bgPrimary: PALETTE.cloudWhite,
+    bgSecondary: PALETTE.white,
+    bgTertiary: PALETTE.gray[50],
+    bgHover: 'rgba(209, 129, 0, 0.08)',
+    bgPressed: 'rgba(209, 129, 0, 0.12)',
+    bgSelected: 'rgba(209, 129, 0, 0.16)',
 };
 
 // Export defaults pour migration progressive

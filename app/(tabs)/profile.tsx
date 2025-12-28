@@ -38,12 +38,25 @@ import { supabase } from '@/lib/supabase';
 import Button from '@/components/Button';
 import { Card } from '@/components/Card';
 import { Input } from '@/components/Input';
-import {
-    COLORS,
-    SPACING,
-    FONT_SIZES,
-    BORDER_RADIUS,
-} from '@/constants/theme';
+import { useTheme } from '@/contexts/ThemeContext';
+import { theme } from '@/theme';
+import { H1, H2, Body, Caption } from '@/components/Text';
+import Icon from '@/components/Icon';
+import Colors from '@/theme/colors';
+import * as ImagePicker from 'expo-image-picker';
+import { analytics } from '@/lib/analytics';
+import { decode } from 'base64-arraybuffer';
+
+// Backward compatibility
+const COLORS = {
+    ...Colors.light,
+    white: Colors.brand.pureWhite,
+    gray: Colors.gray,
+    dark: Colors.light.textPrimary,
+};
+const SPACING = theme.spacing;
+const FONT_SIZES = theme.typography.sizes;
+const BORDER_RADIUS = theme.borderRadius;
 import { Database } from '@/types/database';
 
 type Badge = Database['public']['Tables']['badges']['Row'];

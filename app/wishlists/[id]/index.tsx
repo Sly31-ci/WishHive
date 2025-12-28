@@ -592,6 +592,14 @@ export default function WishlistDetailScreen() {
 
                     <View style={styles.actionGroup}>
                         {wishlist && (
+                            <TouchableOpacity
+                                style={styles.headerButton}
+                                onPress={() => router.push(`/wishlists/${id}/chat` as any)}
+                            >
+                                <MessageSquare size={22} color={textColor} />
+                            </TouchableOpacity>
+                        )}
+                        {wishlist && (
                             <ShareWishlistButton
                                 wishlistId={wishlist.id}
                                 wishlistTitle={wishlist.title}

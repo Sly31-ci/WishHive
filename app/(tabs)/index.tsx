@@ -10,7 +10,7 @@ import {
   Alert,
 } from 'react-native';
 import { router } from 'expo-router';
-import { Bell, TrendingUp, Sparkles, Plus, Heart, MessageSquare } from 'lucide-react-native';
+import { Bell, TrendingUp, Sparkles, Heart, MessageSquare } from 'lucide-react-native';
 import Animated, { FadeInDown, FadeIn } from 'react-native-reanimated';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/lib/supabase';
@@ -20,14 +20,23 @@ import { Card } from '@/components/Card';
 import { WishlistCard } from '@/components/WishlistCard';
 import { EmptyState } from '@/components/EmptyState';
 import { AnonymousInteraction } from '@/components/AnonymousInteraction';
-import {
-  COLORS,
-  SPACING,
-  FONT_SIZES,
-  BORDER_RADIUS,
-  SHADOWS,
-} from '@/constants/theme';
+import { theme } from '@/theme';
+import { Text as DSText, H1, H2, H3, Body, Caption } from '@/components/Text';
+import Icon from '@/components/Icon';
 import { Database } from '@/types/database';
+import Colors from '@/theme/colors';
+
+// Backward compatibility aliases
+const COLORS = {
+  ...Colors.light,
+  white: Colors.brand.pureWhite,
+  gray: Colors.gray,
+  dark: Colors.light.textPrimary,
+};
+const SPACING = theme.spacing;
+const FONT_SIZES = theme.typography.sizes;
+const BORDER_RADIUS = theme.borderRadius;
+const SHADOWS = theme.shadows;
 
 type Wishlist = Database['public']['Tables']['wishlists']['Row'];
 
@@ -165,8 +174,8 @@ export default function HomeScreen() {
       {/* Header Simplifié - 2 éléments max */}
       <View style={styles.header}>
         <View style={styles.headerLeft}>
-          <Text style={styles.greeting}>Hi, {profile?.username}! 👋</Text>
-          <Text style={styles.subtitle}>What wishes will you make today?</Text>
+          <H2 color="primary">Hi, {profile?.username}! 👋</H2>
+          <Body color="secondary">What wishes will you make today?</Body>
         </View>
         <TouchableOpacity
           onPress={() => {
@@ -175,7 +184,7 @@ export default function HomeScreen() {
           }}
           style={styles.notificationButton}
         >
-          <Bell size={24} color={COLORS.dark} />
+          <Icon name="Bell" size="md" variant="default" />
           {unreadCount > 0 && (
             <View style={styles.notificationBadge}>
               <Text style={styles.notificationBadgeText}>
@@ -193,8 +202,8 @@ export default function HomeScreen() {
           <RefreshControl
             refreshing={refreshing}
             onRefresh={onRefresh}
-            tintColor={COLORS.primary}
-            colors={[COLORS.primary]}
+            tintColor={theme.colors.brand.honeyGlow}
+            colors={[theme.colors.brand.honeyGlow]}
           />
         }
       >
@@ -206,12 +215,11 @@ export default function HomeScreen() {
               onPress={() => router.push('/wishlists/create')}
               size="hero"
               fullWidth
-              icon={<Plus size={28} color="#FFFFFF" />}
               iconPosition="left"
             />
-            <Text style={styles.heroHint}>
+            <Caption color="secondary" centered>
               Start your first wishlist in seconds ✨
-            </Text>
+            </Caption>
           </View>
         </Animated.View>
 
@@ -220,14 +228,14 @@ export default function HomeScreen() {
           <View style={styles.levelSection}>
             <View style={styles.levelHeader}>
               <View style={styles.levelInfo}>
-                <Sparkles size={18} color={COLORS.primary} />
-                <Text style={styles.levelText}>
+                <Icon name="Sparkles" size="sm" variant="active" />
+                <Body color="secondary">
                   Level {profile?.level || 1} • {profile?.points || 0} pts
-                </Text>
+                </Body>
               </View>
-              <Text style={styles.levelProgress}>
+              <Caption color="tertiary">
                 {pointsToNextLevel} to next
-              </Text>
+              </Caption>
             </View>
             <View style={styles.progressBar}>
               <Animated.View
@@ -245,8 +253,8 @@ export default function HomeScreen() {
         <Animated.View entering={FadeIn.delay(300)}>
           <View style={styles.section}>
             <View style={styles.sectionHeader}>
-              <TrendingUp size={20} color={COLORS.primary} />
-              <Text style={styles.sectionTitle}>Trending Now</Text>
+              <Icon name="TrendingUp" size="sm" variant="active" />
+              <H3 color="primary">Trending Now</H3>
             </View>
 
             {loading ? (
@@ -284,15 +292,6 @@ export default function HomeScreen() {
           </View>
         </Animated.View>
       </ScrollView>
-
-      {/* Floating Action Button */}
-      <TouchableOpacity
-        style={styles.fab}
-        onPress={() => router.push('/wishlists/create')}
-        activeOpacity={0.8}
-      >
-        <Plus size={28} color="#FFFFFF" />
-      </TouchableOpacity>
 
       <AnonymousInteraction
         visible={reactionModalVisible}
@@ -440,22 +439,6 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     color: COLORS.gray[500],
     fontSize: FONT_SIZES.sm,
-  },
-  fab: {
-    position: 'absolute',
-    bottom: SPACING.xl,
-    right: SPACING.lg,
-    width: 64,
-    height: 64,
-    borderRadius: 32,
-    backgroundColor: COLORS.primary,
-    justifyContent: 'center',
-    alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 8,
   },
   emptyCard: {
     marginHorizontal: SPACING.lg,

@@ -19,8 +19,8 @@ Become the reference social app for creating, sharing, and purchasing wishlists 
 - **SEO & Social Previews**: Rich OG meta-tags for beautiful social sharing
 - Purchase verification system to prevent spoiling
 - Anonymous viewing and messaging options
-- **Live Interactions**: Real-time reactions and messages
-- **Real-time Notifications**: Instant alerts for views and interactions
+- **Live Interactions V2** : Discussion live, réponses ciblées, mentions @ et réactions emojis.
+- **Real-time Notifications** : Instant alerts for views, messages, mentions, and replies.
 - Marketplace with seller integration
 - Gamification with points, badges, and levels
 

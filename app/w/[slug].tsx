@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, FlatList, TouchableOpacity, Alert, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet, FlatList, TouchableOpacity, Alert, ActivityIndicator, Image as RNImage, Linking } from 'react-native';
 import { useLocalSearchParams, router, Stack } from 'expo-router';
 import Head from 'expo-router/head';
 import { Image } from 'expo-image';
@@ -9,10 +9,11 @@ import { AnonymousInteraction } from '@/components/AnonymousInteraction';
 import { Card } from '@/components/Card';
 import { COLORS, SPACING, FONT_SIZES, BORDER_RADIUS } from '@/constants/theme';
 import { Database } from '@/types/database';
-import { MessageCircle, Heart, Download } from 'lucide-react-native';
+import { MessageCircle, Heart, Download, MessageSquare } from 'lucide-react-native';
 import { WishlistTheme, DEFAULT_THEME } from '@/constants/wishlistThemes';
-import * as Linking from 'expo-linking';
+import * as ExpoLinking from 'expo-linking';
 import * as Haptics from 'expo-haptics';
+import { useAuth } from '@/contexts/AuthContext';
 import { getPriorityLabel, getPriorityColor } from '@/constants/priorities';
 import { SkeletonLoader } from '@/components/SkeletonLoader';
 
@@ -34,6 +35,8 @@ export default function PublicWishlistScreen() {
     const [interactionModalVisible, setInteractionModalVisible] = useState(false);
     const [interactionType, setInteractionType] = useState<'reaction' | 'comment'>('reaction');
     const [activeItem, setActiveItem] = useState<string | null>(null);
+    const [currentUserReaction, setCurrentUserReaction] = useState<string | null>(null);
+    const { profile } = useAuth();
 
     // Pagination State
     const [pagination, setPagination] = useState({ page: 0, hasMore: true, loadingMore: false });
@@ -62,6 +65,18 @@ export default function PublicWishlistScreen() {
 
                 if (wishlistError) throw wishlistError;
                 setWishlist(wishlistData);
+
+                // Check for current user reaction
+                if (profile) {
+                    const { data: interaction } = await supabase
+                        .from('wishlist_interactions')
+                        .select('content')
+                        .eq('wishlist_id', wishlistData.id)
+                        .eq('author_id', profile.id)
+                        .eq('interaction_type', 'reaction')
+                        .maybeSingle();
+                    if (interaction) setCurrentUserReaction(interaction.content);
+                }
 
                 // Increment view count
                 await (supabase.rpc as any)('increment_view_count', { p_wishlist_id: wishlistData.id });
@@ -378,6 +393,14 @@ export default function PublicWishlistScreen() {
                                 >
                                     <Heart size={24} color={COLORS.white} />
                                 </TouchableOpacity>
+                                {profile && (
+                                    <TouchableOpacity
+                                        style={[styles.fab, { backgroundColor: COLORS.white, borderWidth: 1, borderColor: themeColor }]}
+                                        onPress={() => router.push(`/wishlists/${wishlist?.id}/chat` as any)}
+                                    >
+                                        <MessageSquare size={24} color={themeColor} />
+                                    </TouchableOpacity>
+                                )}
                             </View>
                         </View>
                         {pagination.loadingMore && (
@@ -393,6 +416,7 @@ export default function PublicWishlistScreen() {
                 onSubmit={handleInteractionSubmit}
                 initialType={interactionType}
                 wishlistThemeColor={themeColor}
+                hasReacted={!!currentUserReaction}
             />
 
             <CagnotteModal

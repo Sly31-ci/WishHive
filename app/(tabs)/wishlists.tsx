@@ -18,12 +18,26 @@ import { WishlistCard } from '@/components/WishlistCard';
 import { ConfirmDialog } from '@/components/ConfirmDialog';
 import { AnonymousInteraction } from '@/components/AnonymousInteraction';
 import * as Haptics from 'expo-haptics';
-import { COLORS, SPACING, FONT_SIZES, BORDER_RADIUS } from '@/constants/theme';
+import { theme } from '@/theme';
+import { H1, H2, Body, Caption } from '@/components/Text';
+import Icon from '@/components/Icon';
+import Colors from '@/theme/colors';
 import { Database } from '@/types/database';
 import { useTheme } from '@/contexts/ThemeContext';
 import { WishlistListSkeleton } from '@/components/skeletons/WishlistCardSkeleton';
 import { analytics } from '@/lib/analytics';
 import { cache } from '@/lib/cache';
+
+// Backward compatibility
+const COLORS = {
+  ...Colors.light,
+  white: Colors.brand.pureWhite,
+  gray: Colors.gray,
+  dark: Colors.light.textPrimary,
+};
+const SPACING = theme.spacing;
+const FONT_SIZES = theme.typography.sizes;
+const BORDER_RADIUS = theme.borderRadius;
 
 type Wishlist = Database['public']['Tables']['wishlists']['Row'];
 

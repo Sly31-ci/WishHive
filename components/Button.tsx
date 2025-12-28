@@ -1,9 +1,6 @@
 /**
- * 🎯 ButtonV2 - Bouton optimisé pour super-apps mobiles
- * - Hauteur minimale 56px (touch-friendly)
- * - Variants simplifiés
- * - Animations natives
- * - Feedback haptique
+ * 🎯 Button Component - Design System Compliant
+ * Utilise semantic tokens pour cohérence et accessibilité
  */
 
 import React from 'react';
@@ -23,7 +20,7 @@ import Animated, {
     withSpring,
     withTiming,
 } from 'react-native-reanimated';
-import { COLORS, FONT_SIZES, BORDER_RADIUS, SHADOWS, SPACING, ANIMATIONS } from '@/constants/theme';
+import { theme, buttonTokens } from '@/theme';
 
 type ButtonVariant = 'primary' | 'secondary' | 'outline' | 'ghost' | 'danger';
 type ButtonSize = 'sm' | 'md' | 'lg' | 'hero';
@@ -66,8 +63,8 @@ export default function Button({
     });
 
     const handlePressIn = () => {
-        scale.value = withTiming(ANIMATIONS.scale.tap, {
-            duration: ANIMATIONS.duration.fast,
+        scale.value = withTiming(theme.animations.scale.tap, {
+            duration: theme.animations.duration.fast,
         });
     };
 
@@ -87,67 +84,68 @@ export default function Button({
     // Styles dynamiques basés sur variant
     const getButtonStyle = (): ViewStyle => {
         const baseStyle: ViewStyle = {
-            borderRadius: BORDER_RADIUS.lg,
+            borderRadius: theme.borderRadius.lg,
             alignItems: 'center',
             justifyContent: 'center',
             flexDirection: 'row',
-            gap: SPACING.sm,
+            gap: theme.spacing.sm,
         };
 
-        // Size
+        // Size styles (touch-friendly)
         const sizeStyles: Record<ButtonSize, ViewStyle> = {
             sm: {
-                paddingVertical: SPACING.sm,
-                paddingHorizontal: SPACING.lg,
-                minHeight: 44,
+                paddingVertical: theme.spacing.sm,
+                paddingHorizontal: theme.spacing.lg,
+                minHeight: theme.layout.touchTarget.min,  // 44px
             },
             md: {
-                paddingVertical: SPACING.md,
-                paddingHorizontal: SPACING.xl,
-                minHeight: 56,
+                paddingVertical: theme.spacing.md,
+                paddingHorizontal: theme.spacing.xl,
+                minHeight: theme.layout.touchTarget.recommended,  // 56px
             },
             lg: {
-                paddingVertical: SPACING.lg,
-                paddingHorizontal: SPACING.xl,
+                paddingVertical: theme.spacing.lg,
+                paddingHorizontal: theme.spacing.xl,
                 minHeight: 64,
             },
             hero: {
-                paddingVertical: SPACING.xl,
-                paddingHorizontal: SPACING.xxl,
+                paddingVertical: theme.spacing.xl,
+                paddingHorizontal: theme.spacing.xxl,
                 minHeight: 72,
             },
         };
 
-        // Variant
+        // Variant styles (semantic tokens)
         const variantStyles: Record<ButtonVariant, ViewStyle> = {
             primary: {
-                backgroundColor: COLORS.primary,
-                ...SHADOWS.md,
+                backgroundColor: buttonTokens.primary.background,  // #E69100 ✨ Brand
+                ...buttonTokens.primary.shadow,
             },
             secondary: {
-                backgroundColor: COLORS.secondary,
-                ...SHADOWS.md,
+                backgroundColor: buttonTokens.secondary.background,  // #6B44FF ✨ Brand
+                ...buttonTokens.secondary.shadow,
             },
             outline: {
-                backgroundColor: 'transparent',
+                backgroundColor: buttonTokens.outline.background,
                 borderWidth: 2,
-                borderColor: COLORS.primary,
+                borderColor: buttonTokens.outline.border,  // #E69100 ✨ Brand
             },
             ghost: {
-                backgroundColor: COLORS.gray[100],
+                backgroundColor: buttonTokens.ghost.background,
             },
             danger: {
-                backgroundColor: COLORS.error,
-                ...SHADOWS.md,
+                backgroundColor: buttonTokens.danger.background,
+                ...buttonTokens.danger.shadow,
             },
         };
 
-        // Disabled
+        // Disabled state
         const disabledStyle: ViewStyle = disabled || loading
             ? {
-                backgroundColor: COLORS.gray[200],
-                borderColor: COLORS.gray[200],
+                backgroundColor: buttonTokens.primary.disabled.background,
+                borderColor: buttonTokens.primary.disabled.background,
                 opacity: 0.6,
+                ...theme.shadows.none,
             }
             : {};
 
@@ -160,29 +158,37 @@ export default function Button({
         };
     };
 
-    // Text styles
+    // Text styles (semantic tokens)
     const getTextStyle = (): TextStyle => {
         const sizeStyles: Record<ButtonSize, TextStyle> = {
-            sm: { fontSize: FONT_SIZES.sm },
-            md: { fontSize: FONT_SIZES.md },
-            lg: { fontSize: FONT_SIZES.lg },
-            hero: { fontSize: FONT_SIZES.xl },
+            sm: { ...theme.typography.presets.buttonSmall },
+            md: { ...theme.typography.presets.buttonMedium },
+            lg: { ...theme.typography.presets.buttonLarge },
+            hero: { ...theme.typography.presets.buttonLarge },
         };
 
-        const variantStyles: Record<ButtonVariant, TextStyle> = {
-            primary: { color: '#FFFFFF' },
-            secondary: { color: '#FFFFFF' },
-            outline: { color: COLORS.primary },
-            ghost: { color: COLORS.dark },
-            danger: { color: '#FFFFFF' },
+        // Texte sur boutons utilise toujours white (ratio OK sur brand colors)
+        const variantTextColors: Record<ButtonVariant, TextStyle> = {
+            primary: { color: buttonTokens.primary.text },       // White
+            secondary: { color: buttonTokens.secondary.text },   // White
+            outline: { color: buttonTokens.outline.text },       // primaryText (#B87100)
+            ghost: { color: buttonTokens.ghost.text },           // textPrimary
+            danger: { color: buttonTokens.danger.text },         // White
         };
 
         return {
-            fontWeight: '600',
             ...sizeStyles[size],
-            ...variantStyles[variant],
-            ...(disabled && { color: COLORS.gray[400] }),
+            ...variantTextColors[variant],
+            ...(disabled && { color: buttonTokens.primary.disabled.text }),
         };
+    };
+
+    // Loading indicator color
+    const getLoadingColor = () => {
+        if (variant === 'outline' || variant === 'ghost') {
+            return theme.colors.light.primaryText;
+        }
+        return buttonTokens.primary.text;  // White pour primary/secondary/danger
     };
 
     return (
@@ -195,7 +201,7 @@ export default function Button({
         >
             {loading ? (
                 <ActivityIndicator
-                    color={variant === 'outline' || variant === 'ghost' ? COLORS.primary : '#FFFFFF'}
+                    color={getLoadingColor()}
                     size="small"
                 />
             ) : (
