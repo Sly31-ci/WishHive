@@ -7,6 +7,7 @@ import {
   TouchableOpacity,
   RefreshControl,
   ActivityIndicator,
+  Alert,
 } from 'react-native';
 import { router } from 'expo-router';
 import { Plus, Calendar, Eye, Trash2 } from 'lucide-react-native';
@@ -15,6 +16,7 @@ import { supabase } from '@/lib/supabase';
 import Button from '@/components/Button';
 import { WishlistCard } from '@/components/WishlistCard';
 import { ConfirmDialog } from '@/components/ConfirmDialog';
+import { AnonymousInteraction } from '@/components/AnonymousInteraction';
 import * as Haptics from 'expo-haptics';
 import { COLORS, SPACING, FONT_SIZES, BORDER_RADIUS } from '@/constants/theme';
 import { Database } from '@/types/database';
@@ -35,6 +37,8 @@ export default function WishlistsScreen() {
   const PAGE_SIZE = 10;
   const [deleteDialogVisible, setDeleteDialogVisible] = useState(false);
   const [wishlistToDelete, setWishlistToDelete] = useState<string | null>(null);
+  const [selectedWishlistId, setSelectedWishlistId] = useState<string | null>(null);
+  const [reactionModalVisible, setReactionModalVisible] = useState(false);
 
   useEffect(() => {
     loadCachedWishlists();
@@ -72,7 +76,7 @@ export default function WishlistsScreen() {
         .select(`
           *,
           items:wishlist_items(id, is_purchased),
-          interactions:wishlist_interactions(id, interaction_type, content)
+          interactions:wishlist_interactions(id, interaction_type, content, author_id)
         `)
         .eq('owner_id', user.id)
         .order('created_at', { ascending: false })
@@ -91,11 +95,14 @@ export default function WishlistsScreen() {
           return acc;
         }, {});
 
+        const currentUserReaction = reactions.find((r: any) => r.author_id === user?.id)?.content || null;
+
         return {
           ...w,
           total_items: items.length,
           purchased_items: items.filter((i: any) => i.is_purchased).length,
-          reactions_summary
+          reactions_summary,
+          currentUserReaction
         };
       });
 
@@ -137,6 +144,37 @@ export default function WishlistsScreen() {
       setLoading(false);
       setRefreshing(false);
       setPagination(prev => ({ ...prev, loadingMore: false }));
+    }
+  };
+
+  const handleReaction = (wishlistId: string) => {
+    setSelectedWishlistId(wishlistId);
+    setReactionModalVisible(true);
+  };
+
+  const handleReactionSubmit = async (data: { type: 'reaction' | 'comment'; content: string; authorName: string }) => {
+    if (!selectedWishlistId) return;
+
+    try {
+      const { error } = await supabase
+        .from('wishlist_interactions')
+        .insert({
+          wishlist_id: selectedWishlistId,
+          interaction_type: data.type,
+          content: data.content,
+          author_name: data.authorName,
+          author_id: user?.id || null,
+        });
+
+      if (error) throw error;
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      Alert.alert('Succès', 'Votre réaction a été envoyée ! ✨');
+      loadWishlists(true);
+    } catch (error) {
+      console.error('Error sending reaction:', error);
+      Alert.alert('Erreur', 'Impossible d\'envoyer la réaction.');
+    } finally {
+      setReactionModalVisible(false);
     }
   };
 
@@ -200,6 +238,8 @@ export default function WishlistsScreen() {
       onLongPress={() => confirmDelete(item.id)}
       onDelete={() => confirmDelete(item.id)}
       showDelete={true}
+      onReact={() => handleReaction(item.id)}
+      currentUserReaction={(item as any).currentUserReaction}
     />
   );
 
@@ -275,6 +315,14 @@ export default function WishlistsScreen() {
         emoji="🗑️"
         onConfirm={handleDeleteWishlist}
         onCancel={() => setDeleteDialogVisible(false)}
+      />
+
+      <AnonymousInteraction
+        visible={reactionModalVisible}
+        onClose={() => setReactionModalVisible(false)}
+        onSubmit={handleReactionSubmit}
+        initialType="reaction"
+        hasReacted={!!wishlists.find(w => w.id === selectedWishlistId && (w as any).currentUserReaction)}
       />
     </View>
   );

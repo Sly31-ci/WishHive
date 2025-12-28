@@ -64,7 +64,7 @@ export default function PublicWishlistScreen() {
                 setWishlist(wishlistData);
 
                 // Increment view count
-                await (supabase.rpc as any)('increment_view_count', { wishlist_id: wishlistData.id });
+                await (supabase.rpc as any)('increment_view_count', { p_wishlist_id: wishlistData.id });
             }
 
             const activeWishlistId = wishlist?.id || (await supabase.from('wishlists').select('id').eq('slug', slug).single()).data?.id;
@@ -199,6 +199,34 @@ export default function PublicWishlistScreen() {
         }
     };
 
+    const handleOpenItemUrl = async (item: WishlistItem) => {
+        const url = item.custom_url || item.product?.external_url;
+        if (url) {
+            try {
+                const canOpen = await Linking.canOpenURL(url);
+                if (canOpen) {
+                    await Linking.openURL(url);
+                } else {
+                    // Fallback to internal product page if link fails but we have productId
+                    if (item.product_id) {
+                        router.push(`/product/${item.product_id}`);
+                    } else {
+                        Alert.alert("Lien non supporté", "Cet article n'a pas de lien d'achat valide.");
+                    }
+                }
+            } catch (error) {
+                console.error('Error opening URL:', error);
+                if (item.product_id) {
+                    router.push(`/product/${item.product_id}`);
+                }
+            }
+        } else if (item.product_id) {
+            router.push(`/product/${item.product_id}`);
+        } else {
+            Alert.alert("Info", "Cet article n'a pas de lien d'achat renseigné.");
+        }
+    };
+
     const renderItem = ({ item }: { item: WishlistItem }) => {
         const title = item.custom_title || item.product?.title || 'Untitled Item';
         const price = item.custom_price || item.product?.price;
@@ -207,9 +235,12 @@ export default function PublicWishlistScreen() {
         return (
             <Card
                 style={styles.itemCard}
-                accessibilityLabel={`Article: ${title}`}
             >
-                <View style={styles.itemContent}>
+                <TouchableOpacity
+                    activeOpacity={0.7}
+                    onPress={() => handleOpenItemUrl(item)}
+                    style={styles.itemContent}
+                >
                     <View style={styles.itemImageContainer}>
                         {imageUrl && (
                             <Image
@@ -251,7 +282,7 @@ export default function PublicWishlistScreen() {
                             </View>
                         )}
                     </View>
-                </View>
+                </TouchableOpacity>
                 <View style={styles.itemActions}>
                     <TouchableOpacity onPress={() => openInteraction('reaction', item.id)} style={styles.actionButton}>
                         <Heart size={20} color={COLORS.gray[500]} />

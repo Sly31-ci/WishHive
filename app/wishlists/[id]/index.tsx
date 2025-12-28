@@ -58,6 +58,7 @@ import { wishlistEvents, EVENTS } from '@/lib/events';
 import { ConfirmDialog } from '@/components/ConfirmDialog';
 import { ReorganizeToolbar } from '@/components/ReorganizeToolbar';
 import { getPriorityLabel, getPriorityColor, getPriorityEmoji } from '@/constants/priorities';
+import * as Linking from 'expo-linking';
 import { cache } from '@/lib/cache';
 
 type Wishlist = Database['public']['Tables']['wishlists']['Row'];
@@ -449,6 +450,33 @@ export default function WishlistDetailScreen() {
 
     const [wishlistDeleteDialogVisible, setWishlistDeleteDialogVisible] = useState(false);
 
+    const handleOpenItemUrl = async (item: any) => {
+        const url = item.custom_url || item.product?.external_url;
+        if (url) {
+            try {
+                const canOpen = await Linking.canOpenURL(url);
+                if (canOpen) {
+                    await Linking.openURL(url);
+                } else {
+                    if (item.product_id) {
+                        router.push(`/product/${item.product_id}`);
+                    } else {
+                        Alert.alert("Lien non supporté", "Cet article n'a pas de lien d'achat valide.");
+                    }
+                }
+            } catch (error) {
+                console.error('Error opening URL:', error);
+                if (item.product_id) {
+                    router.push(`/product/${item.product_id}`);
+                }
+            }
+        } else if (item.product_id) {
+            router.push(`/product/${item.product_id}`);
+        } else {
+            Alert.alert("Info", "Cet article n'a pas de lien d'achat renseigné.");
+        }
+    };
+
     const handleDeleteWishlist = async () => {
         try {
             await supabase.from('wishlist_items').delete().eq('wishlist_id', id);
@@ -485,6 +513,7 @@ export default function WishlistDetailScreen() {
                     groupGift={item.group_gift}
                     isReordering={isReordering}
                     isActive={false}
+                    onPress={() => handleOpenItemUrl(item)}
                 />
             </View>
         );

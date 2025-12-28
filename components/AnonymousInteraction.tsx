@@ -10,6 +10,7 @@ interface AnonymousInteractionProps {
     onSubmit: (data: { type: 'reaction' | 'comment'; content: string; authorName: string }) => void;
     initialType?: 'reaction' | 'comment';
     wishlistThemeColor?: string;
+    hasReacted?: boolean;
 }
 
 const REACTIONS = ['❤️', '🎉', '👍', '🔥', '👀', '🎁'];
@@ -19,9 +20,17 @@ export function AnonymousInteraction({
     onClose,
     onSubmit,
     initialType = 'reaction',
-    wishlistThemeColor = COLORS.primary
+    wishlistThemeColor = COLORS.primary,
+    hasReacted = false
 }: AnonymousInteractionProps) {
-    const [type, setType] = useState<'reaction' | 'comment'>(initialType);
+    const [type, setType] = useState<'reaction' | 'comment'>(hasReacted ? 'comment' : initialType);
+
+    // Update type if hasReacted changes and we are open
+    React.useEffect(() => {
+        if (hasReacted && type === 'reaction') {
+            setType('comment');
+        }
+    }, [hasReacted, visible]);
     const [content, setContent] = useState('');
     const [authorName, setAuthorName] = useState('');
     const [selectedEmoji, setSelectedEmoji] = useState(REACTIONS[0]);
@@ -59,20 +68,22 @@ export function AnonymousInteraction({
                         </TouchableOpacity>
                     </View>
 
-                    <View style={styles.tabs}>
-                        <TouchableOpacity
-                            style={[styles.tab, type === 'reaction' && { borderBottomColor: wishlistThemeColor, borderBottomWidth: 2 }]}
-                            onPress={() => setType('reaction')}
-                        >
-                            <Text style={[styles.tabText, type === 'reaction' && { color: wishlistThemeColor }]}>Réaction</Text>
-                        </TouchableOpacity>
-                        <TouchableOpacity
-                            style={[styles.tab, type === 'comment' && { borderBottomColor: wishlistThemeColor, borderBottomWidth: 2 }]}
-                            onPress={() => setType('comment')}
-                        >
-                            <Text style={[styles.tabText, type === 'comment' && { color: wishlistThemeColor }]}>Message</Text>
-                        </TouchableOpacity>
-                    </View>
+                    {!hasReacted && (
+                        <View style={styles.tabs}>
+                            <TouchableOpacity
+                                style={[styles.tab, type === 'reaction' && { borderBottomColor: wishlistThemeColor, borderBottomWidth: 2 }]}
+                                onPress={() => setType('reaction')}
+                            >
+                                <Text style={[styles.tabText, type === 'reaction' && { color: wishlistThemeColor }]}>Réaction</Text>
+                            </TouchableOpacity>
+                            <TouchableOpacity
+                                style={[styles.tab, type === 'comment' && { borderBottomColor: wishlistThemeColor, borderBottomWidth: 2 }]}
+                                onPress={() => setType('comment')}
+                            >
+                                <Text style={[styles.tabText, type === 'comment' && { color: wishlistThemeColor }]}>Message</Text>
+                            </TouchableOpacity>
+                        </View>
+                    )}
 
                     <View style={styles.content}>
                         <Text style={styles.label}>Votre nom (optionnel)</Text>

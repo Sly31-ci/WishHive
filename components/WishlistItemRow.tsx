@@ -25,6 +25,7 @@ interface WishlistItemRowProps {
     isReordering?: boolean;
     drag?: () => void;
     isActive?: boolean;
+    onPress?: () => void;
 }
 
 export function WishlistItemRow({
@@ -43,7 +44,8 @@ export function WishlistItemRow({
     groupGift,
     isReordering,
     drag,
-    isActive
+    isActive,
+    onPress
 }: WishlistItemRowProps) {
     const giftProgress = groupGift ? (groupGift.current_amount / groupGift.target_amount) * 100 : 0;
 
@@ -97,7 +99,12 @@ export function WishlistItemRow({
                     )}
                 </View>
 
-                <View style={styles.content}>
+                <TouchableOpacity
+                    activeOpacity={0.7}
+                    onPress={onPress}
+                    style={styles.content}
+                    disabled={!onPress}
+                >
                     <View style={styles.titleRow}>
                         <Text style={[styles.title, checked && styles.checkedText]} numberOfLines={1}>
                             {title}
@@ -114,7 +121,7 @@ export function WishlistItemRow({
                             {currency} {price.toFixed(2)}
                         </Text>
                     )}
-                </View>
+                </TouchableOpacity>
 
                 {isOwner && (
                     <View style={styles.actions}>

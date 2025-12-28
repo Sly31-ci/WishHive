@@ -16,9 +16,11 @@ interface WishlistCardProps {
     onLongPress?: () => void;
     onDelete?: () => void;
     showDelete?: boolean;
+    onReact?: () => void;
+    currentUserReaction?: string | null;
 }
 
-export const WishlistCard = React.memo(({ wishlist, onPress, onLongPress, onDelete, showDelete }: WishlistCardProps) => {
+export const WishlistCard = React.memo(({ wishlist, onPress, onLongPress, onDelete, showDelete, onReact, currentUserReaction }: WishlistCardProps) => {
     const { theme: appTheme } = useTheme();
 
     // Parse theme safely
@@ -139,15 +141,31 @@ export const WishlistCard = React.memo(({ wishlist, onPress, onLongPress, onDele
                             )}
                         </View>
 
-                        {showDelete && onDelete && (
-                            <TouchableOpacity
-                                style={[styles.deleteButton, { backgroundColor: appTheme.error + '15' }]}
-                                onPress={onDelete}
-                                hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-                            >
-                                <Trash2 size={16} color={appTheme.error} />
-                            </TouchableOpacity>
-                        )}
+                        <View style={styles.rightActions}>
+                            {onReact && (
+                                <TouchableOpacity
+                                    style={[styles.reactButton, { backgroundColor: wishlistTheme.primaryColor + '15' }]}
+                                    onPress={onReact}
+                                    hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                                >
+                                    {currentUserReaction ? (
+                                        <Text style={styles.userReactionEmoji}>{currentUserReaction}</Text>
+                                    ) : (
+                                        <Heart size={16} color={wishlistTheme.primaryColor} />
+                                    )}
+                                </TouchableOpacity>
+                            )}
+
+                            {showDelete && onDelete && (
+                                <TouchableOpacity
+                                    style={[styles.deleteButton, { backgroundColor: appTheme.error + '15' }]}
+                                    onPress={onDelete}
+                                    hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                                >
+                                    <Trash2 size={16} color={appTheme.error} />
+                                </TouchableOpacity>
+                            )}
+                        </View>
                     </View>
                 </View>
 
@@ -283,6 +301,21 @@ const styles = StyleSheet.create({
     deleteButton: {
         padding: 6,
         borderRadius: 12,
+    },
+    rightActions: {
+        flexDirection: 'row',
+        gap: SPACING.xs,
+        alignItems: 'center',
+    },
+    reactButton: {
+        padding: 6,
+        borderRadius: 12,
+        minWidth: 32,
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    userReactionEmoji: {
+        fontSize: 16,
     },
     accentStrip: {
         height: 4,

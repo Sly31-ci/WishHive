@@ -7,6 +7,7 @@ import {
   TouchableOpacity,
   RefreshControl,
   Dimensions,
+  Alert,
 } from 'react-native';
 import { router } from 'expo-router';
 import { Bell, TrendingUp, Sparkles, Plus, Heart, MessageSquare } from 'lucide-react-native';
@@ -18,6 +19,7 @@ import Button from '@/components/Button';
 import { Card } from '@/components/Card';
 import { WishlistCard } from '@/components/WishlistCard';
 import { EmptyState } from '@/components/EmptyState';
+import { AnonymousInteraction } from '@/components/AnonymousInteraction';
 import {
   COLORS,
   SPACING,
@@ -37,6 +39,8 @@ export default function HomeScreen() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
+  const [selectedWishlistId, setSelectedWishlistId] = useState<string | null>(null);
+  const [reactionModalVisible, setReactionModalVisible] = useState(false);
 
   useEffect(() => {
     loadTrendingWishlists();
@@ -70,6 +74,36 @@ export default function HomeScreen() {
     setUnreadCount(count);
   };
 
+  const handleReaction = (wishlistId: string) => {
+    setSelectedWishlistId(wishlistId);
+    setReactionModalVisible(true);
+  };
+
+  const handleReactionSubmit = async (data: { type: 'reaction' | 'comment'; content: string; authorName: string }) => {
+    if (!selectedWishlistId) return;
+
+    try {
+      const { error } = await supabase
+        .from('wishlist_interactions')
+        .insert({
+          wishlist_id: selectedWishlistId,
+          interaction_type: data.type,
+          content: data.content,
+          author_name: data.authorName,
+          author_id: profile?.id || null,
+        });
+
+      if (error) throw error;
+      Alert.alert('Success', 'Your reaction has been sent! ✨');
+      loadTrendingWishlists(); // Optionally refresh to see count update if implemented
+    } catch (error) {
+      console.error('Error sending reaction:', error);
+      Alert.alert('Error', 'Failed to send reaction.');
+    } finally {
+      setReactionModalVisible(false);
+    }
+  };
+
   const loadTrendingWishlists = async () => {
     try {
       const { data, error } = await supabase
@@ -77,7 +111,7 @@ export default function HomeScreen() {
         .select(`
           *,
           items:wishlist_items(id, is_purchased),
-          interactions:wishlist_interactions(id, interaction_type, content)
+          interactions:wishlist_interactions(id, interaction_type, content, author_id)
         `)
         .eq('privacy', 'public')
         .eq('is_active', true)
@@ -97,11 +131,14 @@ export default function HomeScreen() {
           return acc;
         }, {});
 
+        const currentUserReaction = reactions.find((r: any) => r.author_id === profile?.id)?.content || null;
+
         return {
           ...w,
           total_items: items.length,
           purchased_items: items.filter((i: any) => i.is_purchased).length,
-          reactions_summary
+          reactions_summary,
+          currentUserReaction
         };
       });
 
@@ -237,6 +274,8 @@ export default function HomeScreen() {
                     <WishlistCard
                       wishlist={wishlist}
                       onPress={() => router.push(`/wishlists/${wishlist.id}`)}
+                      onReact={() => handleReaction(wishlist.id)}
+                      currentUserReaction={(wishlist as any).currentUserReaction}
                     />
                   </Animated.View>
                 ))}
@@ -254,6 +293,14 @@ export default function HomeScreen() {
       >
         <Plus size={28} color="#FFFFFF" />
       </TouchableOpacity>
+
+      <AnonymousInteraction
+        visible={reactionModalVisible}
+        onClose={() => setReactionModalVisible(false)}
+        onSubmit={handleReactionSubmit}
+        initialType="reaction"
+        hasReacted={!!trendingWishlists.find(w => w.id === selectedWishlistId && (w as any).currentUserReaction)}
+      />
     </View>
   );
 }
