@@ -1,0 +1,583 @@
+<!DOCTYPE html>
+<html lang="fr">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="theme-color" content="#6B44FF">
+    <title>Wishlist - WishHive</title>
+
+    <!-- SEO -->
+    <meta name="description" content="Consultez cette wishlist partagée via WishHive">
+    <meta property="og:type" content="website">
+    <meta property="og:title" content="Wishlist - WishHive">
+    <meta property="og:description" content="Consultez cette wishlist partagée">
+
+    <!-- Icons -->
+    <link rel="icon"
+        href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎁</text></svg>">
+
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            /* WishHive Brand Colors */
+            --primary: #6B44FF;
+            --accent: #E69100;
+            --success: #00B37E;
+            --dark: #1E1C2E;
+            --light: #F7F8FA;
+            --white: #FFFFFF;
+            --gray-50: #F9FAFB;
+            --gray-100: #F3F4F6;
+            --gray-200: #E5E7EB;
+            --gray-400: #9CA3AF;
+            --gray-500: #71717A;
+            --gray-600: #52525B;
+
+            /* Spacing */
+            --spacing-xs: 4px;
+            --spacing-sm: 8px;
+            --spacing-md: 16px;
+            --spacing-lg: 24px;
+            --spacing-xl: 32px;
+            --spacing-xxl: 48px;
+
+            /* Typography */
+            --font-system: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            --font-xs: 12px;
+            --font-sm: 14px;
+            --font-md: 16px;
+            --font-lg: 18px;
+            --font-xl: 24px;
+            --font-xxl: 32px;
+
+            /* Border Radius */
+            --radius-sm: 8px;
+            --radius-md: 12px;
+            --radius-lg: 16px;
+            --radius-xl: 24px;
+            --radius-full: 9999px;
+
+            /* Shadows */
+            --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.1);
+            --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.1);
+            --shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        body {
+            font-family: var(--font-system);
+            background: var(--light);
+            color: var(--dark);
+            line-height: 1.6;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+
+        /* Container */
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            padding: var(--spacing-lg);
+        }
+
+        /* Header */
+        .header {
+            background: linear-gradient(135deg, var(--primary) 0%, #8B5FFF 100%);
+            color: white;
+            padding: var(--spacing-xl) var(--spacing-lg);
+            text-align: center;
+            margin: calc(var(--spacing-lg) * -1) calc(var(--spacing-lg) * -1) var(--spacing-xl);
+        }
+
+        .logo {
+            font-size: var(--font-xl);
+            margin-bottom: var(--spacing-sm);
+        }
+
+        .app-name {
+            font-size: var(--font-lg);
+            font-weight: 700;
+            opacity: 0.95;
+        }
+
+        /* Wishlist Header */
+        .wishlist-header {
+            background: white;
+            border-radius: var(--radius-lg);
+            padding: var(--spacing-lg);
+            margin-bottom: var(--spacing-lg);
+            box-shadow: var(--shadow-sm);
+        }
+
+        .wishlist-title {
+            font-size: var(--font-xxl);
+            font-weight: 700;
+            margin-bottom: var(--spacing-sm);
+            color: var(--dark);
+            line-height: 1.2;
+        }
+
+        .wishlist-emoji {
+            margin-right: var(--spacing-sm);
+        }
+
+        .wishlist-meta {
+            display: flex;
+            gap: var(--spacing-sm);
+            margin-top: var(--spacing-md);
+            flex-wrap: wrap;
+        }
+
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            padding: var(--spacing-xs) var(--spacing-md);
+            background: var(--gray-100);
+            border-radius: var(--radius-full);
+            font-size: var(--font-xs);
+            font-weight: 600;
+            color: var(--gray-600);
+            text-transform: capitalize;
+        }
+
+        .wishlist-description {
+            color: var(--gray-600);
+            margin-top: var(--spacing-md);
+            line-height: 1.5;
+        }
+
+        .wishlist-date {
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-xs);
+            color: var(--gray-500);
+            font-size: var(--font-sm);
+            margin-top: var(--spacing-md);
+        }
+
+        /* Items */
+        .items-count {
+            font-size: var(--font-sm);
+            color: var(--gray-500);
+            margin-bottom: var(--spacing-md);
+        }
+
+        .item-card {
+            background: white;
+            border-radius: var(--radius-lg);
+            padding: var(--spacing-md);
+            margin-bottom: var(--spacing-md);
+            box-shadow: var(--shadow-sm);
+            display: flex;
+            gap: var(--spacing-md);
+        }
+
+        .item-image {
+            width: 80px;
+            height: 80px;
+            border-radius: var(--radius-md);
+            object-fit: cover;
+            background: var(--gray-100);
+            flex-shrink: 0;
+        }
+
+        .item-placeholder {
+            width: 80px;
+            height: 80px;
+            border-radius: var(--radius-md);
+            background: var(--gray-100);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 32px;
+            flex-shrink: 0;
+        }
+
+        .item-details {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .item-title {
+            font-weight: 600;
+            font-size: var(--font-md);
+            color: var(--dark);
+            margin-bottom: var(--spacing-xs);
+            line-height: 1.4;
+        }
+
+        .item-price {
+            font-weight: 700;
+            font-size: var(--font-lg);
+            color: var(--primary);
+            margin-bottom: var(--spacing-sm);
+        }
+
+        .item-priority {
+            display: inline-flex;
+            align-items: center;
+            padding: 2px var(--spacing-sm);
+            border-radius: var(--spacing-xs);
+            font-size: var(--font-xs);
+            font-weight: 600;
+        }
+
+        .priority-high {
+            background: rgba(239, 68, 68, 0.1);
+            color: #DC2626;
+        }
+
+        .priority-medium {
+            background: rgba(251, 146, 60, 0.1);
+            color: #EA580C;
+        }
+
+        .priority-low {
+            background: rgba(34, 197, 94, 0.1);
+            color: #16A34A;
+        }
+
+        /* CTA Buttons */
+        .cta-section {
+            position: sticky;
+            bottom: 0;
+            background: white;
+            padding: var(--spacing-lg);
+            margin: var(--spacing-xl) calc(var(--spacing-lg) * -1) calc(var(--spacing-lg) * -1);
+            box-shadow: 0 -4px 6px rgba(0, 0, 0, 0.05);
+        }
+
+        .btn {
+            display: block;
+            width: 100%;
+            padding: var(--spacing-md) var(--spacing-lg);
+            border: none;
+            border-radius: var(--radius-full);
+            font-size: var(--font-md);
+            font-weight: 600;
+            text-align: center;
+            text-decoration: none;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .btn-primary {
+            background: var(--primary);
+            color: white;
+            margin-bottom: var(--spacing-sm);
+        }
+
+        .btn-primary:active {
+            transform: scale(0.98);
+            background: #5A36E6;
+        }
+
+        .btn-secondary {
+            background: var(--gray-100);
+            color: var(--dark);
+        }
+
+        .btn-secondary:active {
+            transform: scale(0.98);
+            background: var(--gray-200);
+        }
+
+        /* Loading & Error States */
+        .loading,
+        .error {
+            text-align: center;
+            padding: var(--spacing-xxl);
+        }
+
+        .loading-spinner {
+            width: 48px;
+            height: 48px;
+            border: 4px solid var(--gray-200);
+            border-top-color: var(--primary);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto var(--spacing-md);
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        .error-icon {
+            font-size: 64px;
+            margin-bottom: var(--spacing-md);
+        }
+
+        .error-title {
+            font-size: var(--font-xl);
+            font-weight: 700;
+            margin-bottom: var(--spacing-sm);
+        }
+
+        .error-message {
+            color: var(--gray-600);
+            margin-bottom: var(--spacing-lg);
+        }
+
+        /* Empty State */
+        .empty-state {
+            text-align: center;
+            padding: var(--spacing-xxl);
+            background: white;
+            border-radius: var(--radius-lg);
+            box-shadow: var(--shadow-sm);
+        }
+
+        .empty-icon {
+            font-size: 64px;
+            margin-bottom: var(--spacing-md);
+        }
+
+        /* Responsive */
+        @media (max-width: 375px) {
+            .container {
+                padding: var(--spacing-md);
+            }
+
+            .wishlist-title {
+                font-size: var(--font-xl);
+            }
+
+            .item-image,
+            .item-placeholder {
+                width: 64px;
+                height: 64px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <!-- App Container -->
+    <div class="container">
+        <!-- Loading State -->
+        <div id="loading" class="loading">
+            <div class="loading-spinner"></div>
+            <p>Chargement de la wishlist...</p>
+        </div>
+
+        <!-- Error State -->
+        <div id="error" class="error" style="display: none;">
+            <div class="error-icon">😢</div>
+            <h2 class="error-title">Wishlist introuvable</h2>
+            <p class="error-message">Cette wishlist n'existe pas ou n'est pas publique.</p>
+            <a href="#" class="btn btn-secondary" onclick="window.location.reload()">Réessayer</a>
+        </div>
+
+        <!-- Content (Hidden by default) -->
+        <div id="content" style="display: none;">
+            <!-- Header -->
+            <div class="header">
+                <div class="logo">🎁</div>
+                <div class="app-name">WishHive</div>
+            </div>
+
+            <!-- Wishlist Info -->
+            <div class="wishlist-header">
+                <h1 class="wishlist-title">
+                    <span class="wishlist-emoji" id="wishlist-emoji">🎁</span>
+                    <span id="wishlist-title">Ma Wishlist</span>
+                </h1>
+
+                <div class="wishlist-meta">
+                    <span class="badge" id="wishlist-type">birthday</span>
+                    <span class="badge" id="wishlist-privacy">public</span>
+                </div>
+
+                <p class="wishlist-description" id="wishlist-description" style="display: none;"></p>
+
+                <div class="wishlist-date" id="wishlist-date" style="display: none;">
+                    🗓️ <span id="wishlist-date-text"></span>
+                </div>
+            </div>
+
+            <!-- Items Count -->
+            <p class="items-count" id="items-count">0 items</p>
+
+            <!-- Items List -->
+            <div id="items-list"></div>
+
+            <!-- Empty State -->
+            <div id="empty-state" class="empty-state" style="display: none;">
+                <div class="empty-icon">🎁</div>
+                <p>Aucun item dans cette wishlist pour le moment.</p>
+            </div>
+
+            <!-- CTA Section -->
+            <div class="cta-section">
+                <a href="#" id="open-app-btn" class="btn btn-primary">
+                    📱 Ouvrir dans l'app WishHive
+                </a>
+                <a href="https://wishhive.app" class="btn btn-secondary">
+                    ⬇️ Installer l'app
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Configuration Supabase
+        const SUPABASE_URL = 'https://nydtsqjlbiwuoakqrldr.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im55ZHRzcWpsYml3dW9ha3FybGRyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQ2NjU2NTEsImV4cCI6MjA4MDI0MTY1MX0.ca40pRHIhMigDFbqTk4dyKyr9SM_qMN-SMA43p3c4q0';
+
+        // Get Wishlist ID from URL
+        const urlParams = new URLSearchParams(window.location.search);
+        const wishlistId = urlParams.get('id') || window.location.pathname.split('/').pop();
+
+        // Priority labels
+        const PRIORITY_LABELS = {
+            1: { label: 'Basse', class: 'priority-low' },
+            2: { label: 'Moyenne', class: 'priority-medium' },
+            3: { label: 'Haute', class: 'priority-high' }
+        };
+
+        // Supabase REST API
+        async function fetchWishlist(id) {
+            const response = await fetch(`${SUPABASE_URL}/rest/v1/wishlists?id=eq.${id}&privacy=eq.public&select=*`, {
+                headers: {
+                    'apikey': SUPABASE_ANON_KEY,
+                    'Authorization': `Bearer ${SUPABASE_ANON_KEY}`
+                }
+            });
+
+            if (!response.ok) throw new Error('Wishlist not found');
+            const data = await response.json();
+            if (data.length === 0) throw new Error('Wishlist not found or not public');
+            return data[0];
+        }
+
+        async function fetchItems(wishlistId) {
+            const response = await fetch(`${SUPABASE_URL}/rest/v1/wishlist_items?wishlist_id=eq.${wishlistId}&select=*,product:products(*)&order=priority.desc`, {
+                headers: {
+                    'apikey': SUPABASE_ANON_KEY,
+                    'Authorization': `Bearer ${SUPABASE_ANON_KEY}`
+                }
+            });
+
+            if (!response.ok) throw new Error('Failed to fetch items');
+            return response.json();
+        }
+
+        // Render wishlist
+        function renderWishlist(wishlist) {
+            const theme = wishlist.theme || {};
+            document.getElementById('wishlist-emoji').textContent = theme.emoji || '🎁';
+            document.getElementById('wishlist-title').textContent = wishlist.title;
+            document.getElementById('wishlist-type').textContent = wishlist.type || 'general';
+            document.getElementById('wishlist-privacy').textContent = wishlist.privacy;
+
+            if (wishlist.description) {
+                document.getElementById('wishlist-description').textContent = wishlist.description;
+                document.getElementById('wishlist-description').style.display = 'block';
+            }
+
+            if (wishlist.due_date) {
+                const date = new Date(wishlist.due_date);
+                document.getElementById('wishlist-date-text').textContent = date.toLocaleDateString('fr-FR');
+                document.getElementById('wishlist-date').style.display = 'flex';
+            }
+
+            // Update page title
+            document.title = `${wishlist.title} - WishHive`;
+        }
+
+        // Render items
+        function renderItems(items) {
+            const itemsList = document.getElementById('items-list');
+            const itemsCount = document.getElementById('items-count');
+            const emptyState = document.getElementById('empty-state');
+
+            if (items.length === 0) {
+                emptyState.style.display = 'block';
+                itemsCount.textContent = '0 items';
+                return;
+            }
+
+            itemsCount.textContent = `${items.length} item${items.length > 1 ? 's' : ''}`;
+
+            items.forEach(item => {
+                const title = item.custom_title || item.product?.title || 'Item sans titre';
+                const price = item.custom_price || item.product?.price;
+                const currency = item.product?.currency || 'EUR';
+                const imageUrl = item.custom_images?.[0] || item.product?.images?.[0];
+                const priority = PRIORITY_LABELS[item.priority] || PRIORITY_LABELS[2];
+
+                const itemCard = document.createElement('div');
+                itemCard.className = 'item-card';
+
+                itemCard.innerHTML = `
+                    ${imageUrl
+                        ? `<img src="${imageUrl}" alt="${title}" class="item-image" onerror="this.style.display='none';this.nextElementSibling.style.display='flex';">
+                           <div class="item-placeholder" style="display:none;">🎁</div>`
+                        : `<div class="item-placeholder">🎁</div>`
+                    }
+                    <div class="item-details">
+                        <div class="item-title">${title}</div>
+                        ${price ? `<div class="item-price">${currency} ${price.toFixed(2)}</div>` : ''}
+                        <span class="item-priority ${priority.class}">${priority.label} priorité</span>
+                    </div>
+                `;
+
+                itemsList.appendChild(itemCard);
+            });
+        }
+
+        // Setup deep link
+        function setupDeepLink(wishlistId) {
+            const deepLink = `wishhive://wishlists/${wishlistId}`;
+            document.getElementById('open-app-btn').href = deepLink;
+
+            // Fallback si l'app n'est pas installée
+            document.getElementById('open-app-btn').addEventListener('click', (e) => {
+                setTimeout(() => {
+                    // Si toujours sur la page après 2s, l'app n'est probablement pas installée
+                    // Rediriger vers page d'installation
+                }, 2000);
+            });
+        }
+
+        // Main
+        async function init() {
+            try {
+                if (!wishlistId) {
+                    throw new Error('No wishlist ID provided');
+                }
+
+                // Fetch data
+                const wishlist = await fetchWishlist(wishlistId);
+                const items = await fetchItems(wishlistId);
+
+                // Render
+                renderWishlist(wishlist);
+                renderItems(items);
+                setupDeepLink(wishlistId);
+
+                // Show content
+                document.getElementById('loading').style.display = 'none';
+                document.getElementById('content').style.display = 'block';
+
+            } catch (error) {
+                console.error('Error:', error);
+                document.getElementById('loading').style.display = 'none';
+                document.getElementById('error').style.display = 'block';
+            }
+        }
+
+        // Start
+        init();
+    </script>
+</body>
+
+</html>

@@ -14,10 +14,30 @@
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#FFCC33"
-      }
+      },
+      "intentFilters": [
+        {
+          "action": "VIEW",
+          "data": [
+            {
+              "scheme": "https",
+              "host": "Sly31-ci.github.io",
+              "pathPrefix": "/WishHive/w"
+            }
+          ],
+          "category": [
+            "BROWSABLE",
+            "DEFAULT"
+          ]
+        }
+      ]
     },
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.wishhive.app",
+      "associatedDomains": [
+        "applinks:Sly31-ci.github.io"
+      ]
     },
     "plugins": [
       "expo-router",

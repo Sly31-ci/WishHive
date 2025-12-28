@@ -2,16 +2,17 @@ import { Share, Alert } from 'react-native';
 import { supabase } from './supabase';
 import * as Haptics from 'expo-haptics';
 import * as Clipboard from 'expo-clipboard';
+import { generatePublicWishlistUrl } from '@/config/github-pages';
 
 /**
  * Partage une wishlist via le système de partage natif
  */
 export async function shareWishlist(wishlistId: string, wishlistTitle: string): Promise<string | null> {
     try {
-        // Get wishlist slug
+        // Get wishlist privacy
         const { data: wishlist, error } = await supabase
             .from('wishlists')
-            .select('slug, privacy')
+            .select('privacy')
             .eq('id', wishlistId)
             .single();
 
@@ -29,15 +30,15 @@ export async function shareWishlist(wishlistId: string, wishlistTitle: string): 
             return null;
         }
 
-        // Generate share link
-        const shareLink = `https://wishhive.app/w/${wishlist.slug}`;
+        // Generate public share link via GitHub Pages
+        const shareLink = generatePublicWishlistUrl(wishlistId);
 
         // Haptic feedback
         await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
 
         // Native share
         const result = await Share.share({
-            message: `Découvre ma wishlist "${wishlistTitle}" sur WishHive ! 🎁\n\n${shareLink}`,
+            message: `🎁 Découvre ma wishlist "${wishlistTitle}" sur WishHive !\n\n${shareLink}`,
             url: shareLink, // iOS only
             title: wishlistTitle
         });
@@ -63,7 +64,7 @@ export async function copyShareLink(wishlistId: string): Promise<string | null> 
     try {
         const { data: wishlist } = await supabase
             .from('wishlists')
-            .select('slug, privacy')
+            .select('privacy')
             .eq('id', wishlistId)
             .single();
 
@@ -72,7 +73,8 @@ export async function copyShareLink(wishlistId: string): Promise<string | null> 
             return null;
         }
 
-        const shareLink = `https://wishhive.app/w/${wishlist.slug}`;
+        // Generate public link via GitHub Pages
+        const shareLink = generatePublicWishlistUrl(wishlistId);
 
         // Copy to clipboard (requires expo-clipboard)
         await Clipboard.setStringAsync(shareLink);
@@ -92,15 +94,8 @@ export async function copyShareLink(wishlistId: string): Promise<string | null> 
  */
 export async function generateQRCode(wishlistId: string): Promise<string | null> {
     try {
-        const { data: wishlist } = await supabase
-            .from('wishlists')
-            .select('slug')
-            .eq('id', wishlistId)
-            .single();
-
-        if (!wishlist) return null;
-
-        const shareLink = `https://wishhive.app/w/${wishlist.slug}`;
+        // Generate public link via GitHub Pages
+        const shareLink = generatePublicWishlistUrl(wishlistId);
 
         // Generate QR code URL using a service like qr-code-generator
         const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(shareLink)}`;

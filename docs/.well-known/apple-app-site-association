@@ -1,0 +1,11 @@
+{
+  "applinks": {
+    "apps": [],
+    "details": [
+      {
+        "appID": "TEAM_ID.com.wishhive.app",
+        "paths": ["/WishHive/w/*"]
+      }
+    ]
+  }
+}
