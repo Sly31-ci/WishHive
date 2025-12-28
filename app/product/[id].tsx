@@ -1,3 +1,12 @@
+/**
+ * 📦 Product Detail Screen V2 - Refonte UX/UI
+ * - 1 CTA unique massif
+ * - Modal simplifié
+ * - Image fullscreen immersive
+ * - Info seller inline
+ * - Animations fluides
+ */
+
 import React, { useEffect, useState } from 'react';
 import {
     View,
@@ -12,26 +21,26 @@ import {
     FlatList,
 } from 'react-native';
 import { useLocalSearchParams, router, Stack } from 'expo-router';
-import {
-    ArrowLeft,
-    Share2,
-    Heart,
-    ShoppingCart,
-    Store,
-    Check,
-    Plus,
-} from 'lucide-react-native';
+import { ArrowLeft, Share2, Heart, Store, X } from 'lucide-react-native';
+import Animated, { FadeInDown, FadeIn } from 'react-native-reanimated';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/lib/supabase';
 import Button from '@/components/Button';
-import { COLORS, SPACING, FONT_SIZES, BORDER_RADIUS } from '@/constants/theme';
+import { Card } from '@/components/Card';
+import {
+    COLORS,
+    SPACING,
+    FONT_SIZES,
+    BORDER_RADIUS,
+    SHADOWS,
+} from '@/constants/theme';
 import { Database } from '@/types/database';
 import { useWishlists } from '@/hooks/useWishlists';
 
 type Product = Database['public']['Tables']['products']['Row'];
 type Seller = Database['public']['Tables']['sellers']['Row'];
 
-const { width } = Dimensions.get('window');
+const { width, height } = Dimensions.get('window');
 
 export default function ProductDetailScreen() {
     const { id } = useLocalSearchParams();
@@ -100,7 +109,7 @@ export default function ProductDetailScreen() {
             if (error) throw error;
 
             setShowWishlistModal(false);
-            Alert.alert('Success', 'Added to wishlist!');
+            Alert.alert('Success ✨', 'Added to your wishlist!');
         } catch (error) {
             Alert.alert('Error', 'Failed to add to wishlist');
         } finally {
@@ -111,7 +120,7 @@ export default function ProductDetailScreen() {
     if (loading) {
         return (
             <View style={styles.centerContainer}>
-                <Text>Loading...</Text>
+                <Text style={styles.loadingText}>Loading...</Text>
             </View>
         );
     }
@@ -119,8 +128,13 @@ export default function ProductDetailScreen() {
     if (!product) {
         return (
             <View style={styles.centerContainer}>
-                <Text>Product not found</Text>
-                <Button title="Go Back" onPress={() => router.back()} style={{ marginTop: 20 }} />
+                <Text style={styles.errorText}>Product not found</Text>
+                <Button
+                    title="Go Back"
+                    onPress={() => router.back()}
+                    variant="ghost"
+                    style={{ marginTop: SPACING.lg }}
+                />
             </View>
         );
     }
@@ -151,8 +165,8 @@ export default function ProductDetailScreen() {
             />
 
             <View style={styles.container}>
-                <ScrollView>
-                    {/* Image Gallery */}
+                <ScrollView showsVerticalScrollIndicator={false}>
+                    {/* Image Gallery - Fullscreen */}
                     <View style={styles.galleryContainer}>
                         <ScrollView
                             horizontal
@@ -179,6 +193,7 @@ export default function ProductDetailScreen() {
                             )}
                         </ScrollView>
 
+                        {/* Pagination Dots */}
                         {images.length > 1 && (
                             <View style={styles.pagination}>
                                 {images.map((_, index) => (
@@ -194,53 +209,55 @@ export default function ProductDetailScreen() {
                         )}
                     </View>
 
-                    <View style={styles.content}>
-                        <View style={styles.header}>
+                    {/* Content */}
+                    <Animated.View entering={FadeInDown.delay(100).springify()} style={styles.content}>
+                        {/* Title & Price */}
+                        <View style={styles.headerSection}>
                             <Text style={styles.title}>{product.title}</Text>
                             <Text style={styles.price}>
                                 {product.currency} {product.price.toFixed(2)}
                             </Text>
                         </View>
 
+                        {/* Seller Info - Inline */}
                         {seller && (
-                            <TouchableOpacity
-                                style={styles.sellerCard}
-                                onPress={() => router.push(`/seller/${seller.id}`)}
-                            >
-                                <View style={styles.sellerIcon}>
-                                    <Store size={20} color={COLORS.primary} />
-                                </View>
-                                <View>
-                                    <Text style={styles.sellerLabel}>Sold by</Text>
-                                    <Text style={styles.sellerName}>{seller.shop_name}</Text>
-                                </View>
-                            </TouchableOpacity>
+                            <Animated.View entering={FadeIn.delay(200)}>
+                                <TouchableOpacity
+                                    style={styles.sellerCard}
+                                    onPress={() => router.push(`/seller/${seller.id}`)}
+                                >
+                                    <View style={styles.sellerIcon}>
+                                        <Store size={18} color={COLORS.primary} />
+                                    </View>
+                                    <View style={styles.sellerInfo}>
+                                        <Text style={styles.sellerLabel}>Sold by</Text>
+                                        <Text style={styles.sellerName}>{seller.shop_name}</Text>
+                                    </View>
+                                </TouchableOpacity>
+                            </Animated.View>
                         )}
 
-                        <View style={styles.section}>
+                        {/* Description */}
+                        <Animated.View entering={FadeIn.delay(250)} style={styles.section}>
                             <Text style={styles.sectionTitle}>Description</Text>
                             <Text style={styles.description}>{product.description}</Text>
-                        </View>
-                    </View>
+                        </Animated.View>
+                    </Animated.View>
                 </ScrollView>
 
-                <View style={styles.footer}>
+                {/* CTA UNIQUE - Fixé en bas */}
+                <Animated.View entering={FadeInDown.delay(300).springify()} style={styles.footer}>
                     <Button
                         title="Add to Wishlist"
                         onPress={() => setShowWishlistModal(true)}
-                        icon={<Heart size={20} color={COLORS.white} />}
-                        style={styles.wishlistButton}
+                        size="lg"
+                        fullWidth
+                        icon={<Heart size={24} color="#FFFFFF" />}
+                        iconPosition="left"
                     />
-                    <Button
-                        title="Buy Now"
-                        onPress={() => { }} // Implement buy flow
-                        variant="outline"
-                        icon={<ShoppingCart size={20} color={COLORS.primary} />}
-                        style={styles.buyButton}
-                    />
-                </View>
+                </Animated.View>
 
-                {/* Wishlist Selection Modal */}
+                {/* Modal de sélection wishlist - Simplifié */}
                 <Modal
                     visible={showWishlistModal}
                     transparent
@@ -248,33 +265,37 @@ export default function ProductDetailScreen() {
                     onRequestClose={() => setShowWishlistModal(false)}
                 >
                     <View style={styles.modalOverlay}>
-                        <View style={styles.modalContent}>
+                        <Animated.View entering={FadeInDown.springify()} style={styles.modalContent}>
                             <View style={styles.modalHeader}>
-                                <Text style={styles.modalTitle}>Select Wishlist</Text>
+                                <Text style={styles.modalTitle}>Add to Wishlist</Text>
                                 <TouchableOpacity onPress={() => setShowWishlistModal(false)}>
-                                    <Text style={styles.closeButton}>Close</Text>
+                                    <X size={24} color={COLORS.dark} />
                                 </TouchableOpacity>
                             </View>
 
                             <FlatList
                                 data={wishlists}
                                 keyExtractor={(item) => item.id}
-                                renderItem={({ item }) => (
-                                    <TouchableOpacity
-                                        style={styles.wishlistItem}
-                                        onPress={() => handleAddToWishlist(item.id)}
-                                        disabled={addingToWishlist}
-                                    >
-                                        <View>
-                                            <Text style={styles.wishlistName}>{item.title}</Text>
-                                            <Text style={styles.wishlistType}>{item.type}</Text>
-                                        </View>
-                                        <Plus size={20} color={COLORS.primary} />
-                                    </TouchableOpacity>
+                                renderItem={({ item, index }) => (
+                                    <Animated.View entering={FadeInDown.delay(index * 50).springify()}>
+                                        <TouchableOpacity
+                                            style={styles.wishlistItem}
+                                            onPress={() => handleAddToWishlist(item.id)}
+                                            disabled={addingToWishlist}
+                                        >
+                                            <View>
+                                                <Text style={styles.wishlistName}>{item.title}</Text>
+                                                <Text style={styles.wishlistType}>{item.type}</Text>
+                                            </View>
+                                            <Heart size={20} color={COLORS.primary} />
+                                        </TouchableOpacity>
+                                    </Animated.View>
                                 )}
                                 ListEmptyComponent={
                                     <View style={styles.emptyWishlist}>
-                                        <Text>No wishlists found. Create one first!</Text>
+                                        <Text style={styles.emptyText}>
+                                            No wishlists found.{'\n'}Create one first!
+                                        </Text>
                                         <Button
                                             title="Create Wishlist"
                                             onPress={() => {
@@ -282,12 +303,12 @@ export default function ProductDetailScreen() {
                                                 router.push('/wishlists/create');
                                             }}
                                             size="sm"
-                                            style={{ marginTop: 10 }}
+                                            style={{ marginTop: SPACING.md }}
                                         />
                                     </View>
                                 }
                             />
-                        </View>
+                        </Animated.View>
                     </View>
                 </Modal>
             </View>
@@ -298,35 +319,42 @@ export default function ProductDetailScreen() {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: COLORS.light,
+        backgroundColor: COLORS.white,
     },
     centerContainer: {
         flex: 1,
         justifyContent: 'center',
         alignItems: 'center',
+        backgroundColor: COLORS.light,
+        padding: SPACING.xl,
+    },
+    loadingText: {
+        fontSize: FONT_SIZES.md,
+        color: COLORS.gray[500],
+    },
+    errorText: {
+        fontSize: FONT_SIZES.lg,
+        color: COLORS.dark,
+        fontWeight: '600',
     },
     headerButton: {
-        width: 40,
-        height: 40,
-        borderRadius: 20,
+        width: 44,
+        height: 44,
+        borderRadius: 22,
         backgroundColor: COLORS.white,
         justifyContent: 'center',
         alignItems: 'center',
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.1,
-        shadowRadius: 4,
-        elevation: 3,
-        marginLeft: SPACING.md,
+        ...SHADOWS.md,
+        marginHorizontal: SPACING.md,
     },
     galleryContainer: {
-        height: 300,
+        height: height * 0.45, // 45% de la hauteur d'écran
         backgroundColor: COLORS.white,
         position: 'relative',
     },
     image: {
         width: width,
-        height: 300,
+        height: height * 0.45,
         resizeMode: 'cover',
     },
     placeholderImage: {
@@ -336,32 +364,34 @@ const styles = StyleSheet.create({
     },
     pagination: {
         position: 'absolute',
-        bottom: SPACING.md,
+        bottom: SPACING.lg,
         flexDirection: 'row',
         width: '100%',
         justifyContent: 'center',
-        gap: 8,
+        gap: SPACING.xs,
     },
     paginationDot: {
         width: 8,
         height: 8,
         borderRadius: 4,
-        backgroundColor: 'rgba(0,0,0,0.2)',
+        backgroundColor: 'rgba(255,255,255,0.5)',
     },
     paginationDotActive: {
         backgroundColor: COLORS.primary,
+        width: 24,
     },
     content: {
         padding: SPACING.lg,
     },
-    header: {
+    headerSection: {
         marginBottom: SPACING.lg,
     },
     title: {
         fontSize: FONT_SIZES.xxl,
         fontWeight: '700',
         color: COLORS.dark,
-        marginBottom: SPACING.xs,
+        marginBottom: SPACING.sm,
+        lineHeight: 32,
     },
     price: {
         fontSize: FONT_SIZES.xl,
@@ -371,25 +401,27 @@ const styles = StyleSheet.create({
     sellerCard: {
         flexDirection: 'row',
         alignItems: 'center',
-        backgroundColor: COLORS.white,
+        backgroundColor: COLORS.gray[50],
         padding: SPACING.md,
         borderRadius: BORDER_RADIUS.lg,
         marginBottom: SPACING.lg,
-        borderWidth: 1,
-        borderColor: COLORS.gray[200],
     },
     sellerIcon: {
         width: 40,
         height: 40,
         borderRadius: 20,
-        backgroundColor: COLORS.primary + '10',
+        backgroundColor: COLORS.primary + '15',
         justifyContent: 'center',
         alignItems: 'center',
         marginRight: SPACING.md,
     },
+    sellerInfo: {
+        flex: 1,
+    },
     sellerLabel: {
         fontSize: FONT_SIZES.xs,
         color: COLORS.gray[500],
+        marginBottom: 2,
     },
     sellerName: {
         fontSize: FONT_SIZES.md,
@@ -397,7 +429,7 @@ const styles = StyleSheet.create({
         color: COLORS.dark,
     },
     section: {
-        marginBottom: SPACING.lg,
+        marginBottom: SPACING.xl,
     },
     sectionTitle: {
         fontSize: FONT_SIZES.lg,
@@ -414,15 +446,8 @@ const styles = StyleSheet.create({
         padding: SPACING.lg,
         backgroundColor: COLORS.white,
         borderTopWidth: 1,
-        borderTopColor: COLORS.gray[200],
-        flexDirection: 'row',
-        gap: SPACING.md,
-    },
-    wishlistButton: {
-        flex: 1,
-    },
-    buyButton: {
-        flex: 1,
+        borderTopColor: COLORS.gray[100],
+        ...SHADOWS.lg,
     },
     modalOverlay: {
         flex: 1,
@@ -447,16 +472,12 @@ const styles = StyleSheet.create({
         fontWeight: '700',
         color: COLORS.dark,
     },
-    closeButton: {
-        color: COLORS.primary,
-        fontSize: FONT_SIZES.md,
-        fontWeight: '600',
-    },
     wishlistItem: {
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'center',
         paddingVertical: SPACING.md,
+        paddingHorizontal: SPACING.sm,
         borderBottomWidth: 1,
         borderBottomColor: COLORS.gray[100],
     },
@@ -464,6 +485,7 @@ const styles = StyleSheet.create({
         fontSize: FONT_SIZES.md,
         fontWeight: '600',
         color: COLORS.dark,
+        marginBottom: 2,
     },
     wishlistType: {
         fontSize: FONT_SIZES.xs,
@@ -473,5 +495,11 @@ const styles = StyleSheet.create({
     emptyWishlist: {
         alignItems: 'center',
         padding: SPACING.xl,
+    },
+    emptyText: {
+        fontSize: FONT_SIZES.md,
+        color: COLORS.gray[600],
+        textAlign: 'center',
+        lineHeight: 22,
     },
 });

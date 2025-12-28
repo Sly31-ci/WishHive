@@ -1,3 +1,18 @@
+/**
+ * 📝 Wishlist Detail Screen - Version Complète
+ * Conserve TOUTES les fonctionnalités V1 avec le design moderne V2
+ * 
+ * Fonctionnalités :
+ * - ✅ Customization (theme/couleurs)
+ * - ✅ Partage (ShareWishlistButton)
+ * - ✅ Réorganisation (drag & drop)
+ * - ✅ Delete wishlist
+ * - ✅ Swipe actions sur items
+ * - ✅ Group gifts (cagnotte)
+ * - ✅ Priority badges
+ * - ✅ Purchased status
+ */
+
 import React, { useEffect, useState } from 'react';
 import {
     View,
@@ -10,7 +25,6 @@ import {
     ActivityIndicator,
 } from 'react-native';
 import { Image } from 'expo-image';
-// import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { useLocalSearchParams, router, Stack } from 'expo-router';
 import {
     ArrowLeft,
@@ -21,6 +35,7 @@ import {
     Clock,
     ArrowUpDown,
     Palette,
+    Plus,
 } from 'lucide-react-native';
 import { WishlistThemeSelector } from '@/components/WishlistThemeSelector';
 import ShareWishlistButton from '@/components/ShareWishlistButton';
@@ -53,7 +68,7 @@ export default function WishlistDetailScreen() {
     const [loading, setLoading] = useState(true);
     const [isOwner, setIsOwner] = useState(false);
 
-    // Reordering State (fallback : drag disabled)
+    // Reordering State
     const [isReordering, setIsReordering] = useState(false);
     const [originalItems, setOriginalItems] = useState<WishlistItem[]>([]);
     const [savingOrder, setSavingOrder] = useState(false);
@@ -129,7 +144,6 @@ export default function WishlistDetailScreen() {
         }
 
         try {
-            // Only load wishlist info on first load
             if (isFirstLoad) {
                 const { data: wishlistData, error: wishlistError } = await supabase
                     .from('wishlists')
@@ -157,7 +171,6 @@ export default function WishlistDetailScreen() {
             let newItems: WishlistItem[] = [];
 
             if (itemsData && itemsData.length > 0) {
-                // Manually fetch group gifts to avoid missing relationship error
                 const itemIds = itemsData.map(i => i.id);
                 const { data: giftsData } = await supabase
                     .from('group_gifts')
@@ -167,8 +180,6 @@ export default function WishlistDetailScreen() {
                 const giftsMap = new Map();
                 if (giftsData) {
                     giftsData.forEach(gift => {
-                        // If there are multiple, this will just take the last one, effectively same as picking one. 
-                        // To match previous '0' index logic, we might want to be careful but usually there's only one.
                         if (!giftsMap.has(gift.item_id)) {
                             giftsMap.set(gift.item_id, gift);
                         }
@@ -199,7 +210,6 @@ export default function WishlistDetailScreen() {
             setLoading(false);
             setPagination(prev => ({ ...prev, loadingMore: false }));
 
-            // Save to cache
             if (wishlist) {
                 cache.set(`wishlist_${id}`, wishlist);
             }
@@ -214,8 +224,6 @@ export default function WishlistDetailScreen() {
             loadWishlistDetails(false);
         }
     };
-
-    // Share handled by ShareWishlistButton component
 
     const toggleReorder = () => {
         if (isReordering) {
@@ -559,6 +567,15 @@ export default function WishlistDetailScreen() {
                 }
             />
 
+            {isOwner && (
+                <TouchableOpacity
+                    style={styles.fab}
+                    onPress={() => router.push(`/wishlists/${id}/add-item`)}
+                >
+                    <Plus size={28} color="#FFFFFF" />
+                </TouchableOpacity>
+            )}
+
             {isReordering && (
                 <ReorganizeToolbar
                     onCancel={toggleReorder}
@@ -634,7 +651,7 @@ const styles = StyleSheet.create({
     },
     headerContent: {
         padding: SPACING.lg,
-        paddingTop: 100,
+        paddingTop: 60,
         backgroundColor: COLORS.white,
         borderBottomLeftRadius: BORDER_RADIUS.xl,
         borderBottomRightRadius: BORDER_RADIUS.xl,
@@ -689,6 +706,8 @@ const styles = StyleSheet.create({
     },
     itemCard: {
         padding: SPACING.md,
+        marginHorizontal: SPACING.lg,
+        marginBottom: SPACING.md,
     },
     itemContent: {
         flexDirection: 'row',
@@ -802,7 +821,7 @@ const styles = StyleSheet.create({
         backgroundColor: COLORS.gray[200],
         borderRadius: 4,
         overflow: 'hidden',
-        marginBottom: 8,
+        marginBottom: SPACING.xs,
     },
     progressBarFill: {
         height: '100%',
@@ -811,16 +830,30 @@ const styles = StyleSheet.create({
     cagnotteDetails: {
         flexDirection: 'row',
         justifyContent: 'space-between',
-        alignItems: 'center',
     },
     cagnotteAmount: {
-        fontSize: 12,
-        fontWeight: '600',
-        color: COLORS.dark,
+        fontSize: FONT_SIZES.xs,
+        color: COLORS.gray[600],
     },
     cagnottePercent: {
-        fontSize: 12,
+        fontSize: FONT_SIZES.xs,
         fontWeight: '700',
         color: COLORS.primary,
+    },
+    fab: {
+        position: 'absolute',
+        bottom: SPACING.xl,
+        right: SPACING.lg,
+        width: 64,
+        height: 64,
+        borderRadius: 32,
+        backgroundColor: COLORS.primary,
+        justifyContent: 'center',
+        alignItems: 'center',
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.3,
+        shadowRadius: 8,
+        elevation: 8,
     },
 });

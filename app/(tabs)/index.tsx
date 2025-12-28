@@ -5,20 +5,28 @@ import {
   StyleSheet,
   ScrollView,
   TouchableOpacity,
-  Image,
-  FlatList,
   RefreshControl,
+  Dimensions,
 } from 'react-native';
 import { router } from 'expo-router';
-import { Plus, TrendingUp, Gift, Sparkles, Search, Bell, Trophy } from 'lucide-react-native';
+import { Bell, TrendingUp, Sparkles, Plus } from 'lucide-react-native';
+import Animated, { FadeInDown, FadeIn } from 'react-native-reanimated';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/lib/supabase';
-import { Card } from '@/components/Card';
 import Button from '@/components/Button';
-import { COLORS, SPACING, FONT_SIZES, BORDER_RADIUS } from '@/constants/theme';
+import { Card } from '@/components/Card';
+import {
+  COLORS,
+  SPACING,
+  FONT_SIZES,
+  BORDER_RADIUS,
+  SHADOWS,
+} from '@/constants/theme';
 import { Database } from '@/types/database';
 
 type Wishlist = Database['public']['Tables']['wishlists']['Row'];
+
+const { width } = Dimensions.get('window');
 
 export default function HomeScreen() {
   const { profile } = useAuth();
@@ -38,7 +46,7 @@ export default function HomeScreen() {
         .eq('privacy', 'public')
         .eq('is_active', true)
         .order('view_count', { ascending: false })
-        .limit(10);
+        .limit(6); // Réduit de 10 à 6 pour moins de surcharge
 
       if (error) throw error;
       setTrendingWishlists(data || []);
@@ -55,44 +63,27 @@ export default function HomeScreen() {
     loadTrendingWishlists();
   };
 
-  const renderWishlistCard = ({ item }: { item: Wishlist }) => (
-    <TouchableOpacity
-      style={styles.trendingCard}
-      onPress={() => router.push(`/wishlists/${item.id}`)}
-    >
-      <View style={styles.trendingCardHeader}>
-        <View style={styles.typeBadge}>
-          <Text style={styles.typeBadgeText}>{item.type}</Text>
-        </View>
-      </View>
-      <Text style={styles.trendingTitle} numberOfLines={2}>
-        {item.title}
-      </Text>
-      <Text style={styles.trendingViews}>{item.view_count} views</Text>
-    </TouchableOpacity>
-  );
+  // Calcul de la progression pour level
+  const currentLevelProgress = ((profile?.points || 0) % 100);
+  const pointsToNextLevel = 100 - currentLevelProgress;
 
   return (
     <View style={styles.container}>
+      {/* Header Simplifié - 2 éléments max */}
       <View style={styles.header}>
-
-        <View>
-          <Text style={styles.greeting}>Hello, {profile?.username}!</Text>
+        <View style={styles.headerLeft}>
+          <Text style={styles.greeting}>Hi, {profile?.username}! 👋</Text>
           <Text style={styles.subtitle}>What wishes will you make today?</Text>
         </View>
-        <View style={styles.headerActions}>
-          <TouchableOpacity onPress={() => router.push('/search')}>
-            <Search size={24} color={COLORS.dark} />
-          </TouchableOpacity>
-          <TouchableOpacity onPress={() => router.push('/notifications')}>
-            <Bell size={24} color={COLORS.dark} />
-          </TouchableOpacity>
-          <View style={styles.pointsBadge}>
-            <Sparkles size={16} color={COLORS.accent} />
-            <Text style={styles.pointsText}>{profile?.points || 0}</Text>
+        <TouchableOpacity
+          onPress={() => router.push('/notifications')}
+          style={styles.notificationButton}
+        >
+          <Bell size={24} color={COLORS.dark} />
+          <View style={styles.notificationBadge}>
+            <Text style={styles.notificationBadgeText}>3</Text>
           </View>
-        </View>
-
+        </TouchableOpacity>
       </View>
 
       <ScrollView
@@ -107,92 +98,105 @@ export default function HomeScreen() {
           />
         }
       >
-        <Card style={styles.quickActions}>
-          <Text style={styles.sectionTitle}>Quick Actions</Text>
-          <View style={styles.actionButtons}>
-            <TouchableOpacity
-              style={styles.actionButton}
+        {/* CTA Principal UNIQUE - Style Hero */}
+        <Animated.View entering={FadeInDown.delay(100).springify()}>
+          <View style={styles.heroSection}>
+            <Button
+              title="Create Wishlist"
               onPress={() => router.push('/wishlists/create')}
-            >
-              <View style={styles.actionIcon}>
-                <Plus size={24} color={COLORS.white} />
-              </View>
-              <Text style={styles.actionText}>Create Wishlist</Text>
-            </TouchableOpacity>
-
-            {/* V2 Features Hidden for V1 */}
-            {/* 
-            <TouchableOpacity
-              style={styles.actionButton}
-              onPress={() => router.push('/(tabs)/marketplace')}
-            >
-              <View style={[styles.actionIcon, styles.actionIconSecondary]}>
-                <Gift size={24} color={COLORS.white} />
-              </View>
-              <Text style={styles.actionText}>Browse Gifts</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={styles.actionButton}
-              onPress={() => router.push('/leaderboard')}
-            >
-              <View style={[styles.actionIcon, styles.actionIconTertiary]}>
-                <Trophy size={24} color={COLORS.white} />
-              </View>
-              <Text style={styles.actionText}>Leaderboard</Text>
-            </TouchableOpacity>
-            */}
-          </View>
-        </Card>
-
-        <View style={styles.section}>
-          <View style={styles.sectionHeader}>
-            <TrendingUp size={20} color={COLORS.primary} />
-            <Text style={styles.sectionTitle}>Trending Wishlists</Text>
-          </View>
-
-          {loading ? (
-            <Text style={styles.loadingText}>Loading...</Text>
-          ) : trendingWishlists.length > 0 ? (
-            <FlatList
-              data={trendingWishlists}
-              renderItem={renderWishlistCard}
-              keyExtractor={(item) => item.id}
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              contentContainerStyle={styles.trendingList}
+              size="hero"
+              fullWidth
+              icon={<Plus size={28} color="#FFFFFF" />}
+              iconPosition="left"
             />
-          ) : (
-            <Card style={styles.emptyCard}>
-              <Text style={styles.emptyText}>
-                No trending wishlists yet. Be the first to create one!
+            <Text style={styles.heroHint}>
+              Start your first wishlist in seconds ✨
+            </Text>
+          </View>
+        </Animated.View>
+
+        {/* Level Progress - Inline & Minimaliste */}
+        <Animated.View entering={FadeIn.delay(200)}>
+          <View style={styles.levelSection}>
+            <View style={styles.levelHeader}>
+              <View style={styles.levelInfo}>
+                <Sparkles size={18} color={COLORS.primary} />
+                <Text style={styles.levelText}>
+                  Level {profile?.level || 1} • {profile?.points || 0} pts
+                </Text>
+              </View>
+              <Text style={styles.levelProgress}>
+                {pointsToNextLevel} to next
               </Text>
-              <Button
-                title="Create Wishlist"
-                onPress={() => router.push('/wishlists/create')}
-                size="sm"
-                style={styles.emptyButton}
+            </View>
+            <View style={styles.progressBar}>
+              <Animated.View
+                style={[
+                  styles.progressFill,
+                  { width: `${currentLevelProgress}%` },
+                ]}
+                entering={FadeIn.delay(300).duration(800)}
               />
-            </Card>
-          )}
-        </View>
-
-        <View style={styles.levelCard}>
-          <Text style={styles.levelTitle}>Level {profile?.level || 1}</Text>
-          <View style={styles.progressBar}>
-            <View
-              style={[
-                styles.progressFill,
-                {
-                  width: `${((profile?.points || 0) % 100)}%`,
-                },
-              ]}
-            />
+            </View>
           </View>
-          <Text style={styles.levelText}>
-            {100 - ((profile?.points || 0) % 100)} points to next level
-          </Text>
-        </View>
+        </Animated.View>
+
+        {/* Trending Section - Ultra Simplifié */}
+        <Animated.View entering={FadeIn.delay(300)}>
+          <View style={styles.section}>
+            <View style={styles.sectionHeader}>
+              <TrendingUp size={20} color={COLORS.primary} />
+              <Text style={styles.sectionTitle}>Trending Now</Text>
+            </View>
+
+            {loading ? (
+              <View style={styles.loadingContainer}>
+                <Text style={styles.loadingText}>Loading...</Text>
+              </View>
+            ) : trendingWishlists.length > 0 ? (
+              <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                contentContainerStyle={styles.trendingList}
+              >
+                {trendingWishlists.map((item, index) => (
+                  <Animated.View
+                    key={item.id}
+                    entering={FadeInDown.delay(400 + index * 50).springify()}
+                  >
+                    <Card
+                      onPress={() => router.push(`/wishlists/${item.id}`)}
+                      style={styles.trendingCard}
+                      padding="md"
+                    >
+                      {/* Image placeholder */}
+                      <View style={styles.trendingImage}>
+                        <Text style={styles.trendingEmoji}>
+                          {item.type === 'birthday' ? '🎂' :
+                            item.type === 'wedding' ? '💒' :
+                              item.type === 'baby' ? '👶' :
+                                item.type === 'holiday' ? '🎄' : '🎁'}
+                        </Text>
+                      </View>
+                      <Text style={styles.trendingTitle} numberOfLines={2}>
+                        {item.title}
+                      </Text>
+                      <Text style={styles.trendingViews}>
+                        {item.view_count} views
+                      </Text>
+                    </Card>
+                  </Animated.View>
+                ))}
+              </ScrollView>
+            ) : (
+              <Card style={styles.emptyCard} padding="xl">
+                <Text style={styles.emptyText}>
+                  No trending wishlists yet.{'\n'}Be the first to create one! 🚀
+                </Text>
+              </Card>
+            )}
+          </View>
+        </Animated.View>
       </ScrollView>
     </View>
   );
@@ -206,175 +210,165 @@ const styles = StyleSheet.create({
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'center',
-    padding: SPACING.lg,
+    alignItems: 'flex-start',
+    paddingHorizontal: SPACING.lg,
     paddingTop: SPACING.xxl,
+    paddingBottom: SPACING.lg,
     backgroundColor: COLORS.white,
     borderBottomWidth: 1,
-    borderBottomColor: COLORS.gray[200],
+    borderBottomColor: COLORS.gray[100],
+  },
+  headerLeft: {
+    flex: 1,
   },
   greeting: {
     fontSize: FONT_SIZES.xxl,
     fontWeight: '700',
     color: COLORS.dark,
+    marginBottom: SPACING.xs,
   },
   subtitle: {
     fontSize: FONT_SIZES.sm,
     color: COLORS.gray[600],
-    marginTop: SPACING.xs,
+    lineHeight: 20,
   },
-  pointsBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: COLORS.accent + '20',
-    paddingHorizontal: SPACING.md,
-    paddingVertical: SPACING.sm,
-    borderRadius: BORDER_RADIUS.full,
-    gap: SPACING.xs,
+  notificationButton: {
+    position: 'relative',
+    padding: SPACING.sm,
+    marginLeft: SPACING.md,
   },
-  pointsText: {
-    fontSize: FONT_SIZES.md,
-    fontWeight: '700',
-    color: COLORS.accent,
-  },
-  headerActions: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: SPACING.md,
-  },
-  content: {
-    flex: 1,
-    padding: SPACING.lg,
-  },
-  quickActions: {
-    marginBottom: SPACING.lg,
-  },
-  sectionTitle: {
-    fontSize: FONT_SIZES.lg,
-    fontWeight: '700',
-    color: COLORS.dark,
-    marginBottom: SPACING.md,
-  },
-  actionButtons: {
-    flexDirection: 'row',
-    gap: SPACING.md,
-  },
-  actionButton: {
-    flex: 1,
-    alignItems: 'center',
-    gap: SPACING.sm,
-  },
-  actionIcon: {
-    width: 56,
-    height: 56,
-    borderRadius: BORDER_RADIUS.xl,
-    backgroundColor: COLORS.primary,
+  notificationBadge: {
+    position: 'absolute',
+    top: 4,
+    right: 4,
+    backgroundColor: COLORS.error,
+    borderRadius: 10,
+    width: 20,
+    height: 20,
     justifyContent: 'center',
     alignItems: 'center',
   },
-  actionIconSecondary: {
-    backgroundColor: COLORS.secondary,
+  notificationBadgeText: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: '#FFFFFF',
   },
-  actionIconTertiary: {
-    backgroundColor: COLORS.accent,
+  content: {
+    flex: 1,
   },
-  actionText: {
+  heroSection: {
+    paddingHorizontal: SPACING.lg,
+    paddingTop: SPACING.xl,
+    paddingBottom: SPACING.lg,
+  },
+  heroHint: {
     fontSize: FONT_SIZES.sm,
-    fontWeight: '600',
-    color: COLORS.dark,
-    textAlign: 'center',
-  },
-  section: {
-    marginBottom: SPACING.lg,
-  },
-  sectionHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: SPACING.sm,
-    marginBottom: SPACING.md,
-  },
-  trendingList: {
-    gap: SPACING.md,
-  },
-  trendingCard: {
-    width: 200,
-    backgroundColor: COLORS.white,
-    borderRadius: BORDER_RADIUS.lg,
-    padding: SPACING.md,
-    borderWidth: 1,
-    borderColor: COLORS.gray[200],
-  },
-  trendingCardHeader: {
-    marginBottom: SPACING.sm,
-  },
-  typeBadge: {
-    backgroundColor: COLORS.primary + '20',
-    paddingHorizontal: SPACING.sm,
-    paddingVertical: 4,
-    borderRadius: BORDER_RADIUS.sm,
-    alignSelf: 'flex-start',
-  },
-  typeBadgeText: {
-    fontSize: FONT_SIZES.xs,
-    fontWeight: '600',
-    color: COLORS.primary,
-    textTransform: 'capitalize',
-  },
-  trendingTitle: {
-    fontSize: FONT_SIZES.md,
-    fontWeight: '600',
-    color: COLORS.dark,
-    marginBottom: SPACING.xs,
-  },
-  trendingViews: {
-    fontSize: FONT_SIZES.xs,
-    color: COLORS.gray[500],
-  },
-  loadingText: {
-    textAlign: 'center',
-    color: COLORS.gray[500],
-    padding: SPACING.lg,
-  },
-  emptyCard: {
-    alignItems: 'center',
-    padding: SPACING.xl,
-  },
-  emptyText: {
-    fontSize: FONT_SIZES.md,
     color: COLORS.gray[600],
     textAlign: 'center',
-    marginBottom: SPACING.md,
+    marginTop: SPACING.md,
   },
-  emptyButton: {
-    marginTop: SPACING.sm,
-  },
-  levelCard: {
+  levelSection: {
+    marginHorizontal: SPACING.lg,
+    marginBottom: SPACING.xl,
+    padding: SPACING.lg,
     backgroundColor: COLORS.white,
     borderRadius: BORDER_RADIUS.lg,
-    padding: SPACING.lg,
-    borderWidth: 1,
-    borderColor: COLORS.gray[200],
+    ...SHADOWS.xs,
   },
-  levelTitle: {
-    fontSize: FONT_SIZES.xl,
-    fontWeight: '700',
-    color: COLORS.primary,
+  levelHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
     marginBottom: SPACING.sm,
+  },
+  levelInfo: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: SPACING.xs,
+  },
+  levelText: {
+    fontSize: FONT_SIZES.md,
+    fontWeight: '600',
+    color: COLORS.dark,
+  },
+  levelProgress: {
+    fontSize: FONT_SIZES.xs,
+    color: COLORS.gray[500],
   },
   progressBar: {
-    height: 8,
-    backgroundColor: COLORS.gray[200],
+    height: 6,
+    backgroundColor: COLORS.gray[100],
     borderRadius: BORDER_RADIUS.full,
     overflow: 'hidden',
-    marginBottom: SPACING.sm,
   },
   progressFill: {
     height: '100%',
     backgroundColor: COLORS.primary,
     borderRadius: BORDER_RADIUS.full,
   },
-  levelText: {
+  section: {
+    marginBottom: SPACING.xl,
+  },
+  sectionHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: SPACING.sm,
+    paddingHorizontal: SPACING.lg,
+    marginBottom: SPACING.md,
+  },
+  sectionTitle: {
+    fontSize: FONT_SIZES.lg,
+    fontWeight: '700',
+    color: COLORS.dark,
+  },
+  trendingList: {
+    paddingHorizontal: SPACING.lg,
+    gap: SPACING.md,
+  },
+  trendingCard: {
+    width: width * 0.42, // ~40% de la largeur d'écran
+    minWidth: 160,
+  },
+  trendingImage: {
+    width: '100%',
+    aspectRatio: 1,
+    backgroundColor: COLORS.gray[50],
+    borderRadius: BORDER_RADIUS.md,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: SPACING.sm,
+  },
+  trendingEmoji: {
+    fontSize: 48,
+  },
+  trendingTitle: {
     fontSize: FONT_SIZES.sm,
+    fontWeight: '600',
+    color: COLORS.dark,
+    marginBottom: SPACING.xs,
+    lineHeight: 18,
+  },
+  trendingViews: {
+    fontSize: FONT_SIZES.xs,
+    color: COLORS.gray[500],
+  },
+  loadingContainer: {
+    paddingHorizontal: SPACING.lg,
+    paddingVertical: SPACING.xl,
+  },
+  loadingText: {
+    textAlign: 'center',
+    color: COLORS.gray[500],
+    fontSize: FONT_SIZES.sm,
+  },
+  emptyCard: {
+    marginHorizontal: SPACING.lg,
+    alignItems: 'center',
+  },
+  emptyText: {
+    fontSize: FONT_SIZES.md,
     color: COLORS.gray[600],
+    textAlign: 'center',
+    lineHeight: 24,
   },
 });

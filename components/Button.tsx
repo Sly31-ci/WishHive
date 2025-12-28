@@ -1,195 +1,214 @@
+/**
+ * 🎯 ButtonV2 - Bouton optimisé pour super-apps mobiles
+ * - Hauteur minimale 56px (touch-friendly)
+ * - Variants simplifiés
+ * - Animations natives
+ * - Feedback haptique
+ */
+
 import React from 'react';
 import {
-  TouchableOpacity,
-  Text,
-  StyleSheet,
-  ActivityIndicator,
-  ViewStyle,
-  TextStyle,
+    TouchableOpacity,
+    Text,
+    StyleSheet,
+    ActivityIndicator,
+    ViewStyle,
+    TextStyle,
+    View,
+    Pressable,
 } from 'react-native';
-import { COLORS, SPACING, FONT_SIZES, BORDER_RADIUS, SHADOWS } from '@/constants/theme';
-
-import * as Haptics from 'expo-haptics';
 import Animated, {
-  useAnimatedStyle,
-  useSharedValue,
-  withSpring
+    useSharedValue,
+    useAnimatedStyle,
+    withSpring,
+    withTiming,
 } from 'react-native-reanimated';
+import { COLORS, FONT_SIZES, BORDER_RADIUS, SHADOWS, SPACING, ANIMATIONS } from '@/constants/theme';
 
-interface ButtonProps {
-  title: string;
-  onPress: () => void;
-  variant?: 'primary' | 'secondary' | 'outline' | 'ghost';
-  size?: 'sm' | 'md' | 'lg';
-  loading?: boolean;
-  disabled?: boolean;
-  style?: ViewStyle;
-  textStyle?: TextStyle;
-  icon?: React.ReactNode;
-  haptic?: Haptics.ImpactFeedbackStyle | 'notification' | boolean;
-  accessibilityLabel?: string;
-  accessibilityHint?: string;
+type ButtonVariant = 'primary' | 'secondary' | 'outline' | 'ghost' | 'danger';
+type ButtonSize = 'sm' | 'md' | 'lg' | 'hero';
+
+interface ButtonV2Props {
+    title: string;
+    onPress: () => void;
+    variant?: ButtonVariant;
+    size?: ButtonSize;
+    disabled?: boolean;
+    loading?: boolean;
+    icon?: React.ReactNode;
+    iconPosition?: 'left' | 'right';
+    fullWidth?: boolean;
+    style?: ViewStyle;
+    textStyle?: TextStyle;
 }
 
+const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
+
 export default function Button({
-  title,
-  onPress,
-  variant = 'primary',
-  size = 'md',
-  loading = false,
-  disabled = false,
-  style,
-  textStyle,
-  icon,
-  haptic = Haptics.ImpactFeedbackStyle.Light,
-  accessibilityLabel,
-  accessibilityHint,
-}: ButtonProps) {
-  const scale = useSharedValue(1);
-
-  const animatedStyle = useAnimatedStyle(() => {
-    return {
-      transform: [{ scale: scale.value }],
-    };
-  });
-
-  const handlePressIn = () => {
-    scale.value = withSpring(0.95, { damping: 10, stiffness: 300 });
-  };
-
-  const handlePressOut = () => {
-    scale.value = withSpring(1, { damping: 10, stiffness: 300 });
-  };
-
-  const handlePress = () => {
-    if (haptic) {
-      if (haptic === 'notification') {
-        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-      } else if (typeof haptic === 'string') {
-        Haptics.impactAsync(haptic as Haptics.ImpactFeedbackStyle);
-      } else {
-        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-      }
-    }
-    onPress();
-  };
-
-  const buttonStyles = [
-    styles.base,
-    styles[variant],
-    styles[`${size}Size`],
-    disabled && styles.disabled,
+    title,
+    onPress,
+    variant = 'primary',
+    size = 'md',
+    disabled = false,
+    loading = false,
+    icon,
+    iconPosition = 'left',
+    fullWidth = false,
     style,
-  ];
-
-  const textStyles = [
-    styles.text,
-    styles[`${variant}Text`],
-    styles[`${size}Text`],
-    disabled && styles.disabledText,
     textStyle,
-  ];
+}: ButtonV2Props) {
+    const scale = useSharedValue(1);
 
-  return (
-    <TouchableOpacity
-      style={buttonStyles}
-      onPress={handlePress}
-      onPressIn={handlePressIn}
-      onPressOut={handlePressOut}
-      disabled={disabled || loading}
-      activeOpacity={0.7}
-      accessibilityLabel={accessibilityLabel || title}
-      accessibilityRole="button"
-      accessibilityHint={accessibilityHint}
-      accessibilityState={{ disabled: disabled || loading }}
-    >
-      <Animated.View style={[styles.content, animatedStyle]}>
-        {loading ? (
-          <ActivityIndicator
-            color={variant === 'primary' ? COLORS.dark : (variant === 'secondary' ? COLORS.white : COLORS.primary)}
-          />
-        ) : (
-          <>
-            {icon}
-            <Text style={textStyles}>{title}</Text>
-          </>
-        )}
-      </Animated.View>
-    </TouchableOpacity>
-  );
+    const animatedStyle = useAnimatedStyle(() => {
+        return {
+            transform: [{ scale: scale.value }],
+        };
+    });
+
+    const handlePressIn = () => {
+        scale.value = withTiming(ANIMATIONS.scale.tap, {
+            duration: ANIMATIONS.duration.fast,
+        });
+    };
+
+    const handlePressOut = () => {
+        scale.value = withSpring(1, {
+            damping: 10,
+            stiffness: 300,
+        });
+    };
+
+    const handlePress = () => {
+        if (!disabled && !loading) {
+            onPress();
+        }
+    };
+
+    // Styles dynamiques basés sur variant
+    const getButtonStyle = (): ViewStyle => {
+        const baseStyle: ViewStyle = {
+            borderRadius: BORDER_RADIUS.lg,
+            alignItems: 'center',
+            justifyContent: 'center',
+            flexDirection: 'row',
+            gap: SPACING.sm,
+        };
+
+        // Size
+        const sizeStyles: Record<ButtonSize, ViewStyle> = {
+            sm: {
+                paddingVertical: SPACING.sm,
+                paddingHorizontal: SPACING.lg,
+                minHeight: 44,
+            },
+            md: {
+                paddingVertical: SPACING.md,
+                paddingHorizontal: SPACING.xl,
+                minHeight: 56,
+            },
+            lg: {
+                paddingVertical: SPACING.lg,
+                paddingHorizontal: SPACING.xl,
+                minHeight: 64,
+            },
+            hero: {
+                paddingVertical: SPACING.xl,
+                paddingHorizontal: SPACING.xxl,
+                minHeight: 72,
+            },
+        };
+
+        // Variant
+        const variantStyles: Record<ButtonVariant, ViewStyle> = {
+            primary: {
+                backgroundColor: COLORS.primary,
+                ...SHADOWS.md,
+            },
+            secondary: {
+                backgroundColor: COLORS.secondary,
+                ...SHADOWS.md,
+            },
+            outline: {
+                backgroundColor: 'transparent',
+                borderWidth: 2,
+                borderColor: COLORS.primary,
+            },
+            ghost: {
+                backgroundColor: COLORS.gray[100],
+            },
+            danger: {
+                backgroundColor: COLORS.error,
+                ...SHADOWS.md,
+            },
+        };
+
+        // Disabled
+        const disabledStyle: ViewStyle = disabled || loading
+            ? {
+                backgroundColor: COLORS.gray[200],
+                borderColor: COLORS.gray[200],
+                opacity: 0.6,
+            }
+            : {};
+
+        return {
+            ...baseStyle,
+            ...sizeStyles[size],
+            ...variantStyles[variant],
+            ...disabledStyle,
+            ...(fullWidth && { width: '100%' }),
+        };
+    };
+
+    // Text styles
+    const getTextStyle = (): TextStyle => {
+        const sizeStyles: Record<ButtonSize, TextStyle> = {
+            sm: { fontSize: FONT_SIZES.sm },
+            md: { fontSize: FONT_SIZES.md },
+            lg: { fontSize: FONT_SIZES.lg },
+            hero: { fontSize: FONT_SIZES.xl },
+        };
+
+        const variantStyles: Record<ButtonVariant, TextStyle> = {
+            primary: { color: '#FFFFFF' },
+            secondary: { color: '#FFFFFF' },
+            outline: { color: COLORS.primary },
+            ghost: { color: COLORS.dark },
+            danger: { color: '#FFFFFF' },
+        };
+
+        return {
+            fontWeight: '600',
+            ...sizeStyles[size],
+            ...variantStyles[variant],
+            ...(disabled && { color: COLORS.gray[400] }),
+        };
+    };
+
+    return (
+        <AnimatedPressable
+            onPress={handlePress}
+            onPressIn={handlePressIn}
+            onPressOut={handlePressOut}
+            disabled={disabled || loading}
+            style={[getButtonStyle(), animatedStyle, style]}
+        >
+            {loading ? (
+                <ActivityIndicator
+                    color={variant === 'outline' || variant === 'ghost' ? COLORS.primary : '#FFFFFF'}
+                    size="small"
+                />
+            ) : (
+                <>
+                    {icon && iconPosition === 'left' && icon}
+                    <Text style={[getTextStyle(), textStyle]}>{title}</Text>
+                    {icon && iconPosition === 'right' && icon}
+                </>
+            )}
+        </AnimatedPressable>
+    );
 }
 
 const styles = StyleSheet.create({
-  base: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderRadius: BORDER_RADIUS.lg,
-    gap: SPACING.sm,
-  },
-  content: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: SPACING.sm,
-    width: '100%',
-  },
-  primary: {
-    backgroundColor: COLORS.primary,
-    ...SHADOWS.md,
-  },
-  secondary: {
-    backgroundColor: COLORS.secondary,
-    ...SHADOWS.md,
-  },
-  outline: {
-    backgroundColor: 'transparent',
-    borderWidth: 2,
-    borderColor: COLORS.primary,
-  },
-  ghost: {
-    backgroundColor: 'transparent',
-  },
-  disabled: {
-    opacity: 0.5,
-  },
-  smSize: {
-    paddingHorizontal: SPACING.md,
-    paddingVertical: SPACING.sm,
-  },
-  mdSize: {
-    paddingHorizontal: SPACING.lg,
-    paddingVertical: SPACING.md,
-  },
-  lgSize: {
-    paddingHorizontal: SPACING.xl,
-    paddingVertical: SPACING.lg,
-  },
-  text: {
-    fontWeight: '600',
-  },
-  primaryText: {
-    color: COLORS.dark,
-  },
-  secondaryText: {
-    color: COLORS.white,
-  },
-  outlineText: {
-    color: COLORS.primary,
-  },
-  ghostText: {
-    color: COLORS.primary,
-  },
-  disabledText: {
-    opacity: 0.7,
-  },
-  smText: {
-    fontSize: FONT_SIZES.sm,
-  },
-  mdText: {
-    fontSize: FONT_SIZES.md,
-  },
-  lgText: {
-    fontSize: FONT_SIZES.lg,
-  },
+    // Styles statiques si nécessaire
 });

@@ -2,16 +2,18 @@
 
 ## 📋 Configuration Complète
 
-### 1️⃣ Activer GitHub Pages
+### 1️⃣ ✅ GitHub Pages Activé (DÉJÀ FAIT)
 
-1. Aller sur votre repo GitHub : `https://github.com/<votre-username>/WishHive`
-2. Settings → Pages
-3. Source : **Deploy from a branch**
-4. Branch : **main** (ou master)
-5. Folder : **/docs**
-6. Save
+**GitHub Pages est déjà activé et opérationnel !**
 
-**URL publique** : `https://<votre-username>.github.io/WishHive`
+Configuration actuelle :
+- Repository : `https://github.com/Sly31-ci/WishHive`
+- Branch : `main`
+- Folder : `/docs`
+
+**URL publique** : `https://Sly31-ci.github.io/WishHive`
+
+**✅ Testé et fonctionnel !**
 
 ---
 
@@ -26,112 +28,97 @@
    - `Project URL` (SUPABASE_URL)
    - `anon public` key (SUPABASE_ANON_KEY)
 
-#### B. Mettre à jour `docs/w/index.html`
+#### B. ✅ Configuration Supabase (DÉJÀ FAIT)
 
-Ligne 251-252, remplacer :
+**Les clés Supabase sont déjà configurées automatiquement !**
+
+Fichier `docs/w/index.html` (lignes 427-428) :
 ```javascript
-const SUPABASE_URL = 'https://VOTRE_PROJECT_ID.supabase.co';
-const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...';
+const SUPABASE_URL = 'https://nydtsqjlbiwuoakqrldr.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...'; // Clé complète OK
 ```
 
-#### C. Configurer RLS (Row Level Security)
+**✅ Rien à faire, c'est déjà configuré !**
 
-**IMPORTANT** : Exécuter ces requêtes SQL dans Supabase SQL Editor :
+#### C. ✅ RLS Configuré (DÉJÀ FAIT)
 
-```sql
--- 1️⃣ Activer RLS sur les tables
-ALTER TABLE wishlists ENABLE ROW LEVEL SECURITY;
-ALTER TABLE wishlist_items ENABLE ROW LEVEL SECURITY;
-ALTER TABLE products ENABLE ROW LEVEL SECURITY;
+**Les policies RLS ont été activées automatiquement via le script `configure-rls.sh` !**
 
--- 2️⃣ Politique : Lecture publique des wishlists publiques
-CREATE POLICY "Public wishlists are viewable by anyone"
-ON wishlists FOR SELECT
-USING (privacy = 'public');
-
--- 3️⃣ Politique : Lecture des items de wishlists publiques
-CREATE POLICY "Public wishlist items are viewable"
-ON wishlist_items FOR SELECT
-USING (
-  wishlist_id IN (
-    SELECT id FROM wishlists WHERE privacy = 'public'
-  )
-);
-
--- 4️⃣ Politique : Lecture des produits liés
-CREATE POLICY "Products in public wishlists are viewable"
-ON products FOR SELECT
-USING (
-  id IN (
-    SELECT product_id FROM wishlist_items 
-    WHERE wishlist_id IN (
-      SELECT id FROM wishlists WHERE privacy = 'public'
-    )
-  )
-);
-
--- 5️⃣ Vérification
-SELECT * FROM wishlists WHERE privacy = 'public'; -- Doit fonctionner
+Vérifiez que tout est OK :
+```bash
+cd /home/syzon/Téléchargements/WishHive
+./configure-rls.sh
 ```
+
+**Résultat attendu** : "✅ CONFIGURATION RLS TERMINÉE"
 
 ---
 
 ### 3️⃣ Intégration App Mobile
 
-#### A. Génération de lien
+#### A. ✅ Génération de lien (DÉJÀ FAIT)
 
-Dans `components/ShareWishlistButton.tsx` ou équivalent :
+**Le code a été intégré dans l'app !**
 
+Fichier `config/github-pages.ts` :
 ```typescript
-// Récupérer votre GitHub username
-const GITHUB_USERNAME = 'votre-username'; // À configurer
-const REPO_NAME = 'WishHive';
-
-// Générer le lien public
-const generatePublicLink = (wishlistId: string) => {
-  return `https://${GITHUB_USERNAME}.github.io/${REPO_NAME}/w/?id=${wishlistId}`;
+export const GITHUB_PAGES_CONFIG = {
+  username: 'Sly31-ci',
+  repo: 'WishHive',
+  get baseUrl() {
+    return `https://${this.username}.github.io/${this.repo}`;
+  }
 };
 
-// Utilisation dans ShareWishlistButton
-const publicUrl = generatePublicLink(wishlist.id);
-
-// Partage
-await Share.share({
-  message: `Découvre ma wishlist : ${publicUrl}`,
-  url: publicUrl,
-});
+export function generatePublicWishlistUrl(wishlistId: string): string {
+  return `${GITHUB_PAGES_CONFIG.baseUrl}/w/?id=${wishlistId}`;
+}
 ```
 
-#### B. Configuration Deep Linking
+Fichier `lib/shareWishlist.ts` utilise déjà ces fonctions :
+```typescript
+import { generatePublicWishlistUrl } from '@/config/github-pages';
 
-Dans `app.json` :
+const shareLink = generatePublicWishlistUrl(wishlistId);
+// Génère : https://Sly31-ci.github.io/WishHive/w/?id=abc123
+```
 
+**✅ Rien à faire, c'est déjà intégré !**
+
+#### B. ✅ Configuration Deep Linking (DÉJÀ FAIT)
+
+**Le fichier `app.json` a déjà été configuré !**
+
+Actuellement dans `app.json` :
 ```json
 {
   "expo": {
     "scheme": "wishhive",
     "android": {
-      "intentFilters": [
-        {
-          "action": "VIEW",
-          "data": [
-            {
-              "scheme": "https",
-              "host": "<votre-username>.github.io",
-              "pathPrefix": "/WishHive/w"
-            }
-          ],
-          "category": ["BROWSABLE", "DEFAULT"]
-        }
-      ]
+      "intentFilters": [{
+        "action": "VIEW",
+        "data": [{
+          "scheme": "https",
+          "host": "Sly31-ci.github.io",
+          "pathPrefix": "/WishHive/w"
+        }],
+        "category": ["BROWSABLE", "DEFAULT"]
+      }]
     },
     "ios": {
-      "associatedDomains": [
-        "applinks:<votre-username>.github.io"
-      ]
+      "bundleIdentifier": "com.wishhive.app",
+      "associatedDomains": ["applinks:Sly31-ci.github.io"]
     }
   }
 }
+```
+
+**✅ Rien à faire, c'est déjà configuré !**
+
+**⚠️ IMPORTANT** : Rebuild requis pour activer deep linking :
+```bash
+npx expo prebuild --clean
+npx expo start
 ```
 
 ---

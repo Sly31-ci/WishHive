@@ -8,29 +8,42 @@ import {
   TextInput,
   ScrollView,
   RefreshControl,
+  Dimensions,
 } from 'react-native';
 import { Image } from 'expo-image';
 import { router } from 'expo-router';
-import { Search, Store } from 'lucide-react-native';
+import { Search, Store, X } from 'lucide-react-native';
+import Animated, { FadeInDown, FadeIn } from 'react-native-reanimated';
 import { supabase } from '@/lib/supabase';
 import { FilterChip } from '@/components/FilterChip';
 import { TrendingSection } from '@/components/TrendingSection';
 import { useTheme } from '@/contexts/ThemeContext';
-import { COLORS, SPACING, FONT_SIZES, BORDER_RADIUS } from '@/constants/theme';
+import { Card } from '@/components/Card';
+import {
+  COLORS,
+  SPACING,
+  FONT_SIZES,
+  BORDER_RADIUS,
+  SHADOWS,
+} from '@/constants/theme';
 import { Database } from '@/types/database';
 
 type Product = Database['public']['Tables']['products']['Row'];
 
+const { width } = Dimensions.get('window');
+const CARD_WIDTH = (width - SPACING.lg * 3) / 2;
+
 export default function MarketplaceScreen() {
   const { theme } = useTheme();
-  const [products, setProducts] = useState<Product[]>([]); // All products with stats
-  const [displayedProducts, setDisplayedProducts] = useState<Product[]>([]); // Filtered & Sorted
+  const [products, setProducts] = useState<Product[]>([]);
+  const [displayedProducts, setDisplayedProducts] = useState<Product[]>([]);
   const [trendingProducts, setTrendingProducts] = useState<Product[]>([]);
 
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
-  const [sortBy, setSortBy] = useState<'popular' | 'newest' | 'price_asc' | 'price_desc' | 'trending'>('popular');
+  const [searchExpanded, setSearchExpanded] = useState(false); // Search caché par défaut
+  const [sortBy, setSortBy] = useState<'popular' | 'newest' | 'trending'>('popular'); // 3 filtres seulement
 
   useEffect(() => {
     loadProductsAndStats();
@@ -43,7 +56,6 @@ export default function MarketplaceScreen() {
   const loadProductsAndStats = async () => {
     try {
       setLoading(true);
-      // Fetch products AND their wishlist items to calculate popularity manually
       const { data, error } = await supabase
         .from('products')
         .select('*, wishlist_items(id, created_at)')
@@ -52,7 +64,6 @@ export default function MarketplaceScreen() {
 
       if (error) throw error;
 
-      // Calculate stats
       const now = new Date();
       const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
 
@@ -72,7 +83,6 @@ export default function MarketplaceScreen() {
 
       setProducts(productsWithStats);
 
-      // Define trending: At least 1 recent add
       const trending = productsWithStats
         .filter((p: any) => p.recent_adds > 0)
         .sort((a: any, b: any) => b.recent_adds - a.recent_adds)
@@ -102,10 +112,6 @@ export default function MarketplaceScreen() {
       switch (sortBy) {
         case 'newest':
           return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
-        case 'price_asc':
-          return a.price - b.price;
-        case 'price_desc':
-          return b.price - a.price;
         case 'trending':
           return b.recent_adds - a.recent_adds;
         case 'popular':
@@ -117,15 +123,15 @@ export default function MarketplaceScreen() {
     setDisplayedProducts(filtered);
   };
 
-  const ProductCard = React.memo(({ item, theme, sortBy }: { item: Product; theme: any; sortBy: string }) => {
+  const ProductCard = React.memo(({ item }: { item: Product }) => {
     const images = item.images as string[];
     const imageUrl = images && images.length > 0 ? images[0] : null;
-    const isPopular = sortBy === 'popular' && (item as any).times_added > 0;
 
     return (
-      <TouchableOpacity
-        style={[styles.productCard, { backgroundColor: theme.card, borderColor: theme.border }]}
+      <Card
         onPress={() => router.push(`/product/${item.id}`)}
+        style={styles.productCard}
+        padding="sm"
       >
         <View style={styles.imageContainer}>
           {imageUrl ? (
@@ -141,43 +147,58 @@ export default function MarketplaceScreen() {
               <Store size={32} color={COLORS.gray[400]} />
             </View>
           )}
-          {isPopular && (
-            <View style={styles.popularityBadge}>
-              <Text style={styles.popularityText}>❤️ {(item as any).times_added}</Text>
-            </View>
-          )}
         </View>
-        <Text style={[styles.productTitle, { color: theme.text }]} numberOfLines={2}>
+        <Text style={styles.productTitle} numberOfLines={2}>
           {item.title}
         </Text>
-        <Text style={[styles.productPrice, { color: theme.primary }]}>
+        <Text style={styles.productPrice}>
           {item.currency} {item.price.toFixed(2)}
         </Text>
-      </TouchableOpacity>
+      </Card>
     );
   });
 
   return (
-    <View style={[styles.container, { backgroundColor: theme.background }]}>
-      <View style={[styles.header, { backgroundColor: theme.card, borderBottomColor: theme.border }]}>
-        <Text style={[styles.headerTitle, { color: theme.text }]}>Marketplace</Text>
+    <View style={styles.container}>
+      {/* Header Simplifié */}
+      <View style={styles.header}>
+        <Text style={styles.headerTitle}>Marketplace</Text>
+        <TouchableOpacity
+          onPress={() => setSearchExpanded(!searchExpanded)}
+          style={styles.searchIcon}
+        >
+          {searchExpanded ? (
+            <X size={24} color={COLORS.dark} />
+          ) : (
+            <Search size={24} color={COLORS.dark} />
+          )}
+        </TouchableOpacity>
       </View>
 
-      <View style={[styles.searchContainer, { backgroundColor: theme.card }]}>
-        <View style={[styles.searchBox, { backgroundColor: theme.input }]}>
-          <Search size={20} color={theme.textSecondary} />
-          <TextInput
-            style={[styles.searchInput, { color: theme.text }]}
-            placeholder="Search products..."
-            value={searchQuery}
-            onChangeText={setSearchQuery}
-            placeholderTextColor={theme.textSecondary}
-          />
-        </View>
-      </View>
+      {/* Search Expandable */}
+      {searchExpanded && (
+        <Animated.View entering={FadeIn.duration(200)} style={styles.searchContainer}>
+          <View style={styles.searchBox}>
+            <Search size={18} color={COLORS.gray[500]} />
+            <TextInput
+              style={styles.searchInput}
+              placeholder="Search products..."
+              value={searchQuery}
+              onChangeText={setSearchQuery}
+              placeholderTextColor={COLORS.gray[500]}
+              autoFocus
+            />
+          </View>
+        </Animated.View>
+      )}
 
-      <View style={[styles.sortContainer, { backgroundColor: theme.card }]}>
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.sortContent}>
+      {/* Filtres simplifiés - 3 max */}
+      <View style={styles.filterContainer}>
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.filterContent}
+        >
           <FilterChip
             label="Popular"
             active={sortBy === 'popular'}
@@ -191,18 +212,6 @@ export default function MarketplaceScreen() {
             icon="✨"
           />
           <FilterChip
-            label="Price Up"
-            active={sortBy === 'price_asc'}
-            onPress={() => setSortBy('price_asc')}
-            icon="💰"
-          />
-          <FilterChip
-            label="Price Down"
-            active={sortBy === 'price_desc'}
-            onPress={() => setSortBy('price_desc')}
-            icon="💎"
-          />
-          <FilterChip
             label="Trending"
             active={sortBy === 'trending'}
             onPress={() => setSortBy('trending')}
@@ -211,9 +220,14 @@ export default function MarketplaceScreen() {
         </ScrollView>
       </View>
 
+      {/* Products Grid */}
       <FlatList
         data={displayedProducts}
-        renderItem={({ item }) => <ProductCard item={item} theme={theme} sortBy={sortBy} />}
+        renderItem={({ item, index }) => (
+          <Animated.View entering={FadeInDown.delay(index * 50).springify()}>
+            <ProductCard item={item} />
+          </Animated.View>
+        )}
         keyExtractor={(item) => item.id}
         numColumns={2}
         contentContainerStyle={styles.productGrid}
@@ -232,9 +246,9 @@ export default function MarketplaceScreen() {
         ListEmptyComponent={
           !loading ? (
             <View style={styles.emptyContainer}>
-              <Store size={64} color={theme.textSecondary} />
-              <Text style={[styles.emptyTitle, { color: theme.text }]}>No products found</Text>
-              <Text style={[styles.emptyText, { color: theme.textSecondary }]}>
+              <Store size={64} color={COLORS.gray[400]} />
+              <Text style={styles.emptyTitle}>No products found</Text>
+              <Text style={styles.emptyText}>
                 {searchQuery
                   ? 'Try a different search term'
                   : 'Check back soon for new products!'}
@@ -253,40 +267,52 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.light,
   },
   header: {
-    padding: SPACING.lg,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: SPACING.lg,
     paddingTop: SPACING.xxl,
+    paddingBottom: SPACING.lg,
     backgroundColor: COLORS.white,
     borderBottomWidth: 1,
-    borderBottomColor: COLORS.gray[200],
+    borderBottomColor: COLORS.gray[100],
   },
   headerTitle: {
     fontSize: FONT_SIZES.xxl,
     fontWeight: '700',
     color: COLORS.dark,
   },
+  searchIcon: {
+    padding: SPACING.sm,
+  },
   searchContainer: {
-    padding: SPACING.lg,
+    paddingHorizontal: SPACING.lg,
+    paddingVertical: SPACING.md,
     backgroundColor: COLORS.white,
+    borderBottomWidth: 1,
+    borderBottomColor: COLORS.gray[100],
   },
   searchBox: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: COLORS.light,
+    backgroundColor: COLORS.gray[50],
     borderRadius: BORDER_RADIUS.lg,
     paddingHorizontal: SPACING.md,
     gap: SPACING.sm,
+    height: 48,
   },
   searchInput: {
     flex: 1,
-    paddingVertical: SPACING.md,
     fontSize: FONT_SIZES.md,
     color: COLORS.dark,
   },
-  sortContainer: {
+  filterContainer: {
     backgroundColor: COLORS.white,
-    paddingBottom: SPACING.md,
+    paddingVertical: SPACING.md,
+    borderBottomWidth: 1,
+    borderBottomColor: COLORS.gray[100],
   },
-  sortContent: {
+  filterContent: {
     paddingHorizontal: SPACING.lg,
     gap: SPACING.sm,
   },
@@ -295,27 +321,22 @@ const styles = StyleSheet.create({
   },
   productRow: {
     gap: SPACING.md,
+    marginBottom: SPACING.md,
   },
   productCard: {
+    width: CARD_WIDTH,
     flex: 1,
-    backgroundColor: COLORS.white,
-    borderRadius: BORDER_RADIUS.lg,
-    padding: SPACING.sm,
-    marginBottom: SPACING.md,
-    borderWidth: 1,
-    borderColor: COLORS.gray[200],
   },
   imageContainer: {
     width: '100%',
     aspectRatio: 1,
-    marginBottom: SPACING.sm,
     borderRadius: BORDER_RADIUS.md,
     overflow: 'hidden',
+    marginBottom: SPACING.sm,
   },
   productImage: {
     width: '100%',
     height: '100%',
-    resizeMode: 'cover',
   },
   placeholderImage: {
     width: '100%',
@@ -329,6 +350,7 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: COLORS.dark,
     marginBottom: SPACING.xs,
+    lineHeight: 18,
   },
   productPrice: {
     fontSize: FONT_SIZES.md,
@@ -339,37 +361,20 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    padding: SPACING.xl,
+    paddingVertical: SPACING.xxl,
+    paddingHorizontal: SPACING.lg,
   },
   emptyTitle: {
     fontSize: FONT_SIZES.xl,
     fontWeight: '700',
     color: COLORS.dark,
-    marginTop: SPACING.md,
+    marginTop: SPACING.lg,
     marginBottom: SPACING.xs,
   },
   emptyText: {
     fontSize: FONT_SIZES.md,
     color: COLORS.gray[600],
     textAlign: 'center',
-  },
-  popularityBadge: {
-    position: 'absolute',
-    top: 4,
-    right: 4,
-    backgroundColor: 'white',
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    borderRadius: 8,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
-    elevation: 2,
-  },
-  popularityText: {
-    fontSize: 10,
-    fontWeight: '700',
-    color: COLORS.error,
+    lineHeight: 22,
   },
 });

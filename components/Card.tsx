@@ -1,121 +1,108 @@
-import { View, StyleSheet, ViewStyle, StyleProp, TouchableOpacity } from 'react-native';
-import { COLORS, SPACING, BORDER_RADIUS, SHADOWS } from '@/constants/theme';
-import * as Haptics from 'expo-haptics';
+/**
+ * 🃏 CardV2 - Card component optimisée pour super-apps
+ * - Padding augmenté (24px vs 16px)
+ * - Shadows plus subtiles
+ * - Pressable avec feedback
+ */
+
+import React from 'react';
+import { View, StyleSheet, ViewStyle, Pressable } from 'react-native';
 import Animated, {
-  useAnimatedStyle,
-  useSharedValue,
-  withSpring
+    useSharedValue,
+    useAnimatedStyle,
+    withTiming,
+    withSpring,
 } from 'react-native-reanimated';
-import { AnimatedEntrance } from './AnimatedEntrance';
+import {
+    COLORS,
+    BORDER_RADIUS,
+    SHADOWS,
+    SPACING,
+    ANIMATIONS,
+} from '@/constants/theme';
 
 interface CardProps {
-  children: React.ReactNode;
-  style?: StyleProp<ViewStyle>;
-  variant?: 'default' | 'elevated' | 'outlined';
-  onPress?: () => void;
-  activeOpacity?: number;
-  haptic?: Haptics.ImpactFeedbackStyle | boolean;
-  accessibilityLabel?: string;
-  accessibilityRole?: 'button' | 'header' | 'link' | 'none';
-  animateEntrance?: boolean;
-  entranceDelay?: number;
+    children: React.ReactNode;
+    onPress?: () => void;
+    variant?: 'elevated' | 'outlined' | 'flat';
+    padding?: keyof typeof SPACING | number;
+    style?: ViewStyle;
+    animated?: boolean;
 }
+
+const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
 export function Card({
-  children,
-  style,
-  variant = 'default',
-  onPress,
-  activeOpacity = 0.7,
-  haptic = Haptics.ImpactFeedbackStyle.Light,
-  accessibilityLabel,
-  accessibilityRole,
-  animateEntrance = false,
-  entranceDelay = 0,
+    children,
+    onPress,
+    variant = 'elevated',
+    padding = 'lg',
+    style,
+    animated = true,
 }: CardProps) {
-  const scale = useSharedValue(1);
+    const scale = useSharedValue(1);
 
-  const animatedStyle = useAnimatedStyle(() => {
-    return {
-      transform: [{ scale: scale.value }],
-    };
-  });
+    const animatedStyle = useAnimatedStyle(() => {
+        return {
+            transform: [{ scale: scale.value }],
+        };
+    });
 
-  const handlePressIn = () => {
-    if (onPress) {
-      scale.value = withSpring(0.98, { damping: 10, stiffness: 300 });
-    }
-  };
-
-  const handlePressOut = () => {
-    if (onPress) {
-      scale.value = withSpring(1, { damping: 10, stiffness: 300 });
-    }
-  };
-
-  const handlePress = () => {
-    if (onPress) {
-      if (haptic) {
-        if (typeof haptic === 'string') {
-          Haptics.impactAsync(haptic as Haptics.ImpactFeedbackStyle);
-        } else {
-          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    const handlePressIn = () => {
+        if (onPress && animated) {
+            scale.value = withTiming(0.98, {
+                duration: ANIMATIONS.duration.fast,
+            });
         }
-      }
-      onPress();
-    }
-  };
+    };
 
-  const content = (
-    <Animated.View
-      style={[styles.card, styles[variant], style, animatedStyle]}
-      accessibilityLabel={accessibilityLabel}
-      accessibilityRole={accessibilityRole || (onPress ? 'button' : 'none')}
-    >
-      {children}
-    </Animated.View>
-  );
+    const handlePressOut = () => {
+        if (onPress && animated) {
+            scale.value = withSpring(1, {
+                damping: 10,
+                stiffness: 300,
+            });
+        }
+    };
 
-  let result = content;
+    const getCardStyle = (): ViewStyle => {
+        const variantStyles: Record<string, ViewStyle> = {
+            elevated: {
+                backgroundColor: COLORS.white,
+                ...SHADOWS.sm,
+            },
+            outlined: {
+                backgroundColor: COLORS.white,
+                borderWidth: 1,
+                borderColor: COLORS.gray[200],
+            },
+            flat: {
+                backgroundColor: COLORS.gray[50],
+            },
+        };
 
-  if (onPress) {
-    result = (
-      <TouchableOpacity
-        onPress={handlePress}
-        onPressIn={handlePressIn}
-        onPressOut={handlePressOut}
-        activeOpacity={activeOpacity}
-      >
-        {content}
-      </TouchableOpacity>
-    );
-  }
+        const paddingValue = typeof padding === 'number'
+            ? padding
+            : SPACING[padding];
 
-  if (animateEntrance) {
+        return {
+            borderRadius: BORDER_RADIUS.lg,
+            padding: paddingValue,
+            ...variantStyles[variant],
+        };
+    };
+
+    const Component = onPress ? AnimatedPressable : View;
+    const componentStyle = onPress && animated ? [getCardStyle(), animatedStyle, style] : [getCardStyle(), style];
+
     return (
-      <AnimatedEntrance delay={entranceDelay}>
-        {result}
-      </AnimatedEntrance>
+        <Component
+            onPress={onPress}
+            onPressIn={handlePressIn}
+            onPressOut={handlePressOut}
+            style={componentStyle}
+        >
+            {children}
+        </Component>
     );
-  }
-
-  return result;
 }
-
-const styles = StyleSheet.create({
-  card: {
-    backgroundColor: COLORS.white,
-    borderRadius: BORDER_RADIUS.lg,
-    padding: SPACING.md,
-  },
-  default: {
-    ...SHADOWS.sm,
-  },
-  elevated: {
-    ...SHADOWS.lg,
-  },
-  outlined: {
-    borderWidth: 1,
-    borderColor: COLORS.gray[200],
-  },
-});
