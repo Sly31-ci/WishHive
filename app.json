@@ -29,20 +29,6 @@
             "BROWSABLE",
             "DEFAULT"
           ]
-        },
-        {
-          "action": "VIEW",
-          "data": [
-            {
-              "scheme": "https",
-              "host": "Sly31-ci.github.io",
-              "pathPrefix": "/WishHive/w"
-            }
-          ],
-          "category": [
-            "BROWSABLE",
-            "DEFAULT"
-          ]
         }
       ],
       "package": "com.wishhive.app"
@@ -62,8 +48,7 @@
           "icon": "./assets/notification-icon.png",
           "color": "#FFCC33"
         }
-      ],
-      "@sentry/react-native"
+      ]
     ],
     "extra": {
       "eas": {

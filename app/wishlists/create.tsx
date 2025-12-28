@@ -4,20 +4,16 @@ import {
   Text,
   StyleSheet,
   ScrollView,
-  KeyboardAvoidingView,
   Platform,
   TouchableOpacity,
+  TextInput,
+  SafeAreaView,
 } from 'react-native';
-import { router, Stack } from 'expo-router';
-import { ArrowLeft, Calendar } from 'lucide-react-native';
-import { checkAndAwardBadges } from '@/lib/badgeEngine';
-import { BadgeUnlockedModal } from '@/components/BadgeUnlockedModal';
+import { router } from 'expo-router';
+import { ArrowLeft, Plus } from 'lucide-react-native';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/contexts/ToastContext';
 import { supabase } from '@/lib/supabase';
-import { Input } from '@/components/Input';
-import Button from '@/components/Button';
-import { Card } from '@/components/Card';
 import { COLORS, SPACING, FONT_SIZES, BORDER_RADIUS } from '@/constants/theme';
 import { generateSlug } from '@/lib/slug';
 import { analytics } from '@/lib/analytics';
@@ -28,25 +24,12 @@ const WISHLIST_TYPES = [
   { value: 'christmas', label: 'Christmas', emoji: '🎄' },
   { value: 'baby', label: 'Baby', emoji: '👶' },
   { value: 'general', label: 'General', emoji: '🎁' },
-  { value: 'custom', label: 'Custom', emoji: '✨' },
 ];
 
 const PRIVACY_OPTIONS = [
-  {
-    value: 'public',
-    label: 'Public',
-    description: 'Anyone can find and view',
-  },
-  {
-    value: 'private',
-    label: 'Private',
-    description: 'Only you can see',
-  },
-  {
-    value: 'code_only',
-    label: 'Code Only',
-    description: 'Need code to access',
-  },
+  { value: 'public', label: 'Public', description: 'Anyone can find and view' },
+  { value: 'private', label: 'Private', description: 'Only you can see' },
+  { value: 'code_only', label: 'Code Only', description: 'Need code to access' },
 ];
 
 export default function CreateWishlistScreen() {
@@ -55,11 +38,10 @@ export default function CreateWishlistScreen() {
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [type, setType] = useState('general');
+  const [customType, setCustomType] = useState('');
+  const [customEmoji, setCustomEmoji] = useState('🎁');
   const [privacy, setPrivacy] = useState('public');
-  const [dueDate, setDueDate] = useState('');
   const [loading, setLoading] = useState(false);
-  const [unlockedBadge, setUnlockedBadge] = useState<any>(null);
-  const [showBadgeModal, setShowBadgeModal] = useState(false);
 
   const handleCreate = async () => {
     if (!user) return;
@@ -67,7 +49,7 @@ export default function CreateWishlistScreen() {
     if (!title.trim()) {
       showToast({
         type: 'warning',
-        message: '📝 Please enter a title for your wishlist',
+        message: '📝 Please enter a title',
       });
       return;
     }
@@ -75,52 +57,35 @@ export default function CreateWishlistScreen() {
     try {
       setLoading(true);
 
-      const accessCode =
-        privacy === 'code_only'
-          ? Math.random().toString(36).substring(2, 10).toUpperCase()
-          : null;
-
-      const insertData = {
-        owner_id: user.id,
-        title: title.trim(),
-        description: description.trim() || null,
-        type: type as any,
-        privacy: privacy as any,
-        access_code: accessCode,
-        due_date: dueDate || null,
-        slug: generateSlug(title.trim()),
-      };
+      // Utiliser customType si type === 'custom'
+      const finalType = type === 'custom' && customType
+        ? customType.toLowerCase().trim()
+        : type;
 
       const { data, error } = await (supabase
         .from('wishlists') as any)
-        .insert(insertData)
+        .insert({
+          owner_id: user.id,
+          title: title.trim(),
+          description: description.trim() || null,
+          type: finalType as any,
+          privacy: privacy as any,
+          slug: generateSlug(title.trim()),
+        })
         .select()
         .single();
 
       if (error) throw error;
 
       if (data) {
-        // Check for badge unlock
-        if (user) {
-          const badgeResults = await checkAndAwardBadges(user.id, 'create_wishlist');
-          const awarded = badgeResults.find(r => r.awarded);
-          if (awarded && awarded.badge) {
-            setUnlockedBadge(awarded.badge);
-            setShowBadgeModal(true);
-          }
-        }
-
         showToast({
           type: 'success',
-          message: '🎉 Wishlist created successfully!',
-          duration: 2000,
+          message: '🎉 Wishlist created!',
         });
 
         analytics.track('Wishlist Created', {
           wishlist_id: data.id,
           type: data.type,
-          privacy: data.privacy,
-          has_due_date: !!data.due_date,
         });
 
         router.back();
@@ -129,7 +94,7 @@ export default function CreateWishlistScreen() {
     } catch (err: any) {
       showToast({
         type: 'error',
-        message: err.message || '😕 Failed to create wishlist. Please try again.',
+        message: err.message || 'Failed to create wishlist',
       });
     } finally {
       setLoading(false);
@@ -137,123 +102,167 @@ export default function CreateWishlistScreen() {
   };
 
   return (
-    <>
-      <BadgeUnlockedModal
-        visible={showBadgeModal}
-        badge={unlockedBadge}
-        onClose={() => setShowBadgeModal(false)}
-      />
+    <SafeAreaView style={styles.container}>
+      {/* Header */}
+      <View style={styles.header}>
+        <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
+          <ArrowLeft size={24} color={COLORS.dark} />
+        </TouchableOpacity>
+        <Text style={styles.headerTitle}>Create Wishlist</Text>
+        <View style={{ width: 40 }} />
+      </View>
 
-      <Stack.Screen
-        options={{
-          headerShown: true,
-          headerTitle: 'Create Wishlist',
-          headerLeft: () => (
-            <TouchableOpacity onPress={() => router.back()}>
-              <ArrowLeft size={24} color={COLORS.dark} />
-            </TouchableOpacity>
-          ),
-        }}
-      />
-      <KeyboardAvoidingView
-        style={styles.container}
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      <ScrollView
+        style={styles.scroll}
+        contentContainerStyle={styles.scrollContent}
+        keyboardShouldPersistTaps="always"
       >
-        <ScrollView
-          style={styles.scrollView}
-          contentContainerStyle={styles.content}
-          keyboardShouldPersistTaps="handled"
-        >
-          <Card>
-            <Input
-              label="Wishlist Title"
-              placeholder="My Birthday Wishlist"
-              value={title}
-              onChangeText={setTitle}
-            />
+        {/* Title */}
+        <View style={styles.field}>
+          <Text style={styles.label}>Title *</Text>
+          <TextInput
+            style={styles.input}
+            placeholder="My Birthday Wishlist"
+            placeholderTextColor={COLORS.gray[400]}
+            value={title}
+            onChangeText={setTitle}
+            autoFocus={false}
+            editable={!loading}
+          />
+        </View>
 
-            <Input
-              label="Description (Optional)"
-              placeholder="Tell people what this wishlist is for..."
-              value={description}
-              onChangeText={setDescription}
-              multiline
-              numberOfLines={3}
-              style={styles.textArea}
-            />
+        {/* Description */}
+        <View style={styles.field}>
+          <Text style={styles.label}>Description</Text>
+          <TextInput
+            style={[styles.input, styles.textArea]}
+            placeholder="Optional description..."
+            placeholderTextColor={COLORS.gray[400]}
+            value={description}
+            onChangeText={setDescription}
+            multiline
+            numberOfLines={3}
+            textAlignVertical="top"
+            editable={!loading}
+          />
+        </View>
 
-            <View style={styles.section}>
-              <Text style={styles.label}>Event Type</Text>
-              <View style={styles.typeGrid}>
-                {WISHLIST_TYPES.map((item) => (
-                  <TouchableOpacity
-                    key={item.value}
-                    style={[
-                      styles.typeCard,
-                      type === item.value && styles.typeCardSelected,
-                    ]}
-                    onPress={() => setType(item.value)}
-                  >
-                    <Text style={styles.typeEmoji}>{item.emoji}</Text>
-                    <Text
-                      style={[
-                        styles.typeLabel,
-                        type === item.value && styles.typeLabelSelected,
-                      ]}
-                    >
-                      {item.label}
-                    </Text>
-                  </TouchableOpacity>
-                ))}
+        {/* Event Type */}
+        <View style={styles.field}>
+          <Text style={styles.label}>Event Type</Text>
+          <View style={styles.typeGrid}>
+            {WISHLIST_TYPES.map((item) => (
+              <TouchableOpacity
+                key={item.value}
+                style={[
+                  styles.typeCard,
+                  type === item.value && styles.typeCardActive,
+                ]}
+                onPress={() => setType(item.value)}
+                disabled={loading}
+                activeOpacity={0.7}
+              >
+                <Text style={styles.typeEmoji}>{item.emoji}</Text>
+                <Text style={[
+                  styles.typeText,
+                  type === item.value && styles.typeTextActive
+                ]}>
+                  {item.label}
+                </Text>
+              </TouchableOpacity>
+            ))}
+
+            {/* Custom Type Button */}
+            <TouchableOpacity
+              style={[
+                styles.typeCard,
+                styles.customTypeCard,
+                type === 'custom' && styles.typeCardActive,
+              ]}
+              onPress={() => setType('custom')}
+              disabled={loading}
+              activeOpacity={0.7}
+            >
+              <Plus size={28} color={type === 'custom' ? COLORS.primary : COLORS.gray[600]} />
+              <Text style={[
+                styles.typeText,
+                type === 'custom' && styles.typeTextActive
+              ]}>
+                Custom
+              </Text>
+            </TouchableOpacity>
+          </View>
+
+          {/* Custom Type Inputs */}
+          {type === 'custom' && (
+            <View style={styles.customInputsContainer}>
+              <View style={styles.customInputRow}>
+                <View style={styles.emojiInputWrapper}>
+                  <Text style={styles.customInputLabel}>Emoji</Text>
+                  <TextInput
+                    style={[styles.input, styles.emojiInput]}
+                    placeholder="🎓"
+                    value={customEmoji}
+                    onChangeText={setCustomEmoji}
+                    maxLength={2}
+                    editable={!loading}
+                  />
+                </View>
+                <View style={styles.labelInputWrapper}>
+                  <Text style={styles.customInputLabel}>Label</Text>
+                  <TextInput
+                    style={styles.input}
+                    placeholder="Graduation"
+                    placeholderTextColor={COLORS.gray[400]}
+                    value={customType}
+                    onChangeText={setCustomType}
+                    autoFocus
+                    editable={!loading}
+                  />
+                </View>
               </View>
             </View>
+          )}
+        </View>
 
-            <View style={styles.section}>
-              <Text style={styles.label}>Privacy</Text>
-              {PRIVACY_OPTIONS.map((option) => (
-                <TouchableOpacity
-                  key={option.value}
-                  style={[
-                    styles.privacyCard,
-                    privacy === option.value && styles.privacyCardSelected,
-                  ]}
-                  onPress={() => setPrivacy(option.value)}
-                >
-                  <View style={styles.radioOuter}>
-                    {privacy === option.value && (
-                      <View style={styles.radioInner} />
-                    )}
-                  </View>
-                  <View style={styles.privacyContent}>
-                    <Text style={styles.privacyLabel}>{option.label}</Text>
-                    <Text style={styles.privacyDescription}>
-                      {option.description}
-                    </Text>
-                  </View>
-                </TouchableOpacity>
-              ))}
-            </View>
+        {/* Privacy */}
+        <View style={styles.field}>
+          <Text style={styles.label}>Privacy</Text>
+          {PRIVACY_OPTIONS.map((option) => (
+            <TouchableOpacity
+              key={option.value}
+              style={[
+                styles.privacyOption,
+                privacy === option.value && styles.privacyOptionActive,
+              ]}
+              onPress={() => setPrivacy(option.value)}
+              disabled={loading}
+              activeOpacity={0.7}
+            >
+              <View style={styles.radio}>
+                {privacy === option.value && <View style={styles.radioDot} />}
+              </View>
+              <View style={styles.privacyText}>
+                <Text style={styles.privacyLabel}>{option.label}</Text>
+                <Text style={styles.privacyDesc}>{option.description}</Text>
+              </View>
+            </TouchableOpacity>
+          ))}
+        </View>
 
-            <Input
-              label="Due Date (Optional)"
-              placeholder="YYYY-MM-DD"
-              value={dueDate}
-              onChangeText={setDueDate}
-              icon={<Calendar size={20} color={COLORS.gray[400]} />}
-            />
-
-
-
-            <Button
-              title="Create Wishlist"
-              onPress={handleCreate}
-              loading={loading}
-              style={styles.button}
-            />
-          </Card>
-        </ScrollView>
-      </KeyboardAvoidingView>
-    </>
+        {/* Create Button */}
+        <TouchableOpacity
+          style={[styles.createButton, loading && styles.createButtonDisabled]}
+          onPress={handleCreate}
+          disabled={loading}
+          activeOpacity={0.8}
+        >
+          <Text style={styles.createButtonText}>
+            {loading ? 'Creating...' : 'Create Wishlist'}
+          </Text>
+        </TouchableOpacity>
+      </ScrollView>
+    </SafeAreaView>
   );
 }
 
@@ -262,14 +271,32 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: COLORS.light,
   },
-  scrollView: {
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: SPACING.md,
+    paddingVertical: SPACING.md,
+    backgroundColor: COLORS.white,
+    borderBottomWidth: 1,
+    borderBottomColor: COLORS.gray[200],
+  },
+  backButton: {
+    padding: SPACING.sm,
+  },
+  headerTitle: {
+    fontSize: FONT_SIZES.lg,
+    fontWeight: '700',
+    color: COLORS.dark,
+  },
+  scroll: {
     flex: 1,
   },
-  content: {
+  scrollContent: {
     padding: SPACING.lg,
   },
-  section: {
-    marginBottom: SPACING.lg,
+  field: {
+    marginBottom: SPACING.xl,
   },
   label: {
     fontSize: FONT_SIZES.sm,
@@ -277,68 +304,85 @@ const styles = StyleSheet.create({
     color: COLORS.dark,
     marginBottom: SPACING.sm,
   },
+  input: {
+    backgroundColor: COLORS.white,
+    borderWidth: 1,
+    borderColor: COLORS.gray[300],
+    borderRadius: BORDER_RADIUS.md,
+    paddingHorizontal: SPACING.md,
+    paddingVertical: SPACING.md,
+    fontSize: FONT_SIZES.md,
+    color: COLORS.dark,
+    minHeight: 52,
+  },
+  textArea: {
+    minHeight: 100,
+    paddingTop: SPACING.md,
+  },
   typeGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: SPACING.sm,
   },
   typeCard: {
-    width: '31%',
+    width: '30%',
     aspectRatio: 1,
     backgroundColor: COLORS.white,
-    borderRadius: BORDER_RADIUS.md,
     borderWidth: 2,
-    borderColor: COLORS.gray[200],
+    borderColor: COLORS.gray[300],
+    borderRadius: BORDER_RADIUS.md,
     justifyContent: 'center',
     alignItems: 'center',
-    gap: SPACING.xs,
+    padding: SPACING.sm,
   },
-  typeCardSelected: {
+  typeCardActive: {
     borderColor: COLORS.primary,
-    backgroundColor: COLORS.primary + '10',
+    backgroundColor: COLORS.primary + '15',
   },
   typeEmoji: {
-    fontSize: FONT_SIZES.xxxl,
+    fontSize: 28,
+    marginBottom: SPACING.xs,
   },
-  typeLabel: {
+  typeText: {
     fontSize: FONT_SIZES.xs,
     fontWeight: '600',
     color: COLORS.gray[600],
+    textAlign: 'center',
   },
-  typeLabelSelected: {
+  typeTextActive: {
     color: COLORS.primary,
   },
-  privacyCard: {
+  privacyOption: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: COLORS.white,
-    borderRadius: BORDER_RADIUS.md,
     borderWidth: 2,
-    borderColor: COLORS.gray[200],
+    borderColor: COLORS.gray[300],
+    borderRadius: BORDER_RADIUS.md,
     padding: SPACING.md,
     marginBottom: SPACING.sm,
-    gap: SPACING.md,
   },
-  privacyCardSelected: {
+  privacyOptionActive: {
     borderColor: COLORS.primary,
     backgroundColor: COLORS.primary + '10',
   },
-  radioOuter: {
-    width: 20,
-    height: 20,
-    borderRadius: BORDER_RADIUS.full,
+  radio: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
     borderWidth: 2,
     borderColor: COLORS.gray[400],
     justifyContent: 'center',
     alignItems: 'center',
+    marginRight: SPACING.md,
   },
-  radioInner: {
-    width: 10,
-    height: 10,
-    borderRadius: BORDER_RADIUS.full,
+  radioDot: {
+    width: 12,
+    height: 12,
+    borderRadius: 6,
     backgroundColor: COLORS.primary,
   },
-  privacyContent: {
+  privacyText: {
     flex: 1,
   },
   privacyLabel: {
@@ -347,21 +391,49 @@ const styles = StyleSheet.create({
     color: COLORS.dark,
     marginBottom: 2,
   },
-  privacyDescription: {
+  privacyDesc: {
     fontSize: FONT_SIZES.xs,
     color: COLORS.gray[600],
   },
-  textArea: {
-    height: 80,
-    textAlignVertical: 'top',
+  createButton: {
+    backgroundColor: COLORS.primary,
+    borderRadius: BORDER_RADIUS.full,
+    paddingVertical: SPACING.md + 4,
+    alignItems: 'center',
+    marginTop: SPACING.lg,
   },
-  error: {
-    color: COLORS.error,
-    fontSize: FONT_SIZES.sm,
-    marginBottom: SPACING.sm,
-    textAlign: 'center',
+  createButtonDisabled: {
+    opacity: 0.6,
   },
-  button: {
+  createButtonText: {
+    fontSize: FONT_SIZES.md,
+    fontWeight: '700',
+    color: COLORS.white,
+  },
+  customTypeCard: {
+    borderStyle: 'dashed',
+  },
+  customInputsContainer: {
     marginTop: SPACING.md,
+  },
+  customInputRow: {
+    flexDirection: 'row',
+    gap: SPACING.sm,
+  },
+  emojiInputWrapper: {
+    width: '25%',
+  },
+  labelInputWrapper: {
+    flex: 1,
+  },
+  customInputLabel: {
+    fontSize: FONT_SIZES.xs,
+    fontWeight: '600',
+    color: COLORS.dark,
+    marginBottom: SPACING.xs,
+  },
+  emojiInput: {
+    textAlign: 'center',
+    fontSize: FONT_SIZES.xl,
   },
 });
