@@ -35,8 +35,15 @@ import {
     CheckCircle,
     Clock,
     Plus,
+    MessageSquare,
+    ChevronUp,
+    ChevronDown,
+    MoreVertical,
+    ArrowUpDown,
+    Palette,
 } from 'lucide-react-native';
 import { WishlistThemeSelector } from '@/components/WishlistThemeSelector';
+import { InteractionsModal } from '@/components/InteractionsModal';
 import ShareWishlistButton from '@/components/ShareWishlistButton';
 import { WishlistTheme, DEFAULT_THEME } from '@/constants/wishlistThemes';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -58,7 +65,6 @@ type WishlistItem = Database['public']['Tables']['wishlist_items']['Row'] & {
     group_gift?: Database['public']['Tables']['group_gifts']['Row'] | null;
 };
 
-import { ChevronUp, ChevronDown, MoreVertical, ArrowUpDown, Palette } from 'lucide-react-native';
 import { PRIORITY_OPTIONS } from '@/constants/priorities';
 import { StatusBadge } from '@/components/StatusBadge';
 import { WishlistItemRow } from '@/components/WishlistItemRow';
@@ -78,6 +84,8 @@ export default function WishlistDetailScreen() {
     const [isReordering, setIsReordering] = useState(false);
     const [originalItems, setOriginalItems] = useState<WishlistItem[]>([]);
     const [savingOrder, setSavingOrder] = useState(false);
+    const [interactions, setInteractions] = useState<any[]>([]);
+    const [showInteractionsModal, setShowInteractionsModal] = useState(false);
 
     // Customization State
     const [showThemeSelector, setShowThemeSelector] = useState(false);
@@ -162,6 +170,17 @@ export default function WishlistDetailScreen() {
                 if (wishlistError) throw wishlistError;
                 setWishlist(wishlistData);
                 setIsOwner(user?.id === wishlistData.owner_id);
+
+                // Fetch interactions if owner
+                if (user?.id === wishlistData.owner_id) {
+                    const { data: interData } = await supabase
+                        .from('wishlist_interactions')
+                        .select('*')
+                        .eq('wishlist_id', id as string)
+                        .order('created_at', { ascending: false });
+
+                    if (interData) setInteractions(interData);
+                }
             }
 
             const start = isFirstLoad ? 0 : pagination.page * PAGE_SIZE;
@@ -493,6 +512,16 @@ export default function WishlistDetailScreen() {
                                 </TouchableOpacity>
 
                                 <TouchableOpacity
+                                    style={[styles.headerButton, interactions.length > 0 && { backgroundColor: COLORS.primary + '20' }]}
+                                    onPress={() => setShowInteractionsModal(true)}
+                                >
+                                    <MessageSquare size={22} color={interactions.length > 0 ? COLORS.primary : textColor} />
+                                    {interactions.length > 0 && (
+                                        <View style={styles.unreadBadge} />
+                                    )}
+                                </TouchableOpacity>
+
+                                <TouchableOpacity
                                     style={[styles.headerButton, { backgroundColor: 'rgba(239, 68, 68, 0.2)' }]}
                                     onPress={() => setWishlistDeleteDialogVisible(true)}
                                 >
@@ -639,6 +668,13 @@ export default function WishlistDetailScreen() {
                 onConfirm={handleDeleteWishlist}
                 onCancel={() => setWishlistDeleteDialogVisible(false)}
             />
+
+            <InteractionsModal
+                visible={showInteractionsModal}
+                onClose={() => setShowInteractionsModal(false)}
+                interactions={interactions}
+                wishlistThemeColor={currentTheme.primaryColor}
+            />
         </View>
     );
 }
@@ -769,5 +805,16 @@ const styles = StyleSheet.create({
         shadowOpacity: 0.3,
         shadowRadius: 8,
         elevation: 8,
+    },
+    unreadBadge: {
+        position: 'absolute',
+        top: 8,
+        right: 8,
+        width: 8,
+        height: 8,
+        borderRadius: 4,
+        backgroundColor: COLORS.error,
+        borderWidth: 1,
+        borderColor: COLORS.white,
     },
 });

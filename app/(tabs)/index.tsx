@@ -46,7 +46,8 @@ export default function HomeScreen() {
         .from('wishlists')
         .select(`
           *,
-          items:wishlist_items(id, is_purchased)
+          items:wishlist_items(id, is_purchased),
+          interactions:wishlist_interactions(id, interaction_type, content)
         `)
         .eq('privacy', 'public')
         .eq('is_active', true)
@@ -58,10 +59,19 @@ export default function HomeScreen() {
       // Transform data to include stats
       const wishlistsWithStats = (data || []).map(w => {
         const items = (w as any).items || [];
+        const interactions = (w as any).interactions || [];
+        const reactions = interactions.filter((i: any) => i.interaction_type === 'reaction');
+
+        const reactions_summary = reactions.reduce((acc: any, curr: any) => {
+          acc[curr.content] = (acc[curr.content] || 0) + 1;
+          return acc;
+        }, {});
+
         return {
           ...w,
           total_items: items.length,
-          purchased_items: items.filter((i: any) => i.is_purchased).length
+          purchased_items: items.filter((i: any) => i.is_purchased).length,
+          reactions_summary
         };
       });
 

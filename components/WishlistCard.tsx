@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import { Calendar, Eye, Trash2, Package } from 'lucide-react-native';
+import { Calendar, Eye, Trash2, Package, Heart } from 'lucide-react-native';
 import { Card } from './Card';
 import { COLORS, SPACING, FONT_SIZES, BORDER_RADIUS } from '@/constants/theme';
 import { Database } from '@/types/database';
@@ -127,6 +127,16 @@ export const WishlistCard = React.memo(({ wishlist, onPress, onLongPress, onDele
                                 <Eye size={14} color={COLORS.gray[500]} />
                                 <Text style={styles.infoText}>{wishlist.view_count}</Text>
                             </View>
+                            {(wishlist as any).reactions_summary && Object.entries((wishlist as any).reactions_summary).length > 0 && (
+                                <View style={styles.reactionsContainer}>
+                                    {Object.entries((wishlist as any).reactions_summary).map(([emoji, count]) => (
+                                        <View key={emoji} style={styles.reactionBadge}>
+                                            <Text style={styles.reactionEmoji}>{emoji}</Text>
+                                            <Text style={styles.reactionCount}>{count as number}</Text>
+                                        </View>
+                                    ))}
+                                </View>
+                            )}
                         </View>
 
                         {showDelete && onDelete && (
@@ -277,5 +287,30 @@ const styles = StyleSheet.create({
     accentStrip: {
         height: 4,
         width: '100%',
+    },
+    reactionsContainer: {
+        flexDirection: 'row',
+        flexWrap: 'wrap',
+        gap: 6,
+        marginLeft: 'auto',
+    },
+    reactionBadge: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 2,
+        backgroundColor: COLORS.gray[50],
+        paddingHorizontal: 6,
+        paddingVertical: 2,
+        borderRadius: 12,
+        borderWidth: 1,
+        borderColor: COLORS.gray[200],
+    },
+    reactionEmoji: {
+        fontSize: 12,
+    },
+    reactionCount: {
+        fontSize: 10,
+        fontWeight: '700',
+        color: COLORS.gray[600],
     },
 });
