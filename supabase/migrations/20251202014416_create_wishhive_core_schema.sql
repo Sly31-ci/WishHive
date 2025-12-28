@@ -263,7 +263,6 @@ ALTER TABLE wishlists ENABLE ROW LEVEL SECURITY;
 
 CREATE POLICY "Public wishlists are viewable by all"
   ON wishlists FOR SELECT
-  TO authenticated
   USING (privacy = 'public' AND is_active = true);
 
 CREATE POLICY "Owners can view own wishlists"
@@ -308,7 +307,6 @@ ALTER TABLE products ENABLE ROW LEVEL SECURITY;
 
 CREATE POLICY "Anyone can view active products"
   ON products FOR SELECT
-  TO authenticated
   USING (is_active = true);
 
 CREATE POLICY "Sellers can manage own products"
@@ -339,11 +337,15 @@ ALTER TABLE wishlist_items ENABLE ROW LEVEL SECURITY;
 
 CREATE POLICY "Items visible if wishlist is accessible"
   ON wishlist_items FOR SELECT
-  TO authenticated
   USING (
     wishlist_id IN (
       SELECT id FROM wishlists 
-      WHERE privacy = 'public' OR owner_id = auth.uid()
+      WHERE privacy = 'public'
+    )
+    OR 
+    wishlist_id IN (
+      SELECT id FROM wishlists 
+      WHERE owner_id = auth.uid()
     )
   );
 

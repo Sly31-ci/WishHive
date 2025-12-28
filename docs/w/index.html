@@ -434,13 +434,16 @@
 
         // Get Wishlist ID from URL
         const urlParams = new URLSearchParams(window.location.search);
-        const wishlistId = urlParams.get('id') || window.location.pathname.split('/').pop();
+        let wishlistId = urlParams.get('id') || window.location.pathname.split('/').pop();
+        if (wishlistId) wishlistId = wishlistId.trim();
 
-        // Priority labels
+        // Priority labels (matching app 1-5 scale)
         const PRIORITY_LABELS = {
-            1: { label: 'Basse', class: 'priority-low' },
-            2: { label: 'Moyenne', class: 'priority-medium' },
-            3: { label: 'Haute', class: 'priority-high' }
+            1: { label: 'Liste', class: 'priority-low' },
+            2: { label: 'Bonus', class: 'priority-low' },
+            3: { label: 'Souhaité', class: 'priority-medium' },
+            4: { label: 'Important', class: 'priority-high' },
+            5: { label: 'Urgent', class: 'priority-high' }
         };
 
         // Supabase REST API

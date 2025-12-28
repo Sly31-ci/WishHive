@@ -103,7 +103,7 @@ export default function ProductDetailScreen() {
             const { error } = await supabase.from('wishlist_items').insert({
                 wishlist_id: wishlistId,
                 product_id: product.id,
-                priority: 2,
+                priority: 3, // 'Souhaité' par défaut
             });
 
             if (error) throw error;

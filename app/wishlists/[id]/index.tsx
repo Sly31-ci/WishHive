@@ -7,7 +7,7 @@
  * - ✅ Partage (ShareWishlistButton)
  * - ✅ Réorganisation (drag & drop)
  * - ✅ Delete wishlist
- * - ✅ Swipe actions sur items
+ * - ✅ Delete items via button
  * - ✅ Group gifts (cagnotte)
  * - ✅ Priority badges
  * - ✅ Purchased status
@@ -48,7 +48,6 @@ import { COLORS, SPACING, FONT_SIZES, BORDER_RADIUS } from '@/constants/theme';
 import { Database } from '@/types/database';
 import * as Haptics from 'expo-haptics';
 import { wishlistEvents, EVENTS } from '@/lib/events';
-import { SwipeableItem } from '@/components/SwipeableItem';
 import { ConfirmDialog } from '@/components/ConfirmDialog';
 import { ReorganizeToolbar } from '@/components/ReorganizeToolbar';
 import { getPriorityLabel, getPriorityColor } from '@/constants/priorities';
@@ -59,6 +58,9 @@ type WishlistItem = Database['public']['Tables']['wishlist_items']['Row'] & {
     product?: Database['public']['Tables']['products']['Row'] | null;
     group_gift?: Database['public']['Tables']['group_gifts']['Row'] | null;
 };
+
+import { ChevronUp, ChevronDown } from 'lucide-react-native';
+import { PRIORITY_OPTIONS } from '@/constants/priorities';
 
 export default function WishlistDetailScreen() {
     const { id } = useLocalSearchParams<{ id: string }>();
@@ -118,7 +120,9 @@ export default function WishlistDetailScreen() {
             setIsOwner(user?.id === cachedWishlist.owner_id);
         }
         if (cachedItems && cachedItems.length > 0) {
-            setItems(cachedItems);
+            // Deduplicate cache data
+            const unique = Array.from(new Map(cachedItems.map(item => [item.id, item])).values());
+            setItems(unique);
             setLoading(false);
         }
     };
@@ -136,10 +140,10 @@ export default function WishlistDetailScreen() {
     }, [id]);
 
     const loadWishlistDetails = async (isFirstLoad = true) => {
-        if (isFirstLoad) {
+        if (isFirstLoad && !savingOrder) {
             setLoading(true);
             setPagination({ page: 0, hasMore: true, loadingMore: false });
-        } else {
+        } else if (!isFirstLoad) {
             setPagination(prev => ({ ...prev, loadingMore: true }));
         }
 
@@ -194,9 +198,26 @@ export default function WishlistDetailScreen() {
 
             if (isFirstLoad) {
                 setItems(newItems);
-                setPagination({ page: 1, hasMore: newItems.length === PAGE_SIZE, loadingMore: false });
+                setPagination({
+                    page: 1,
+                    hasMore: newItems.length === PAGE_SIZE,
+                    loadingMore: false
+                });
+
+                // Update cache with fresh data
+                cache.set(`wishlist_items_${id}`, newItems);
             } else {
-                setItems(prev => [...prev, ...newItems]);
+                setItems(prev => {
+                    const existingIds = new Set(prev.map(item => item.id));
+                    const uniqueNew = newItems.filter(item => !existingIds.has(item.id));
+                    const updated = [...prev, ...uniqueNew];
+
+                    // Update cache with merged data
+                    cache.set(`wishlist_items_${id}`, updated);
+
+                    return updated;
+                });
+
                 setPagination(prev => ({
                     page: prev.page + 1,
                     hasMore: newItems.length === PAGE_SIZE,
@@ -213,14 +234,11 @@ export default function WishlistDetailScreen() {
             if (wishlist) {
                 cache.set(`wishlist_${id}`, wishlist);
             }
-            if (items.length > 0) {
-                cache.set(`wishlist_items_${id}`, items);
-            }
         }
     };
 
     const handleLoadMore = () => {
-        if (pagination.hasMore && !pagination.loadingMore && !loading) {
+        if (pagination.hasMore && !pagination.loadingMore && !loading && !isReordering) {
             loadWishlistDetails(false);
         }
     };
@@ -230,9 +248,51 @@ export default function WishlistDetailScreen() {
             setIsReordering(false);
             setItems(originalItems);
         } else {
-            setOriginalItems(items);
+            setOriginalItems([...items]);
             setIsReordering(true);
             Haptics.selectionAsync();
+        }
+    };
+
+    const handleMoveItem = (index: number, direction: 'up' | 'down') => {
+        const newItems = [...items];
+        const targetIndex = direction === 'up' ? index - 1 : index + 1;
+
+        if (targetIndex >= 0 && targetIndex < items.length) {
+            const [movedItem] = newItems.splice(index, 1);
+            newItems.splice(targetIndex, 0, movedItem);
+            setItems(newItems);
+            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+        }
+    };
+
+    const changePriority = (item: WishlistItem) => {
+        if (!isOwner || isReordering) return;
+
+        Alert.alert(
+            'Changer la priorité',
+            'Sélectionnez le niveau de priorité pour ce souhait :',
+            PRIORITY_OPTIONS.map(opt => ({
+                text: opt.label,
+                onPress: () => handleUpdatePriority(item.id, opt.value)
+            })).concat([{ text: 'Annuler', style: 'cancel' } as any])
+        );
+    };
+
+    const handleUpdatePriority = async (itemId: string, newPriority: number) => {
+        try {
+            const { error } = await supabase
+                .from('wishlist_items')
+                .update({ priority: newPriority })
+                .eq('id', itemId);
+
+            if (error) throw error;
+
+            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+            loadWishlistDetails(); // Re-fetch to get correctly sorted list
+        } catch (error) {
+            console.error(error);
+            Alert.alert('Erreur', 'Impossible de modifier la priorité.');
         }
     };
 
@@ -242,7 +302,7 @@ export default function WishlistDetailScreen() {
         try {
             const updates = items.map((item, index) => ({
                 id: item.id,
-                priority: (items.length - index) * 10,
+                priority: Math.min(5, Math.max(1, Math.floor(((items.length - 1 - index) / Math.max(1, items.length - 1)) * 4) + 1)),
                 wishlist_id: id as string,
             }));
 
@@ -254,7 +314,7 @@ export default function WishlistDetailScreen() {
 
             Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
             setIsReordering(false);
-            loadWishlistDetails();
+            loadWishlistDetails(true);
         } catch (error) {
             console.error(error);
             Alert.alert('Error', "Impossible d'enregistrer l'ordre.");
@@ -307,11 +367,26 @@ export default function WishlistDetailScreen() {
         }
     };
 
-    const WishlistItemCard = React.memo(({ item, isOwner, isReordering, onDelete }: {
+    const WishlistItemCard = React.memo(({
+        item,
+        isOwner,
+        isReordering,
+        onDelete,
+        onMoveUp,
+        onMoveDown,
+        isFirst,
+        isLast,
+        onPriorityPress
+    }: {
         item: WishlistItem;
         isOwner: boolean;
         isReordering: boolean;
-        onDelete: (id: string) => void
+        onDelete: (id: string) => void;
+        onMoveUp: () => void;
+        onMoveDown: () => void;
+        isFirst: boolean;
+        isLast: boolean;
+        onPriorityPress: () => void;
     }) => {
         const title = item.custom_title || item.product?.title || 'Untitled Item';
         const price = item.custom_price || item.product?.price;
@@ -321,6 +396,25 @@ export default function WishlistDetailScreen() {
         const content = (
             <Card style={styles.itemCard}>
                 <View style={styles.itemContent}>
+                    {isReordering && (
+                        <View style={styles.reorderControls}>
+                            <TouchableOpacity
+                                onPress={onMoveUp}
+                                disabled={isFirst}
+                                style={[styles.reorderButton, isFirst && { opacity: 0.3 }]}
+                            >
+                                <ChevronUp size={24} color={COLORS.primary} />
+                            </TouchableOpacity>
+                            <TouchableOpacity
+                                onPress={onMoveDown}
+                                disabled={isLast}
+                                style={[styles.reorderButton, isLast && { opacity: 0.3 }]}
+                            >
+                                <ChevronDown size={24} color={COLORS.primary} />
+                            </TouchableOpacity>
+                        </View>
+                    )}
+
                     <View style={styles.itemImageContainer}>
                         {imageUrl ? (
                             <Image
@@ -350,17 +444,21 @@ export default function WishlistDetailScreen() {
 
                         <View style={styles.itemsRow}>
                             <View style={styles.itemMeta}>
-                                <View style={[
-                                    styles.priorityBadge,
-                                    { backgroundColor: getPriorityColor(item.priority) + '20' }
-                                ]}>
+                                <TouchableOpacity
+                                    onPress={onPriorityPress}
+                                    disabled={!isOwner || isReordering}
+                                    style={[
+                                        styles.priorityBadge,
+                                        { backgroundColor: getPriorityColor(item.priority) + '20' }
+                                    ]}
+                                >
                                     <Text style={[
                                         styles.priorityText,
                                         { color: getPriorityColor(item.priority) }
                                     ]}>
-                                        {getPriorityLabel(item.priority)} priority
+                                        {getPriorityLabel(item.priority)}
                                     </Text>
-                                </View>
+                                </TouchableOpacity>
 
                                 {item.is_purchased && !item.group_gift && (
                                     <View style={styles.purchasedBadge}>
@@ -377,10 +475,10 @@ export default function WishlistDetailScreen() {
                                 )}
                             </View>
 
-                            {isOwner && (
-                                <View style={styles.deleteIconButton}>
+                            {isOwner && !isReordering && (
+                                <TouchableOpacity onPress={() => onDelete(item.id)} style={styles.deleteIconButton}>
                                     <Trash2 size={18} color={COLORS.error} />
-                                </View>
+                                </TouchableOpacity>
                             )}
                         </View>
 
@@ -409,23 +507,20 @@ export default function WishlistDetailScreen() {
             </Card>
         );
 
-        if (isOwner && !isReordering) {
-            return (
-                <SwipeableItem onDelete={() => onDelete(item.id)}>
-                    {content}
-                </SwipeableItem>
-            );
-        }
-
         return content;
     });
 
-    const renderItem = ({ item }: { item: WishlistItem }) => (
+    const renderItem = ({ item, index }: { item: WishlistItem; index: number }) => (
         <WishlistItemCard
             item={item}
             isOwner={isOwner}
             isReordering={isReordering}
             onDelete={handleDeleteItem}
+            onMoveUp={() => handleMoveItem(index, 'up')}
+            onMoveDown={() => handleMoveItem(index, 'down')}
+            isFirst={index === 0}
+            isLast={index === items.length - 1}
+            onPriorityPress={() => changePriority(item)}
         />
     );
 
@@ -433,7 +528,8 @@ export default function WishlistDetailScreen() {
         const HeaderWrapper = ({ children }: { children: React.ReactNode }) => {
             const style = [
                 styles.headerContent,
-                { backgroundColor: currentTheme.gradient ? 'transparent' : currentTheme.primaryColor }
+                { backgroundColor: currentTheme.gradient ? 'transparent' : currentTheme.primaryColor },
+                isReordering && { borderBottomWidth: 4, borderBottomColor: COLORS.primary }
             ];
 
             if (currentTheme.gradient) {
@@ -554,7 +650,7 @@ export default function WishlistDetailScreen() {
             <FlatList
                 data={items}
                 renderItem={renderItem}
-                keyExtractor={(item) => item.id}
+                keyExtractor={(item, index) => `${item.id}-${index}`}
                 ListHeaderComponent={renderHeader}
                 ListEmptyComponent={renderEmpty}
                 contentContainerStyle={{ paddingBottom: 100 }}
@@ -794,6 +890,14 @@ const styles = StyleSheet.create({
         marginTop: SPACING.sm,
     },
     deleteIconButton: {
+        padding: 4,
+    },
+    reorderControls: {
+        justifyContent: 'center',
+        paddingRight: SPACING.sm,
+        gap: SPACING.xs,
+    },
+    reorderButton: {
         padding: 4,
     },
     cagnotteBadge: {

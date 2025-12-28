@@ -45,7 +45,9 @@ export default function WishlistsScreen() {
     if (!user) return;
     const cachedData = await cache.get<Wishlist[]>(`wishlists_${user.id}`);
     if (cachedData && cachedData.length > 0) {
-      setWishlists(cachedData);
+      // Deduplicate cache data
+      const unique = Array.from(new Map(cachedData.map(item => [item.id, item])).values());
+      setWishlists(unique);
       setLoading(false);
     }
   };
@@ -75,11 +77,33 @@ export default function WishlistsScreen() {
       if (error) throw error;
 
       const newWishlists = data || [];
+
       if (isRefresh) {
         setWishlists(newWishlists);
-        setPagination({ page: 1, hasMore: newWishlists.length === PAGE_SIZE, loadingMore: false });
+        setPagination({
+          page: 1,
+          hasMore: newWishlists.length === PAGE_SIZE,
+          loadingMore: false
+        });
+
+        // Update cache with fresh data
+        if (user && newWishlists.length > 0) {
+          cache.set(`wishlists_${user.id}`, newWishlists);
+        }
       } else {
-        setWishlists(prev => [...prev, ...newWishlists]);
+        setWishlists(prev => {
+          const existingIds = new Set(prev.map(item => item.id));
+          const uniqueNew = newWishlists.filter(item => !existingIds.has(item.id));
+          const updated = [...prev, ...uniqueNew];
+
+          // Update cache with merged data
+          if (user && updated.length > 0) {
+            cache.set(`wishlists_${user.id}`, updated);
+          }
+
+          return updated;
+        });
+
         setPagination(prev => ({
           page: prev.page + 1,
           hasMore: newWishlists.length === PAGE_SIZE,
@@ -92,11 +116,6 @@ export default function WishlistsScreen() {
       setLoading(false);
       setRefreshing(false);
       setPagination(prev => ({ ...prev, loadingMore: false }));
-
-      // Save to cache after successful load or refresh
-      if (user && wishlists.length > 0) {
-        cache.set(`wishlists_${user.id}`, wishlists);
-      }
     }
   };
 
@@ -105,7 +124,7 @@ export default function WishlistsScreen() {
   };
 
   const handleLoadMore = () => {
-    if (pagination.hasMore && !pagination.loadingMore && !loading) {
+    if (pagination.hasMore && !pagination.loadingMore && !loading && !refreshing) {
       loadWishlists();
     }
   };
@@ -210,7 +229,7 @@ export default function WishlistsScreen() {
         <FlatList
           data={wishlists}
           renderItem={renderWishlistCard}
-          keyExtractor={(item) => item.id}
+          keyExtractor={(item, index) => `${item.id}-${index}`}
           contentContainerStyle={styles.listContent}
           refreshControl={
             <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={COLORS.primary} />

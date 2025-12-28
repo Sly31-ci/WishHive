@@ -1,11 +1,11 @@
 import { COLORS } from './theme';
 
 export const PRIORITY_LEVELS = {
-    URGENT: 400,
-    IMPORTANT: 300,
-    DESIRED: 200,
-    BONUS: 100,
-    LIST: 0,
+    URGENT: 5,
+    IMPORTANT: 4,
+    DESIRED: 3,
+    BONUS: 2,
+    LIST: 1,
 };
 
 export const getPriorityLabel = (priority: number) => {

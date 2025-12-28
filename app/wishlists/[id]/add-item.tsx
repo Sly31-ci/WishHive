@@ -56,7 +56,7 @@ export default function AddItemScreen() {
             const { data, error } = await supabase.from('wishlist_items').insert({
                 wishlist_id: wishlistId as string,
                 product_id: product.id,
-                priority: 3,
+                priority: 3, // 'Souhaité' par défaut (3 sur 1-5)
             }).select().single();
 
             if (error) throw error;
@@ -135,7 +135,7 @@ export default function AddItemScreen() {
                 custom_images: customImage ? [customImage] : null,
                 custom_price: customPrice ? parseFloat(customPrice) : null,
                 note: customNote.trim() || null,
-                priority: 3,
+                priority: 3, // 'Souhaité' par défaut (3 sur 1-5)
             }).select().single();
 
             if (error) throw error;
