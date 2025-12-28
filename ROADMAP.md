@@ -2,152 +2,79 @@
 
 Ce document trace la feuille de route du développement de WishHive, de la conception initiale au lancement et aux évolutions futures.
 
-**Dernière mise à jour** : 22 Décembre 2025
-**Statut Global** : 🚀 Phase 5 (Fonctionnalités Avancées) complétée à 80%
+**Dernière mise à jour** : Janvier 2025
+**Statut Global** : 🚀 Phase 5 complétée ! Préparation pour la Phase 6.
 
 ---
 
 ## 🟢 Phase 1 : Fondation & Architecture (Terminée)
-**Objectif** : Mettre en place les bases solides du projet.
-
-- [x] **Initialisation du projet**
-  - [x] Création projet Expo (React Native)
-  - [x] Configuration TypeScript
-  - [x] Installation des dépendances (Expo Router, Lucide, etc.)
-  - [x] Configuration ESLint/Prettier
-
-- [x] **Architecture Backend (Supabase)**
-  - [x] Modélisation de la base de données (12 tables)
-  - [x] Création des migrations SQL
-  - [x] Configuration des Row Level Security (RLS)
-  - [x] Triggers pour l'automatisation (points, timestamps)
-
-- [x] **Structure Frontend**
-  - [x] Mise en place Expo Router (File-based routing)
-  - [x] Création des contextes (AuthContext)
-  - [x] Création des hooks personnalisés (useWishlists, useGamification)
-  - [x] Composants UI de base (Button, Input, Card)
+- [x] Initialisation Expo (React Native)
+- [x] Configuration Supabase (Tables & Auth)
+- [x] Configuration RLS & Sécurité
 
 ---
 
 ## 🟢 Phase 2 : Fonctionnalités Core (Terminée)
-**Objectif** : Implémenter les fonctionnalités essentielles de l'application.
-
-- [x] **Authentification**
-  - [x] Login / Signup / Logout
-  - [x] Gestion de session persistante
-  - [x] **Correction** : Bug de création de profil (Trigger fix)
-
-- [x] **Gestion des Wishlists**
-  - [x] Création de listes (titre, type, confidentialité)
-  - [x] Ajout d'items (produits ou custom)
-  - [x] Affichage et détails des listes
-  - [x] Suppression et modification
-
-- [x] **Marketplace & Vendeurs**
-  - [x] Profils vendeurs
-  - [x] Catalogue produits
-  - [x] Dashboard vendeur (mockup)
-
-- [x] **Gamification**
-  - [x] Système de points et niveaux
-  - [x] Badges et achievements
-  - [x] Leaderboard
+- [x] Authentification complète
+- [x] Gestion des Wishlists (CRUD)
+- [x] Gamification (Points & Badges)
 
 ---
 
-## 🟡 Phase 3 : Expérience Développeur & Tests (En Cours)
-**Objectif** : Faciliter le développement et assurer la stabilité.
-
-- [x] **Mode Développement**
-  - [x] Variable d'environnement `EXPO_PUBLIC_DEV_MODE`
-  - [x] Système de profils mockés (User, Seller, Admin)
-  - [x] Sélecteur de profil flottant
-  - [x] Bypass authentification en dev
-
-- [x] **Vérification Système**
-  - [x] Script de test connexion Supabase (`test-supabase.js`)
-  - [x] Rapport de connexion (`SUPABASE_CONNECTION_REPORT.md`)
-  - [x] Documentation du mode Dev (`MODE_DEV.md`)
+## 🟢 Phase 3 : Expérience Développeur (Terminée)
+- [x] Mode Dev (Profile Selector)
+- [x] Scripts d'automatisation (migrations, RLS)
+- [x] Documentation technique consolidée
 
 ---
 
-## 🟠 Phase 4 : Lancement & Vérification (À Faire)
-**Objectif** : Tester l'application en conditions réelles et corriger les bugs.
-
-- [x] **Tests Utilisateurs**
-  - [x] Création de compte réel
-  - [x] Parcours complet : Créer wishlist -> Ajouter item -> Partager
-  - [x] Parcours achat : Voir wishlist -> Choisir cadeau -> "Acheter"
-
-- [x] **Tests Vendeurs**
-  - [x] Inscription vendeur
-  - [x] Création de produit
-  - [x] Gestion des commandes
-
-- [x] **Polissage UI/UX**
-  - [x] Animations de transition (Reanimated)
-  - [x] Feedback visuel (Toasts, Loaders, Skeleton)
-  - [x] Empty states (écrans vides)
-  - [x] Mode sombre (vérification complète)
-  - [x] **P1 Haptics** : Foundation haptiques sur tous les boutons
-  - [x] **P2 Offline** : Système de cache pour consultation hors-ligne
+## 🟢 Phase 4 : UX & Polissage (Terminée)
+- [x] Correction critique des inputs mobiles (Native UI)
+- [x] Optimisation des formulaires de création
+- [x] Support des types d'événements personnalisés (Emoji + Label)
+- [x] Feedback haptique et animations
 
 ---
 
-## 🔵 Phase 5 : Fonctionnalités Avancées (Futur)
-**Objectif** : Enrichir l'application avec des fonctionnalités "Wow".
-
-- [x] **Social & Viralité**
-  - [x] Partage natif (iOS/Android sheet)
-  - [x] Génération d'images OG pour les liens partagés
-  - [x] Notifications Réelles (Database + Push foundations)
-  - [x] **Social V2** : Cagnotte collective et Chat temps-réel
-
-- [ ] **Paiement & Commandes**
-  - [ ] Intégration Stripe (Paiements réels)
-  - [ ] Gestion des adresses de livraison
-  - [ ] Suivi de commande temps réel
-
-- [x] **IA & Smart Features**
-  - [x] Scanner de reçus (OCR) pour validation par image
-  - [ ] Suggestions de cadeaux par IA
-  - [ ] Parsing automatique de liens (Scraping)
+## 🟢 Phase 5 : Viralité & Web Viewer (Terminée)
+- [x] **Web Viewer Public** hosting sur GitHub Pages
+- [x] **Universal Links** (iOS) & **App Links** (Android)
+- [x] Partage dynamique via QR Code et Native Share
+- [x] Support Privacy "Code Only"
 
 ---
 
-## 🟣 Phase 6 : Production & Scale
-**Objectif** : Préparer l'application pour les stores.
-
-- [ ] **Optimisation**
-  - [ ] Performance audit (Lighthouse/Flashlight)
-  - [ ] Optimisation des images (CDN)
-  - [ ] Code splitting & Lazy loading
-
-- [ ] **Déploiement**
-  - [ ] Configuration EAS Build
-  - [ ] Soumission Apple App Store
-  - [ ] Soumission Google Play Store
-  - [ ] Landing page web
+## 🟡 Phase 6 : Économie & Marketplace (En Cours)
+- [ ] **Paiements Réels** : Intégration Stripe (Checkout & Connect)
+- [ ] **Gestion des adresses** : Carnet d'adresses sécurisé pour livraison
+- [ ] **Dashboard Vendeur Pro** : Gestion des stocks et analytics avancés
+- [ ] **Cagnotte V2** : Interface de contribution simplifiée
 
 ---
 
-## 📊 Vue d'ensemble des Écrans Implémentés
+## 🔵 Phase 7 : Intelligence & Scale (Futur)
+- [ ] **AI Gift Stylist** : Suggestions de cadeaux basées sur le profil
+- [ ] **Browser Extension** : Ajouter des items depuis n'importe quel site
+- [ ] **Notifications Push** : Firebase Cloud Messaging (FCM) integration
+- [ ] **App Stores** : Soumission finale (App Store & Play Store)
 
-| Module | Écrans | Statut |
-|--------|--------|--------|
-| **Auth** | Login, Signup | ✅ Prêt |
-| **Tabs** | Home, Wishlists, Marketplace, Profile | ✅ Prêt |
-| **Wishlists** | Create, Edit, Details, Add Item | ✅ Prêt |
-| **Social** | Leaderboard, Notifications, Friend Circles | ✅ Prêt |
-| **Seller** | Dashboard, Profile, Product Details | ✅ Prêt |
-| **User** | Public Profile, Settings, Rewards | ✅ Prêt |
-| **Purchase** | One-Click Gift, Split Pay | ✅ Prêt |
+---
+
+## 📊 État des Modules
+
+| Module | Statut | Note |
+|--------|--------|------|
+| **Wishlist Creation** | ✅ 100% | Native UI + Custom Types |
+| **Web Viewer** | ✅ 100% | Live sur GitHub Pages |
+| **Deep Linking** | ✅ 100% | Universal & App Links |
+| **Authentication** | ✅ 100% | Supabase Email + Mock Dev |
+| **Marketplace** | 🟡 60% | Browsing OK, Checkout en cours |
+| **Gamification** | ✅ 90% | Points/Badges OK |
 
 ---
 
 **Légende** :
-- ✅ : Terminé et fonctionnel
-- 🟡 : En cours / Partiellement fonctionnel
-- 🟠 : À faire prochainement
-- 🔵 : Prévu pour plus tard
+- ✅ : Terminé
+- 🟡 : En cours
+- 🔵 : Projeté
+

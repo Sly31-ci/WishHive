@@ -4,169 +4,88 @@
 
 Avant de commencer, assurez-vous d'avoir installé :
 - Node.js 18 ou supérieur
-- npm ou yarn
-- Expo CLI : `npm install -g expo-cli`
-- Un compte Supabase (gratuit)
+- Watchman (pour macOS/Linux)
+- Expo Go sur votre appareil mobile
 
-## 🚀 Installation
+## 🚀 Installation Rapide
 
-### 1. Installer les dépendances
-
+### 1. Cloner et installer
 ```bash
+git clone <url-du-repo>
+cd WishHive
 npm install
 ```
 
 ### 2. Configuration Supabase
+1. Créez un projet sur [supabase.com](https://supabase.com).
+2. Récupérez votre **URL** et **Anon Key**.
+3. Créez un fichier `.env` à la racine :
+   ```bash
+   cp .env.example .env
+   ```
+4. Remplissez le `.env` avec vos accès.
 
-#### Créer un projet Supabase
-1. Allez sur [supabase.com](https://supabase.com)
-2. Créez un nouveau projet
-3. Notez votre **Project URL** et **anon key**
-
-#### Exécuter les migrations
-1. Dans votre dashboard Supabase, allez dans **SQL Editor**
-2. Exécutez les fichiers de migration dans l'ordre :
-   - `supabase/migrations/20251202014416_create_wishhive_core_schema.sql`
-   - `supabase/migrations/20251202014457_create_functions_and_triggers.sql`
-
-### 3. Configuration de l'environnement
-
-Créez un fichier `.env` à la racine du projet :
+### 3. Initialisation de la Base de Données
+Exécutez les scripts automatisés situés dans le dossier `scripts/` :
 
 ```bash
-cp .env.example .env
-```
+# 1. Configurer les tables et migrations
+# Copier le contenu de supabase/migrations/ vers SQL Editor de Supabase
 
-Modifiez le fichier `.env` avec vos credentials Supabase :
+# 2. Configurer la sécurité RLS automatiquement
+./scripts/configure-rls.sh
 
-```
-EXPO_PUBLIC_SUPABASE_URL=https://votre-projet.supabase.co
-EXPO_PUBLIC_SUPABASE_ANON_KEY=votre_anon_key_ici
+# 3. Configurer le stockage (images)
+./scripts/setup-storage.sh
 ```
 
 ## 🎯 Lancer l'application
 
-### Mode développement
-
+### Mode Développement
 ```bash
-npm run dev
+npx expo start --clear
 ```
 
-Options disponibles :
-- Appuyez sur `w` pour ouvrir dans le navigateur web
-- Appuyez sur `i` pour iOS simulator (Mac uniquement)
-- Appuyez sur `a` pour Android emulator
-- Scannez le QR code avec l'app Expo Go sur votre téléphone
+- Utilisez **Expo Go** pour tester sur mobile réel.
+- Le **Profile Selector** flottant (en mode DEV) vous permet de basculer entre User, Seller et Admin sans mot de passe.
 
-### Build production
+## 🌍 Web Viewer (Public Share)
 
-#### Web
-```bash
-npm run build:web
-```
+Le Web Viewer est auto-hébergé sur GitHub Pages. Pour le mettre à jour :
+1. Les fichiers sont dans `docs/`.
+2. Configurez GitHub Pages pour pointer vers le dossier `/docs` de la branche `main`.
+3. URL : `https://Sly31-ci.github.io/WishHive/`
 
-#### Mobile (iOS/Android)
-```bash
-# Installer EAS CLI
-npm install -g eas-cli
+## 📁 Structure du Projet
 
-# Configurer
-eas build:configure
+- `app/` : Routes mobiles (Expo Router).
+- `components/` : Composants UI atomiques.
+- `docs/` : Documentation + Web Viewer statique.
+- `scripts/` : Outils de maintenance et migrations.
+- `supabase/` : Fichiers SQL et schémas.
 
-# Build iOS
-eas build --platform ios
+## ✅ État des Fonctionnalités
 
-# Build Android
-eas build --platform android
-```
-
-## 📁 Structure du projet
-
-```
-WishHive/
-├── app/                    # Écrans et navigation
-│   ├── (auth)/            # Authentification
-│   ├── (tabs)/            # Navigation principale
-│   └── wishlists/         # Gestion wishlists
-├── components/            # Composants réutilisables
-│   ├── Badge.tsx
-│   ├── Button.tsx
-│   ├── Card.tsx
-│   ├── Input.tsx
-│   ├── ProductCard.tsx
-│   └── WishlistCard.tsx
-├── hooks/                 # Hooks personnalisés
-│   ├── useGamification.ts
-│   ├── useProducts.ts
-│   └── useWishlists.ts
-├── lib/                   # Utilitaires
-│   ├── supabase.ts
-│   ├── utils.ts
-│   ├── haptics.ts
-│   └── sharing.ts
-├── constants/             # Constantes et thème
-│   └── Colors.ts
-├── contexts/              # Contextes React
-│   └── AuthContext.tsx
-├── types/                 # Types TypeScript
-│   └── database.ts
-└── supabase/             # Migrations SQL
-    └── migrations/
-```
-
-## 🎨 Fonctionnalités disponibles
-
-### ✅ Déjà implémenté
-- Authentification (signup/login/forgot password)
-- Structure de navigation fluide (Expo Router)
-- **Design System Premium** (Haptics, Reanimated, Skeleton loaders)
-- **Social V2** (Cagnotte collective, Chat temps-réel)
-- **Engagement** (Notifications, Reels interactions, Gamification)
-- **Performance** (Lazy loading, Memoization, Caching offline)
-- **SEO & Viralité** (Deep linking, OG Meta-tags dynamiques)
-- Marketplace & Profils vendeurs
-- Migrations base de données complètes (15+ tables)
-
-### 🔄 À tester
-- Flow complet de contribution à une cagnotte
-- Discussion en temps réel dans un salon de chat
-- Partage de wishlist et aperçu social rich
-- Performance sur un grand nombre d'items (pagination)
+- ✅ **Authentification** : Email/Pass + Social foundations.
+- ✅ **Wishlists** : Création avec types d'événements personnalisés.
+- ✅ **Partage** : Génération de QR codes et liens GitHub Pages.
+- ✅ **Deep Linking** : Ouverture automatique de l'app via les liens web.
+- ✅ **Sécurité** : RLS configuré partout.
 
 ## 🐛 Dépannage
 
-### Erreur de connexion Supabase
-- Vérifiez vos credentials dans `.env`
-- Assurez-vous que les migrations sont exécutées
-- Vérifiez que RLS est activé sur les tables
-
-### Erreur Expo
+### Problème de Cache Metro
 ```bash
-# Nettoyer le cache
-expo start -c
+rm -rf .expo node_modules/.cache
+npx expo start --clear
 ```
 
-### Erreur npm
+### Script de Test Supabase
 ```bash
-# Supprimer node_modules et réinstaller
-rm -rf node_modules
-npm install
+node scripts/test-supabase.js
 ```
-
-## 📚 Ressources
-
-- [Documentation Expo](https://docs.expo.dev/)
-- [Documentation Supabase](https://supabase.com/docs)
-- [Documentation React Native](https://reactnative.dev/)
-
-## 🎯 Prochaines étapes
-
-1. **Tester l'application** : `npm run dev`
-2. **Créer un compte** : Testez le flow d'authentification
-3. **Créer une wishlist** : Testez la création et gestion
-4. **Explorer le marketplace** : Parcourez les produits
-5. **Tester la gamification** : Gagnez des points et badges
 
 ---
 
-**Besoin d'aide ?** Consultez le README.md principal ou créez une issue.
+**WishHive** - Make Wishes Real.
+

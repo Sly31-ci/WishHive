@@ -2,268 +2,84 @@
 
 ## Vue d'ensemble
 
-WishHive est une application mobile cross-platform construite avec React Native et Expo, utilisant Supabase comme backend.
+WishHive est une application hybride composée d'une application mobile cross-platform (React Native/Expo) et d'un Web Viewer statique (GitHub Pages) pour le partage public des wishlists. Supabase sert de backend unifié.
 
 ## Stack Technique
 
-### Frontend
-- **Framework** : React Native 0.81.4
-- **Runtime** : Expo SDK 54
-- **Langage** : TypeScript 5.9
-- **Navigation** : Expo Router 6.0
-- **State Management** : React Context API
-- **UI Components** : Custom components + Lucide icons
+### Frontend (Mobile)
+- **Framework** : React Native (Expo SDK 54)
+- **Navigation** : Expo Router v4+
+- **Langage** : TypeScript
+- **State Management** : React Context API (Auth, Toast, Badges)
+- **Animations** : React Native Reanimated v3
+- **Haptics** : Expo Haptics
+
+### Frontend (Web Viewer)
+- **Hosting** : GitHub Pages (`https://Sly31-ci.github.io/WishHive/`)
+- **Techno** : Vanilla HTML5 / CSS3 / JavaScript (optimisé pour mobile)
+- **Integration** : Supabase JS Client (Read-only via RLS)
+- **SEO** : Dynamic Meta Tags via JavaScript & GitHub Pages structure
 
 ### Backend
 - **BaaS** : Supabase
-- **Database** : PostgreSQL
-- **Authentication** : Supabase Auth
-- **Storage** : Supabase Storage (pour images)
-- **Real-time** : Supabase Realtime
+- **Database** : PostgreSQL (15+ tables)
+- **Authentication** : Supabase Auth (OTP, Email, Social)
+- **Storage** : Supabase Storage (Produits, Avatars)
+- **Real-time** : Supabase Realsync (Chat, Cagnotte)
 
 ### Sécurité
-- Row Level Security (RLS) sur toutes les tables
+- Row Level Security (RLS) sur TOUTES les tables (Public read-only pour wishlists publiques)
 - Authentification JWT
-- Policies PostgreSQL pour contrôle d'accès
+- Contraintes CHECK en DB pour l'intégrité des types (ex: type_not_empty)
 
 ## Architecture de la Base de Données
 
-### Tables Principales
+Les tables principales incluent : `profiles`, `wishlists`, `wishlist_items`, `products`, `sellers`, `orders`, `badges`, `reactions`, `follows`, `transactions`, `notifications`, `friend_circles`, `chat_messages`, `group_gifts`.
 
-#### 1. profiles
-Profils utilisateurs étendus avec gamification
-- Points et niveaux
-- Avatar et bio
-- Paramètres personnalisés
-
-#### 2. wishlists
-Collections de souhaits
-- Types d'événements (anniversaire, mariage, etc.)
-- Niveaux de confidentialité (public, privé, code)
-- Compteur de vues
-
-#### 3. wishlist_items
-Produits dans les wishlists
-- Référence produit marketplace OU custom
-- Priorité (1-5)
-- Statut d'achat
-
-#### 4. products
-Catalogue marketplace
-- Géré par les vendeurs
-- Prix, variations, stock
-- Images multiples
-
-#### 5. sellers
-Boutiques et vendeurs
-- Vérification KYC
-- Informations de paiement
-- Analytics
-
-#### 6. orders
-Suivi des achats
-- Statuts (pending → confirmed → shipped → delivered)
-- Options de livraison
-- Mode anonyme
-
-#### 7. badges & user_badges
-Système d'achievements
-- 4 tiers (bronze, silver, gold, platinum)
-- Critères d'obtention
-- Récompenses en points
-
-#### 8. reactions
-Engagement social
-- Types : heart, fire, celebrate, shush
-- Mode anonyme supporté
-
-#### 9. follows
-Connexions sociales
-- Suivre utilisateurs ou vendeurs
-
-#### 10. transactions
-Ledger points et récompenses
-- Types : earn, spend, refund
-- Traçabilité complète
-
-#### 11. notifications
-Système d'alertes temps-réel
-- Types : follow, like, gift, system
-- Statut de lecture et métadonnées
-
-#### 12. friend_circles & circle_members
-Organisation sociale
-- Cercles privés (Famille, Amis, etc.)
-- Gestion des membres par email
-
-#### 13. collaborative_wishlists
-Édition partagée
-- Rôles : owner, editor, viewer
-- Historique d'activités (wishlist_activities)
-
-#### 14. group_gifts & gift_contributions
-Cagnotte collective
-- Objectif de financement
-- Suivi des contributions individuelles
-
-#### 15. chat_rooms & chat_messages
-Communication temps-réel
-- Salons contextuels (Cercle ou Wishlist)
-- Support Supabase Realtime
-
-## Architecture Frontend
-
-### Structure des Dossiers
+## Architecture Frontend (Dossiers)
 
 ```
-app/
-├── (auth)/           # Groupe de routes authentification
-│   ├── login.tsx
-│   └── signup.tsx
-├── (tabs)/           # Navigation principale
-│   ├── index.tsx     # Home/Feed
-│   ├── wishlists.tsx # Mes wishlists
-│   ├── marketplace.tsx
-│   └── profile.tsx
-└── wishlists/        # Gestion wishlists
-    └── create.tsx
-
-components/
-├── Badge.tsx         # Affichage achievements
-├── Button.tsx        # Bouton réutilisable
-├── Card.tsx          # Container de base
-├── Input.tsx         # Champ de saisie
-├── ProductCard.tsx   # Carte produit
-└── WishlistCard.tsx  # Carte wishlist
-
-hooks/
-├── useGamification.ts # Points, badges, transactions
-├── useProducts.ts     # Marketplace
-└── useWishlists.ts    # CRUD wishlists
-
-lib/
-├── supabase.ts       # Client Supabase
-├── utils.ts          # Fonctions utilitaires
-├── haptics.ts        # Retour haptique
-└── sharing.ts        # Partage wishlists
+project/
+├── app/                    # Routes mobiles (Expo Router)
+├── components/            # Composants UI React Native
+├── docs/                  # Documentation & Web Viewer
+│   ├── .well-known/      # AssetLinks (Android) & AASA (iOS)
+│   ├── project_history/   # Archives et rapports
+│   └── w/                 # Web Viewer Wishlist publique
+├── scripts/               # Scripts utilitaires & Migrations
+├── lib/                   # Logique métier & Client Supabase
+└── supabase/              # Configuration & SQL
 ```
 
-### Flux de Données
+## Deep Linking & Universal Links
 
-1. **Authentification**
-   ```
-   User → AuthContext → Supabase Auth → Profile Creation
-   ```
+WishHive supporte le routage inter-plateforme :
+- **Custom Scheme** : `wishhive://wishlists/[id]`
+- **Universal Links (iOS)** : `https://Sly31-ci.github.io/WishHive/w/?id=[id]`
+- **App Links (Android)** : `https://Sly31-ci.github.io/WishHive/w/?id=[id]`
 
-2. **Création Wishlist**
-   ```
-   User Input → useWishlists.createWishlist() → Supabase → RLS Check → Insert
-   ```
-
-3. **Gamification**
-   ```
-   Action → useGamification.awardPoints() → Transaction Insert → Profile Update
-   ```
-
-4. **Chat & Temps-Réel**
-   ```
-   Message → chatService.sendMessage() → Supabase Insert → Realtime Broadcast → Subscriber Update
-   ```
-
-## Patterns de Code
+##patterns de Code
 
 ### Custom Hooks
-Tous les appels Supabase sont encapsulés dans des hooks :
-- Séparation des préoccupations
-- Réutilisabilité
-- Gestion d'état cohérente
+Encapsulation systématique de la logique Supabase pour la réutilisabilité et la gestion d'erreur centralisée.
 
-### Context API
-- `AuthContext` : État d'authentification global
-- Évite prop drilling
-- Single source of truth
+### Native UI for Inputs
+Les formulaires critiques (ex: Création de wishlist) utilisent des `TextInput` natifs directs pour garantir une expérience mobile fluide (clavier réactif, focus stable).
 
-### TypeScript
-- Types stricts pour database
-- Interfaces pour tous les composants
-- Type safety end-to-end
+## Sécurité & RLS
 
-## Sécurité
-
-### Row Level Security (RLS)
-
-Exemples de policies :
-
-```sql
--- Users peuvent voir leurs propres wishlists
-CREATE POLICY "Owners can view own wishlists"
-  ON wishlists FOR SELECT
-  TO authenticated
-  USING (owner_id = auth.uid());
-
--- Wishlists publiques visibles par tous
-CREATE POLICY "Public wishlists are viewable by all"
-  ON wishlists FOR SELECT
-  TO authenticated
-  USING (privacy = 'public' AND is_active = true);
-```
-
-### Validation
-- Contraintes CHECK en database
-- Validation côté client avec TypeScript
-- Sanitization des inputs
+Toute la donnée est protégée par des politiques RLS strictes :
+- **Wishlists Privées** : Uniquement accessibles par le `owner_id`.
+- **Wishlists Publiques** : Accessibles en `SELECT` pour `anon` et `authenticated`.
+- **Écriture** : Uniquement pour l'utilisateur authentifié propriétaire.
 
 ## Performance
-
-### Optimisations Database
-- Index sur colonnes fréquemment requêtées
-- Full-text search indexes
-- Pagination des résultats
-
-### Optimisations Frontend
-- Lazy loading des images
-- Memoization avec React.memo
-- Debouncing des recherches
-
-## Déploiement
-
-### Web
-```bash
-npm run build:web
-# → Génère dist/ statique
-```
-
-### Mobile
-```bash
-eas build --platform ios
-eas build --platform android
-# → Génère .ipa et .apk
-```
-
-## Monitoring & Analytics
-
-### Implémenté
-- **Sentry** : Error tracking en production
-- **Mixpanel** : Analytics comportemental
-- **Expo Haptics** : Feedback tactile foundation
-- **Deep Linking** : Routage via scheme `wishhive://`
-
-### À implémenter
-- Test de charge et scalabilité
-- A/B testing framework
-- Performance monitoring avancé (Flashlight)
-
-## Évolutions Futures
-
-### Phase 3
-- Paiements intégrés (Stripe)
-- Recommandations IA
-- App desktop (Electron)
-- Extensions navigateur
-- API publique
-- Webhooks pour intégrations
+- Optimisation des index PostgreSQL pour le filtrage par type et privacy.
+- Cache Metro nettoyé et scripts optimisés pour le développement.
+- Web Viewer ultra-léger sans framework lourd pour une vitesse de chargement maximale.
 
 ---
 
-**Version** : 1.0.0  
-**Dernière mise à jour** : Décembre 2024
+**Version** : 1.1.0  
+**Dernière mise à jour** : Décembre 2024 / Janvier 2025
+

@@ -5,27 +5,24 @@ All notable changes to WishHive will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [1.1.0-beta] - 2025-12-22
+## [1.2.0] - 2025-01-28
 
 ### Added
-- **Social V2**: Real-time Chat integration for Friend Circles and Collaborative Wishlists.
-- **Group Gifting (Cagnotte)**: Collective funding system with progress tracking.
-- **SEO & Social**: Rich OpenGraph meta-tags and dynamic deep linking (`wishhive://`).
-- **Offline Mode**: Basic data caching for wishlists and profiles.
-- **Engagement**: Real-time Notification system and Activity History for collaborative lists.
-- **Analytics**: Mixpanel and Sentry integration for monitoring and tracking.
-- **UI/UX**: Staggered entrance animations, haptic feedback foundation, and skeleton loaders.
+- **Web Viewer (Public Sharing)**: Static web viewer hosted on GitHub Pages for public wishlist sharing.
+- **Universal & App Links**: Cross-platform deep linking enabled for `https://Sly31-ci.github.io/WishHive/w/`.
+- **Custom Event Types**: Fully customizable event types with Emoji + Label picker.
+- **Privacy "Code Only"**: New privacy layer requiring a specific code to access a wishlist.
+- **QR Code Sharing**: Dynamic QR code generation for quick physical sharing.
 
 ### Fixed
-- Authentication profile creation trigger issues.
-- Responsive layout fixes for marketplace and public views.
-- Contrast compliance for "HoneyGlow" brand color (HoneyGlow is now darker).
-- Image rendering performance using hardware-accelerated `expo-image`.
+- **Mobile Input UX**: Complete refactor of the "Create Wishlist" form using native UI components. Fixed keyboard closing/focus issues.
+- **Project Structure**: Cleaned up root directory, archived history, and centralized scripts in `/scripts`.
 
-### Database
-- New tables: `group_gifts`, `gift_contributions`, `chat_rooms`, `chat_messages`, `notifications`, `friend_circles`, `circle_members`, `collaborative_wishlists`, `wishlist_activities`.
+### Changed
+- Refactored `lib/shareWishlist.ts` to use GitHub Pages URLs as the primary sharing method.
+- Updated `app.json` for proper associated domains (iOS) and intent filters (Android).
 
-## [Unreleased]
+## [1.1.0-beta] - 2024-12-22
 
 ### Added
 - Initial project structure with Expo and React Native
