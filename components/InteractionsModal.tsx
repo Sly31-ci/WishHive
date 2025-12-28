@@ -3,8 +3,20 @@ import { View, Text, StyleSheet, Modal, FlatList, TouchableOpacity, ScrollView }
 import { X, MessageSquare, Heart, Clock } from 'lucide-react-native';
 import { COLORS, SPACING, BORDER_RADIUS, FONT_SIZES, SHADOWS } from '@/constants/theme';
 import { Card } from './Card';
-import { formatDistanceToNow } from 'date-fns';
-import { fr } from 'date-fns/locale/fr';
+// Simple formatter to avoid date-fns bundling issues in some environments
+const formatTime = (dateStr: string) => {
+    try {
+        const date = new Date(dateStr);
+        return date.toLocaleDateString('fr-FR', {
+            day: 'numeric',
+            month: 'short',
+            hour: '2-digit',
+            minute: '2-digit'
+        });
+    } catch (e) {
+        return dateStr;
+    }
+};
 
 interface Interaction {
     id: string;
@@ -40,7 +52,7 @@ export function InteractionsModal({
                 <View style={styles.timeBadge}>
                     <Clock size={12} color={COLORS.gray[400]} />
                     <Text style={styles.timeText}>
-                        {formatDistanceToNow(new Date(item.created_at), { addSuffix: true, locale: fr })}
+                        {formatTime(item.created_at)}
                     </Text>
                 </View>
             </View>

@@ -9,10 +9,11 @@ import {
   Dimensions,
 } from 'react-native';
 import { router } from 'expo-router';
-import { Bell, TrendingUp, Sparkles, Plus } from 'lucide-react-native';
+import { Bell, TrendingUp, Sparkles, Plus, Heart, MessageSquare } from 'lucide-react-native';
 import Animated, { FadeInDown, FadeIn } from 'react-native-reanimated';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/lib/supabase';
+import { getUnreadCount } from '@/lib/notifications';
 import Button from '@/components/Button';
 import { Card } from '@/components/Card';
 import { WishlistCard } from '@/components/WishlistCard';
@@ -35,10 +36,39 @@ export default function HomeScreen() {
   const [trendingWishlists, setTrendingWishlists] = useState<Wishlist[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [unreadCount, setUnreadCount] = useState(0);
 
   useEffect(() => {
     loadTrendingWishlists();
-  }, []);
+    loadUnreadCount();
+
+    if (profile?.id) {
+      const channel = supabase
+        .channel(`home_notifications_${profile.id}`)
+        .on(
+          'postgres_changes',
+          {
+            event: 'INSERT',
+            schema: 'public',
+            table: 'notifications',
+            filter: `user_id=eq.${profile.id}`,
+          },
+          () => {
+            setUnreadCount(prev => prev + 1);
+          }
+        )
+        .subscribe();
+
+      return () => {
+        supabase.removeChannel(channel);
+      };
+    }
+  }, [profile?.id]);
+
+  const loadUnreadCount = async () => {
+    const count = await getUnreadCount();
+    setUnreadCount(count);
+  };
 
   const loadTrendingWishlists = async () => {
     try {
@@ -102,13 +132,20 @@ export default function HomeScreen() {
           <Text style={styles.subtitle}>What wishes will you make today?</Text>
         </View>
         <TouchableOpacity
-          onPress={() => router.push('/notifications')}
+          onPress={() => {
+            router.push('/notifications');
+            setUnreadCount(0); // Arbitrarily clear for UX until refetch
+          }}
           style={styles.notificationButton}
         >
           <Bell size={24} color={COLORS.dark} />
-          <View style={styles.notificationBadge}>
-            <Text style={styles.notificationBadgeText}>3</Text>
-          </View>
+          {unreadCount > 0 && (
+            <View style={styles.notificationBadge}>
+              <Text style={styles.notificationBadgeText}>
+                {unreadCount > 9 ? '9+' : unreadCount}
+              </Text>
+            </View>
+          )}
         </TouchableOpacity>
       </View>
 

@@ -7,12 +7,13 @@ import {
     TouchableOpacity,
 } from 'react-native';
 import { router, Stack } from 'expo-router';
-import { ArrowLeft, Bell, Heart, User, Gift } from 'lucide-react-native';
+import { ArrowLeft, Bell, Heart, User, Gift, Eye, MessageSquare } from 'lucide-react-native';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/lib/supabase';
 import { COLORS, SPACING, FONT_SIZES, BORDER_RADIUS } from '@/constants/theme';
 import { getNotifications, markAsRead, Notification } from '@/lib/notifications';
 import { SkeletonLoader } from '@/components/SkeletonLoader';
+import * as Haptics from 'expo-haptics';
 
 
 
@@ -23,7 +24,31 @@ export default function NotificationsScreen() {
 
     useEffect(() => {
         loadNotifications();
-    }, []);
+
+        if (user) {
+            const channel = supabase
+                .channel(`user_notifications_${user.id}`)
+                .on(
+                    'postgres_changes',
+                    {
+                        event: 'INSERT',
+                        schema: 'public',
+                        table: 'notifications',
+                        filter: `user_id=eq.${user.id}`,
+                    },
+                    (payload) => {
+                        const newNotif = payload.new as Notification;
+                        setNotifications(prev => [newNotif, ...prev]);
+                        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+                    }
+                )
+                .subscribe();
+
+            return () => {
+                supabase.removeChannel(channel);
+            };
+        }
+    }, [user]);
 
     const loadNotifications = async () => {
         setLoading(true);
@@ -47,6 +72,10 @@ export default function NotificationsScreen() {
                 return <Heart size={24} color={COLORS.error} />;
             case 'gift':
                 return <Gift size={24} color={COLORS.accent} />;
+            case 'message':
+                return <MessageSquare size={24} color={COLORS.primary} />;
+            case 'view':
+                return <Eye size={24} color={COLORS.gray[400]} />;
             default:
                 return <Bell size={24} color={COLORS.gray[500]} />;
         }

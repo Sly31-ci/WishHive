@@ -44,6 +44,7 @@ import {
 } from 'lucide-react-native';
 import { WishlistThemeSelector } from '@/components/WishlistThemeSelector';
 import { InteractionsModal } from '@/components/InteractionsModal';
+import { AnonymousInteraction } from '@/components/AnonymousInteraction';
 import ShareWishlistButton from '@/components/ShareWishlistButton';
 import { WishlistTheme, DEFAULT_THEME } from '@/constants/wishlistThemes';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -70,6 +71,7 @@ import { StatusBadge } from '@/components/StatusBadge';
 import { WishlistItemRow } from '@/components/WishlistItemRow';
 import { EmptyState } from '@/components/EmptyState';
 import Button from '@/components/Button';
+import { Heart, MessageCircle } from 'lucide-react-native';
 import Animated, { FadeInUp, Layout } from 'react-native-reanimated';
 
 export default function WishlistDetailScreen() {
@@ -86,6 +88,11 @@ export default function WishlistDetailScreen() {
     const [savingOrder, setSavingOrder] = useState(false);
     const [interactions, setInteractions] = useState<any[]>([]);
     const [showInteractionsModal, setShowInteractionsModal] = useState(false);
+
+    // Interaction State
+    const [interactionsSummary, setInteractionsSummary] = useState<Record<string, number>>({});
+    const [interactionModalVisible, setInteractionModalVisible] = useState(false);
+    const [interactionType, setInteractionType] = useState<'reaction' | 'comment'>('reaction');
 
     // Customization State
     const [showThemeSelector, setShowThemeSelector] = useState(false);
@@ -119,6 +126,40 @@ export default function WishlistDetailScreen() {
         if (id) {
             loadCachedDetails();
             loadWishlistDetails();
+
+            // Real-time reactions and comments
+            const channel = supabase
+                .channel(`wishlist_live_${id}`)
+                .on(
+                    'postgres_changes',
+                    {
+                        event: 'INSERT',
+                        schema: 'public',
+                        table: 'wishlist_interactions',
+                        filter: `wishlist_id=eq.${id}`,
+                    },
+                    (payload) => {
+                        const newInteraction = payload.new;
+
+                        // Update interactions list
+                        setInteractions(prev => [newInteraction, ...prev]);
+
+                        // Update summary if reaction
+                        if (newInteraction.interaction_type === 'reaction') {
+                            setInteractionsSummary(prev => ({
+                                ...prev,
+                                [newInteraction.content]: (prev[newInteraction.content] || 0) + 1
+                            }));
+                        } else if (newInteraction.interaction_type === 'comment') {
+                            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+                        }
+                    }
+                )
+                .subscribe();
+
+            return () => {
+                supabase.removeChannel(channel);
+            };
         }
     }, [id]);
 
@@ -163,7 +204,7 @@ export default function WishlistDetailScreen() {
             if (isFirstLoad) {
                 const { data: wishlistData, error: wishlistError } = await supabase
                     .from('wishlists')
-                    .select('*')
+                    .select('*, owner_profile:profiles(username)')
                     .eq('id', id as string)
                     .single();
 
@@ -171,15 +212,23 @@ export default function WishlistDetailScreen() {
                 setWishlist(wishlistData);
                 setIsOwner(user?.id === wishlistData.owner_id);
 
-                // Fetch interactions if owner
-                if (user?.id === wishlistData.owner_id) {
-                    const { data: interData } = await supabase
-                        .from('wishlist_interactions')
-                        .select('*')
-                        .eq('wishlist_id', id as string)
-                        .order('created_at', { ascending: false });
+                // Fetch interactions summary etc
+                const { data: interData } = await supabase
+                    .from('wishlist_interactions')
+                    .select('*')
+                    .eq('wishlist_id', id as string)
+                    .order('created_at', { ascending: false });
 
-                    if (interData) setInteractions(interData);
+                if (interData) {
+                    setInteractions(interData);
+                    // Generate summary for header
+                    const summary = interData
+                        .filter(i => i.interaction_type === 'reaction')
+                        .reduce((acc: any, curr) => {
+                            acc[curr.content] = (acc[curr.content] || 0) + 1;
+                            return acc;
+                        }, {});
+                    setInteractionsSummary(summary);
                 }
             }
 
@@ -415,38 +464,64 @@ export default function WishlistDetailScreen() {
     };
 
 
-    const renderItem = ({ item, drag, isActive, getIndex }: RenderItemParams<WishlistItem>) => {
-        const index = getIndex() ?? 0;
+    const renderItem = ({ item, index }: { item: WishlistItem; index: number }) => {
         return (
-            <ScaleDecorator>
-                <View style={[
-                    { paddingHorizontal: SPACING.lg },
-                    isActive && { opacity: 0.9, transform: [{ scale: 1.02 }] }
-                ]}>
-                    <WishlistItemRow
-                        title={item.custom_title || item.product?.title || 'Untitled Item'}
-                        price={item.custom_price || item.product?.price}
-                        currency={item.product?.currency}
-                        imageUrl={item.custom_images?.[0] || item.product?.images?.[0]}
-                        checked={item.is_purchased}
-                        onToggle={() => handleTogglePurchase(item)}
-                        onDelete={() => handleDeleteItem(item.id)}
-                        isOwner={isOwner}
-                        index={index}
-                        priorityColor={getPriorityColor(item.priority)}
-                        priorityEmoji={getPriorityEmoji(item.priority)}
-                        onEdit={() => router.push(`/wishlists/${id}/edit-item/${item.id}` as any)}
-                        groupGift={item.group_gift}
-                        isReordering={isReordering}
-                        drag={drag}
-                        isActive={isActive}
-                    />
-                </View>
-            </ScaleDecorator>
+            <View style={[
+                { paddingHorizontal: SPACING.lg },
+            ]}>
+                <WishlistItemRow
+                    title={item.custom_title || item.product?.title || 'Untitled Item'}
+                    price={item.custom_price || item.product?.price}
+                    currency={item.product?.currency}
+                    imageUrl={item.custom_images?.[0] || item.product?.images?.[0]}
+                    checked={item.is_purchased}
+                    onToggle={() => handleTogglePurchase(item)}
+                    onDelete={() => handleDeleteItem(item.id)}
+                    isOwner={isOwner}
+                    index={index}
+                    priorityColor={getPriorityColor(item.priority)}
+                    priorityEmoji={getPriorityEmoji(item.priority)}
+                    onEdit={() => router.push(`/wishlists/${id}/edit-item/${item.id}` as any)}
+                    groupGift={item.group_gift}
+                    isReordering={isReordering}
+                    isActive={false}
+                />
+            </View>
         );
     };
 
+    const handleInteractionSubmit = async (data: { type: 'reaction' | 'comment'; content: string; authorName: string }) => {
+        if (!id) return;
+
+        try {
+            const { error } = await supabase
+                .from('wishlist_interactions')
+                .insert({
+                    wishlist_id: id as string,
+                    interaction_type: data.type,
+                    content: data.content,
+                    author_name: data.authorName,
+                });
+
+            if (error) throw error;
+            Alert.alert('Merci !', 'Votre interaction a été envoyée.');
+            loadWishlistDetails(false); // Refresh stats
+
+        } catch (error) {
+            console.error('Error sending interaction:', error);
+            Alert.alert('Erreur', 'Impossible d\'envoyer votre réaction.');
+        }
+    };
+
+    const openGuestInteraction = (type: 'reaction' | 'comment') => {
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+        setInteractionType(type);
+        setInteractionModalVisible(true);
+    };
+
     const renderHeader = () => {
+        if (!wishlist) return null;
+
         const HeaderWrapper = ({ children }: { children: React.ReactNode }) => {
             const style = [
                 styles.headerContent,
@@ -529,6 +604,23 @@ export default function WishlistDetailScreen() {
                                 </TouchableOpacity>
                             </>
                         )}
+
+                        {!isOwner && (
+                            <>
+                                <TouchableOpacity
+                                    style={styles.headerButton}
+                                    onPress={() => openGuestInteraction('comment')}
+                                >
+                                    <MessageCircle size={22} color={textColor} />
+                                </TouchableOpacity>
+                                <TouchableOpacity
+                                    style={[styles.headerButton, { backgroundColor: COLORS.error + '20' }]}
+                                    onPress={() => openGuestInteraction('reaction')}
+                                >
+                                    <Heart size={22} color={COLORS.error} fill={COLORS.error} />
+                                </TouchableOpacity>
+                            </>
+                        )}
                     </View>
                 </View>
 
@@ -540,10 +632,27 @@ export default function WishlistDetailScreen() {
                         <Text style={[styles.cleanTitle, { color: textColor }]}>
                             {wishlist?.title}
                         </Text>
+                        <View style={styles.creatorRow}>
+                            <Text style={[styles.creatorLabel, { color: subTextColor }]}>Par </Text>
+                            <Text style={[styles.creatorName, { color: textColor }]}>
+                                {(wishlist as any).owner_profile?.username || 'Utilisateur'}
+                            </Text>
+                        </View>
                         {wishlist?.description && (
-                            <Text style={[styles.cleanDescription, { color: subTextColor }]} numberOfLines={2}>
+                            <Text style={[styles.cleanDescription, { color: subTextColor, marginTop: 4 }]} numberOfLines={2}>
                                 {wishlist.description}
                             </Text>
+                        )}
+
+                        {Object.keys(interactionsSummary).length > 0 && (
+                            <View style={styles.headerReactions}>
+                                {Object.entries(interactionsSummary).map(([emoji, count]) => (
+                                    <View key={emoji} style={styles.headerReactionBadge}>
+                                        <Text style={styles.headerReactionEmoji}>{emoji}</Text>
+                                        <Text style={styles.headerReactionCount}>{count}</Text>
+                                    </View>
+                                ))}
+                            </View>
                         )}
                     </View>
                 </View>
@@ -597,16 +706,10 @@ export default function WishlistDetailScreen() {
         <View style={styles.container}>
             <Stack.Screen options={{ headerShown: false }} />
 
-            <DraggableFlatList
+            <FlatList
                 data={items}
                 renderItem={renderItem}
                 keyExtractor={(item) => item.id}
-                onDragEnd={({ data }) => {
-                    setItems(data);
-                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                }}
-                dragItemOverflow={true}
-                activationDistance={20}
                 ListHeaderComponent={ListHeader}
                 ListEmptyComponent={renderEmpty}
                 contentContainerStyle={{ paddingBottom: 100 }}
@@ -673,6 +776,14 @@ export default function WishlistDetailScreen() {
                 visible={showInteractionsModal}
                 onClose={() => setShowInteractionsModal(false)}
                 interactions={interactions}
+                wishlistThemeColor={currentTheme.primaryColor}
+            />
+
+            <AnonymousInteraction
+                visible={interactionModalVisible}
+                onClose={() => setInteractionModalVisible(false)}
+                onSubmit={handleInteractionSubmit}
+                initialType={interactionType}
                 wishlistThemeColor={currentTheme.primaryColor}
             />
         </View>
@@ -805,6 +916,41 @@ const styles = StyleSheet.create({
         shadowOpacity: 0.3,
         shadowRadius: 8,
         elevation: 8,
+    },
+    creatorRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+    },
+    creatorLabel: {
+        fontSize: FONT_SIZES.sm,
+        fontWeight: '500',
+    },
+    creatorName: {
+        fontSize: FONT_SIZES.sm,
+        fontWeight: '700',
+    },
+    headerReactions: {
+        flexDirection: 'row',
+        flexWrap: 'wrap',
+        gap: 6,
+        marginTop: 10,
+    },
+    headerReactionBadge: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 4,
+        backgroundColor: 'rgba(255,255,255,0.2)',
+        paddingHorizontal: 8,
+        paddingVertical: 4,
+        borderRadius: 12,
+    },
+    headerReactionEmoji: {
+        fontSize: 14,
+    },
+    headerReactionCount: {
+        fontSize: 12,
+        fontWeight: '700',
+        color: COLORS.white,
     },
     unreadBadge: {
         position: 'absolute',

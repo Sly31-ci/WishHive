@@ -82,3 +82,24 @@ export async function createNotification(
         console.error('Error creating notification:', error);
     }
 }
+
+/**
+ * Get count of unread notifications
+ */
+export async function getUnreadCount(): Promise<number> {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return 0;
+
+    const { count, error } = await supabase
+        .from('notifications')
+        .select('*', { count: 'exact', head: true })
+        .eq('user_id', user.id)
+        .eq('read', false);
+
+    if (error) {
+        console.error('Error fetching unread count:', error);
+        return 0;
+    }
+
+    return count || 0;
+}
