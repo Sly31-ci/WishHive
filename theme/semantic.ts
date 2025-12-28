@@ -10,6 +10,22 @@ import { TYPOGRAPHY } from './typography';
 import { SPACING, BORDER_RADIUS, SHADOWS } from './spacing';
 
 // ============================================
+// 📦 LAYOUT HELPERS
+// ============================================
+
+const { cardPadding, screenPadding, touchTarget } = {
+    cardPadding: 20,
+    screenPadding: 20,
+    touchTarget: { min: 44, recommended: 56 }
+};
+
+export const LAYOUT = {
+    cardPadding,
+    screenPadding,
+    touchTarget,
+} as const;
+
+// ============================================
 // 🔘 BUTTON TOKENS (Semantic)
 // ============================================
 
@@ -276,22 +292,6 @@ export const ICON_TOKENS = {
         warning: Colors.light.warning,
         info: Colors.light.info,
     },
-} as const;
-
-// ============================================
-// 📦 LAYOUT HELPERS
-// ============================================
-
-const { cardPadding, screenPadding, touchTarget } = {
-    cardPadding: 20,
-    screenPadding: 20,
-    touchTarget: { min: 44, recommended: 56 }
-};
-
-export const LAYOUT = {
-    cardPadding,
-    screenPadding,
-    touchTarget,
 } as const;
 
 // ============================================

@@ -13,6 +13,7 @@ import {
     Image,
 } from 'react-native';
 import { useLocalSearchParams, router, Stack } from 'expo-router';
+import { MessageSquare, ArrowLeft, X, AtSign, Send } from 'lucide-react-native';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/contexts/AuthContext';
 import { theme } from '@/theme';
@@ -427,7 +428,7 @@ export default function WishlistChatScreen() {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: COLORS.light,
+        backgroundColor: COLORS.background,
     },
     centerContainer: {
         flex: 1,

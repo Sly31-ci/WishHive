@@ -39,7 +39,7 @@ export const FilterChip: React.FC<FilterChipProps> = ({
             <Text
                 style={[
                     styles.label,
-                    { color: active ? COLORS.white : theme.textSecondary }
+                    { color: active ? '#FFFFFF' : theme.textSecondary }
                 ]}
             >
                 {label}

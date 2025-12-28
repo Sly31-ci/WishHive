@@ -608,38 +608,44 @@ export default function WishlistDetailScreen() {
                         )}
 
                         {isOwner && (
-                            <>
-                                <TouchableOpacity
-                                    style={[styles.headerButton, isReordering && styles.activeButton]}
-                                    onPress={toggleReorder}
-                                >
-                                    <ArrowUpDown size={22} color={isReordering ? COLORS.primary : textColor} />
-                                </TouchableOpacity>
-
-                                <TouchableOpacity
-                                    style={styles.headerButton}
-                                    onPress={() => setShowThemeSelector(true)}
-                                >
-                                    <Palette size={22} color={textColor} />
-                                </TouchableOpacity>
-
-                                <TouchableOpacity
-                                    style={[styles.headerButton, interactions.length > 0 && { backgroundColor: COLORS.primary + '20' }]}
-                                    onPress={() => setShowInteractionsModal(true)}
-                                >
-                                    <MessageSquare size={22} color={interactions.length > 0 ? COLORS.primary : textColor} />
-                                    {interactions.length > 0 && (
-                                        <View style={styles.unreadBadge} />
-                                    )}
-                                </TouchableOpacity>
-
-                                <TouchableOpacity
-                                    style={[styles.headerButton, { backgroundColor: 'rgba(239, 68, 68, 0.2)' }]}
-                                    onPress={() => setWishlistDeleteDialogVisible(true)}
-                                >
-                                    <Trash2 size={22} color={COLORS.error} />
-                                </TouchableOpacity>
-                            </>
+                            <TouchableOpacity
+                                style={styles.headerButton}
+                                onPress={() => {
+                                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                                    Alert.alert(
+                                        'Actions',
+                                        'Choisissez une action',
+                                        [
+                                            {
+                                                text: isReordering ? '✓ Terminer la réorganisation' : '↕️ Réorganiser',
+                                                onPress: toggleReorder
+                                            },
+                                            {
+                                                text: '🎨 Personnaliser le thème',
+                                                onPress: () => setShowThemeSelector(true)
+                                            },
+                                            {
+                                                text: `📬 Interactions${interactions.length > 0 ? ` (${interactions.length})` : ''}`,
+                                                onPress: () => setShowInteractionsModal(true)
+                                            },
+                                            {
+                                                text: '🗑️ Supprimer la wishlist',
+                                                onPress: () => setWishlistDeleteDialogVisible(true),
+                                                style: 'destructive'
+                                            },
+                                            {
+                                                text: 'Annuler',
+                                                style: 'cancel'
+                                            }
+                                        ]
+                                    );
+                                }}
+                            >
+                                <MoreVertical size={22} color={textColor} />
+                                {(interactions.length > 0 || isReordering) && (
+                                    <View style={styles.unreadBadge} />
+                                )}
+                            </TouchableOpacity>
                         )}
 
                         {!isOwner && (
