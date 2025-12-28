@@ -116,9 +116,15 @@ project/
 ├── components/            # Reusable UI components
 ├── constants/             # Theme and constants
 ├── contexts/              # React contexts (Auth)
+├── docs/                  # Project documentation and web assets
+│   ├── project_history/   # Archivage des analyses et rapports
+│   └── w/                 # Web viewer assets
 ├── hooks/                 # Custom React hooks
 ├── lib/                   # Utilities (Supabase client)
-└── types/                 # TypeScript type definitions
+├── scripts/               # Utility scripts and migrations
+├── supabase/              # Supabase configuration and SQL
+├── types/                 # TypeScript type definitions
+└── utils/                 # General utility functions
 ```
 
 ## Database Schema
