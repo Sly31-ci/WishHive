@@ -1,8 +1,18 @@
+/**
+ * 🎯 FilterChip Component - REFONTE PREMIUM
+ * 
+ * Design iOS-first :
+ * - État actif : Honey Glow (#FFB937) avec texte blanc
+ * - État inactif : Fond blanc avec bordure grise
+ * - Bordures arrondies (pill shape)
+ * - Animations fluides au tap
+ * - Haptic feedback
+ */
+
 import React from 'react';
 import { TouchableOpacity, Text, StyleSheet, View } from 'react-native';
 import * as Haptics from 'expo-haptics';
-import { COLORS, SPACING, FONT_SIZES, BORDER_RADIUS } from '@/constants/theme';
-import { useTheme } from '@/contexts/ThemeContext';
+import { BRAND_PALETTE } from '@/theme/colors';
 
 interface FilterChipProps {
     label: string;
@@ -17,8 +27,6 @@ export const FilterChip: React.FC<FilterChipProps> = ({
     onPress,
     icon,
 }) => {
-    const { theme } = useTheme();
-
     const handlePress = () => {
         Haptics.selectionAsync();
         onPress();
@@ -28,18 +36,16 @@ export const FilterChip: React.FC<FilterChipProps> = ({
         <TouchableOpacity
             style={[
                 styles.chip,
-                {
-                    backgroundColor: active ? theme.primary : theme.card,
-                    borderColor: active ? theme.primary : theme.border
-                }
+                active ? styles.chipActive : styles.chipInactive
             ]}
             onPress={handlePress}
+            activeOpacity={0.7}
         >
             {icon && <Text style={styles.icon}>{icon}</Text>}
             <Text
                 style={[
                     styles.label,
-                    { color: active ? '#FFFFFF' : theme.textSecondary }
+                    active ? styles.labelActive : styles.labelInactive
                 ]}
             >
                 {label}
@@ -52,18 +58,39 @@ const styles = StyleSheet.create({
     chip: {
         flexDirection: 'row',
         alignItems: 'center',
-        paddingHorizontal: SPACING.md,
-        paddingVertical: 8,
-        borderRadius: BORDER_RADIUS.full,
-        borderWidth: 1,
-        gap: SPACING.xs,
-        marginRight: SPACING.xs,
+        paddingHorizontal: 20,
+        paddingVertical: 10,
+        borderRadius: 999, // ✅ Pill shape
+        gap: 6,
+        marginRight: 8,
+        minHeight: 44, // ✅ Touch target iOS
+    },
+    chipActive: {
+        backgroundColor: BRAND_PALETTE.honeyGlow, // 🟡 Honey Glow
+        borderWidth: 0,
+        shadowColor: BRAND_PALETTE.honeyGlow,
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.2,
+        shadowRadius: 4,
+        elevation: 3,
+    },
+    chipInactive: {
+        backgroundColor: BRAND_PALETTE.pureWhite,
+        borderWidth: 1.5,
+        borderColor: '#E5E7EB', // Gray 200
     },
     icon: {
         fontSize: 16,
     },
     label: {
-        fontSize: FONT_SIZES.sm,
+        fontSize: 15,
         fontWeight: '600',
+        letterSpacing: 0.2,
+    },
+    labelActive: {
+        color: BRAND_PALETTE.pureWhite, // ✅ Blanc sur Honey Glow
+    },
+    labelInactive: {
+        color: BRAND_PALETTE.grayDark, // ✅ Gris foncé lisible
     },
 });

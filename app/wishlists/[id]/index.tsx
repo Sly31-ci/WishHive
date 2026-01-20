@@ -102,9 +102,13 @@ export default function WishlistDetailScreen() {
     const [pagination, setPagination] = useState({ page: 0, hasMore: true, loadingMore: false });
     const PAGE_SIZE = 15;
 
-    const currentTheme = wishlist?.theme && typeof wishlist.theme === 'object'
-        ? (wishlist.theme as unknown as WishlistTheme)
-        : DEFAULT_THEME;
+    const currentTheme =
+        wishlist?.theme &&
+            typeof wishlist.theme === 'object' &&
+            Object.keys(wishlist.theme).length > 0 &&
+            (wishlist.theme as any).primaryColor
+            ? (wishlist.theme as unknown as WishlistTheme)
+            : DEFAULT_THEME;
 
     const handleSaveTheme = async (newTheme: WishlistTheme) => {
         try {

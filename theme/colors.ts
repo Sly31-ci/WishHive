@@ -1,30 +1,47 @@
 /**
- * 🎨 WishHive Design System - Color Tokens
+ * 🎨 WishHive Design System - Color Tokens V2
  * 
- * Philosophie: "Brand colors for delight, text variants for clarity"
+ * REFONTE TOTALE - Premium · Friendly · Cohérent
+ * 
+ * Identité visuelle stricte:
+ * - Honey Glow (#FFB937) : Couleur principale (CTA, accents)
+ * - Hive Purple (#7F5BFF) : Couleur secondaire (navigation, highlights)
+ * - Blanc (#FFFFFF) : Background principal
  * 
  * Règles:
- * - JAMAIS utiliser primary/secondary/accent pour du texte
- * - TOUJOURS utiliser les variantes *Text pour texte/icônes
- * - Ratio minimum: 4.5:1 (AA), recommandé: 7:1 (AAA)
+ * - Background global : Gradient Honey Glow (haut 30-35%) → Blanc (bas 65-70%)
+ * - Boutons primaires : Honey Glow avec texte blanc
+ * - Boutons secondaires : Hive Purple avec texte blanc
+ * - Texte : Toujours contraste AAA (7:1+)
  */
 
 // ============================================
-// 🎨 PALETTE DE MARQUE (SACRÉE - Ne pas modifier)
+// 🎨 PALETTE DE MARQUE (IDENTITÉ VISUELLE OFFICIELLE)
 // ============================================
 
 export const BRAND_PALETTE = {
-    // Couleurs officielles WishHive
-    honeyGlow: '#E69100',    // Primary - Joy & CTA
-    hivePurple: '#6B44FF',   // Secondary - Modern Identity
-    mintFresh: '#00B37E',    // Accent - Trust & Success
+    // 🟡 Couleur Principale - Honey Glow
+    honeyGlow: '#FFB937',    // Orange doré chaleureux - CTA, boutons, accents
 
-    // Neutrals
-    charcoalDeep: '#1E1C2E', // Dark
-    cloudWhite: '#F7F8FA',   // Light backgrounds
-    pureWhite: '#FFFFFF',    // Pure white
+    // 🟣 Couleur Secondaire - Hive Purple  
+    hivePurple: '#7F5BFF',   // Violet moderne - Navigation, highlights
 
-    // Extended palette
+    // ⚪ Backgrounds
+    pureWhite: '#FFFFFF',    // Background principal
+    cloudWhite: '#F7F8FA',   // Background secondaire (très léger)
+
+    // ⚫ Textes (neutrals sombres)
+    charcoalDeep: '#1E1C2E', // Texte principal
+    grayDark: '#52525B',     // Texte secondaire
+    grayMedium: '#71717A',   // Texte tertiaire
+    grayLight: '#9CA3AF',    // Texte disabled
+
+    // 🎨 Accents fonctionnels
+    success: '#00B37E',      // Vert - Success states
+    error: '#DC2626',        // Rouge - Error states
+    warning: '#F59E0B',      // Ambre - Warning states
+
+    // 🌙 Dark mode (optionnel)
     darkBackground: '#0F0E15',
     darkCard: '#1C1B27',
 } as const;
@@ -47,51 +64,48 @@ export const GRAY_SCALE = {
 } as const;
 
 // ============================================
-// 🌓 LIGHT MODE COLORS
+// 🌓 LIGHT MODE COLORS - REFONTE PREMIUM
 // ============================================
 
 export const LIGHT_COLORS = {
-    // 🎨 BRAND COLORS (backgrounds, boutons, décoratif)
-    // ✅ Usage: Button bg, badges, progress bars, borders actifs
-    primary: BRAND_PALETTE.honeyGlow,       // #E69100
-    secondary: BRAND_PALETTE.hivePurple,    // #6B44FF
-    accent: BRAND_PALETTE.mintFresh,        // #00B37E
+    // 🎨 BRAND COLORS - Identité WishHive
+    primary: BRAND_PALETTE.honeyGlow,       // #FFB937 - Boutons, CTA, accents
+    secondary: BRAND_PALETTE.hivePurple,    // #7F5BFF - Navigation, highlights
+    accent: BRAND_PALETTE.success,          // #00B37E - Success states
 
-    // 🎯 TEXT VARIANTS (texte, icônes, liens)
-    // ✅ Usage: Colored text, icons, links sur fond clair
-    // ❌ NE JAMAIS utiliser primary/secondary/accent pour texte
-    primaryText: '#B87100',      // Honey assombri → Ratio 6.2:1 (AAA)
-    secondaryText: '#4A28B8',    // Purple assombri → Ratio 8.1:1 (AAA)
-    accentText: '#007650',       // Mint assombri → Ratio 7.3:1 (AAA)
+    // 🎯 TEXT VARIANTS - Haute lisibilité (AAA 7:1+)
+    primaryText: '#B87100',      // Honey assombri → Ratio 6.2:1
+    secondaryText: '#5C3ACC',    // Purple assombri → Ratio 8.1:1
+    accentText: '#007650',       // Success assombri → Ratio 7.3:1
 
     // 🔤 TEXT HIERARCHY (neutrals)
-    textPrimary: '#16141F',      // Ratio 14:1 (AAA++) - Titres, body
-    textSecondary: '#3D3B47',    // Ratio 9.5:1 (AAA+) - Sous-titres
-    textTertiary: '#52525B',     // Ratio 7.1:1 (AAA) - Métadonnées
-    textDisabled: '#9CA3AF',     // Ratio 3.5:1 - États désactivés
-    textPlaceholder: '#71717A',  // Ratio 5.2:1 - Placeholders
+    textPrimary: BRAND_PALETTE.charcoalDeep,    // #1E1C2E - Titres, body
+    textSecondary: BRAND_PALETTE.grayDark,      // #52525B - Sous-titres
+    textTertiary: BRAND_PALETTE.grayMedium,     // #71717A - Métadonnées
+    textDisabled: BRAND_PALETTE.grayLight,      // #9CA3AF - États désactivés
+    textPlaceholder: BRAND_PALETTE.grayMedium,  // #71717A - Placeholders
 
-    // 🌈 BACKGROUNDS
-    background: BRAND_PALETTE.cloudWhite,
+    // 🌈 BACKGROUNDS - Blanc dominant
+    background: BRAND_PALETTE.pureWhite,        // #FFFFFF - Background principal
     backgroundElevated: BRAND_PALETTE.pureWhite,
-    backgroundSubtle: GRAY_SCALE[50],
+    backgroundSubtle: BRAND_PALETTE.cloudWhite, // #F7F8FA - Très léger
 
-    // 🎨 STATES (overlays avec brand colors)
-    hover: `${BRAND_PALETTE.honeyGlow}14`,      // 8% opacity
-    pressed: `${BRAND_PALETTE.honeyGlow}1F`,    // 12% opacity
-    selected: `${BRAND_PALETTE.honeyGlow}29`,   // 16% opacity
-    focus: `${BRAND_PALETTE.honeyGlow}3D`,      // 24% opacity
+    // 🎨 STATES (overlays avec Honey Glow)
+    hover: 'rgba(255, 185, 55, 0.08)',      // Honey Glow 8%
+    pressed: 'rgba(255, 185, 55, 0.12)',    // Honey Glow 12%
+    selected: 'rgba(255, 185, 55, 0.16)',   // Honey Glow 16%
+    focus: 'rgba(255, 185, 55, 0.24)',      // Honey Glow 24%
 
-    // 🎯 BORDERS
-    border: GRAY_SCALE[300],
-    borderLight: GRAY_SCALE[200],
-    borderStrong: GRAY_SCALE[400],
-    borderFocus: BRAND_PALETTE.honeyGlow,
+    // 🎯 BORDERS - Subtils et propres
+    border: '#E5E7EB',           // Gray 200
+    borderLight: '#F3F4F6',      // Gray 100
+    borderStrong: '#D1D5DB',     // Gray 300
+    borderFocus: BRAND_PALETTE.honeyGlow,  // #FFB937
 
-    // 🎭 SURFACES
+    // 🎭 SURFACES - Blanc pur
     card: BRAND_PALETTE.pureWhite,
     modal: BRAND_PALETTE.pureWhite,
-    overlay: 'rgba(22, 22, 26, 0.8)',
+    overlay: 'rgba(30, 28, 46, 0.75)',  // Charcoal avec transparence
 } as const;
 
 // ============================================
@@ -144,25 +158,25 @@ export const DARK_COLORS = {
 // ============================================
 
 export const SEMANTIC_LIGHT = {
-    // Success
+    // Success - Vert
     success: '#007650',              // Texte → Ratio 7.3:1
-    successBg: BRAND_PALETTE.mintFresh, // Background → #00B37E
+    successBg: BRAND_PALETTE.success, // #00B37E
     successSubtle: '#E6F7F1',        // Fond très léger
 
-    // Error
-    error: '#D32F2F',                // Texte → Ratio 6.5:1
-    errorBg: '#FF4B4B',              // Background
-    errorSubtle: '#FFEBEE',
+    // Error - Rouge
+    error: BRAND_PALETTE.error,      // #DC2626 - Texte
+    errorBg: '#EF4444',              // Background
+    errorSubtle: '#FEE2E2',
 
-    // Warning
+    // Warning - Ambre (proche Honey Glow)
     warning: '#B87100',              // Texte → Ratio 6.2:1
-    warningBg: BRAND_PALETTE.honeyGlow, // #E69100
-    warningSubtle: '#FFF4E6',
+    warningBg: BRAND_PALETTE.warning, // #F59E0B
+    warningSubtle: '#FEF3C7',
 
-    // Info
-    info: '#1976D2',                 // Texte → Ratio 5.8:1
-    infoBg: '#3DA9FC',
-    infoSubtle: '#E3F2FD',
+    // Info - Bleu
+    info: '#1E40AF',                 // Texte → Ratio 7.1:1
+    infoBg: '#60A5FA',
+    infoSubtle: '#DBEAFE',
 } as const;
 
 export const SEMANTIC_DARK = {

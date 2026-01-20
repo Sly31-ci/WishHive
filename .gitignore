@@ -33,3 +33,34 @@ yarn-error.*
 
 # typescript
 *.tsbuildinfo
+
+# PocketBase
+pocketbase/pb_data
+pocketbase/pb_migrations
+pocketbase/*.zip
+pocketbase/pocketbase
+
+# Migration exports
+supabase-export.json
+pocketbase-backup.json
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# Backups
+.backups/
+*.backup
+*.bak
+*-OLD-backup.*
+
+# Temporary files
+*.tmp
+*.temp
+.cache/
+
+# Scripts de nettoyage
+clean-project.sh

@@ -5,14 +5,14 @@
  */
 
 // ============================================
-// 🎨 PALETTE (Inchangée - Identité de marque)
+// 🎨 PALETTE - IDENTITÉ VISUELLE WISHHIVE
 // ============================================
 
 export const PALETTE = {
-    // Brand Colors
-    honeyGlow: '#E69100',
-    hivePurple: '#6B44FF',
-    mintFresh: '#00B37E',
+    // Brand Colors - IDENTITÉ VISUELLE OFFICIELLE
+    honeyGlow: '#FFB937',      // 🟡 Orange/Jaune doré - Couleur primaire
+    hivePurple: '#7F5BFF',     // 🟣 Violet - Couleur secondaire
+    mintFresh: '#00B37E',      // 🟢 Vert - Accent (success)
 
     // Neutrals - Light
     cloudWhite: '#F7F8FA',
@@ -107,13 +107,13 @@ export const THEME_V2 = {
         textPlaceholder: '#71717A',         // Ratio 5.2:1 (inputs)
 
         // 🎨 COULEURS PRIMAIRES (ajustées pour visibilité)
-        primary: '#D18100',                 // honeyGlow assombri (-10% lum) → Ratio 4.8:1
-        primaryDark: '#B87100',             // Pour texte sur blanc → Ratio 6.2:1
-        primaryLight: PALETTE.honeyGlow,    // Original pour backgrounds
+        primary: PALETTE.honeyGlow,         // #FFB937 - Couleur exacte de l'identité
+        primaryDark: '#E69A1F',             // Variant foncé si nécessaire
+        primaryLight: '#FFC555',            // Variant clair
 
-        secondary: '#5932D9',               // hivePurple assombri → Ratio 6.5:1
-        secondaryDark: '#4A28B8',           // Pour texte → Ratio 8.1:1
-        secondaryLight: PALETTE.hivePurple, // Original
+        secondary: '#7049E6',               // #7F5BFF assombri → Meilleur contraste
+        secondaryDark: '#5C3ACC',           // Pour texte
+        secondaryLight: PALETTE.hivePurple, // #7F5BFF Original
 
         accent: '#008C63',                  // mintFresh assombri → Ratio 5.9:1
         accentDark: '#007650',              // Pour texte → Ratio 7.3:1
@@ -121,7 +121,7 @@ export const THEME_V2 = {
 
         success: '#007650',                 // Ratio 7.3:1 ✅
         error: '#D32F2F',                   // Ratio 6.5:1 (était #FF4B4B 3.2:1)
-        warning: '#D18100',                 // Identique à primary
+        warning: PALETTE.honeyGlow,         // #FFB937 - Identique à primary
         info: '#1976D2',                    // Ratio 5.8:1 (était #3DA9FC 3.1:1)
 
         // 🎯 BORDURES & BACKGROUNDS
@@ -131,16 +131,16 @@ export const THEME_V2 = {
 
         input: PALETTE.white,
         inputBorder: PALETTE.gray[400],     // Plus visible (était gray[300])
-        inputBorderFocus: '#D18100',        // Primary dark
+        inputBorderFocus: PALETTE.honeyGlow, // #FFB937
 
         tabBar: PALETTE.white,
         header: PALETTE.white,
         overlay: PALETTE.overlay,
 
         // 🆕 NOUVEAUX: États interactifs
-        hover: 'rgba(209, 129, 0, 0.08)',   // Primary 8%
-        pressed: 'rgba(209, 129, 0, 0.12)',  // Primary 12%
-        selected: 'rgba(209, 129, 0, 0.16)', // Primary 16%
+        hover: 'rgba(255, 185, 55, 0.08)',   // #FFB937 à 8%
+        pressed: 'rgba(255, 185, 55, 0.12)',  // #FFB937 à 12%
+        selected: 'rgba(255, 185, 55, 0.16)', // #FFB937 à 16%
     },
     dark: {
         background: PALETTE.darkBackground,
@@ -153,13 +153,13 @@ export const THEME_V2 = {
         textPlaceholder: '#8E8E93',         // Inputs
 
         // 🎨 COULEURS PRIMAIRES DARK MODE (plus lumineuses)
-        primary: '#FFB84D',                 // honeyGlow éclairci → Ratio 8.2:1 sur dark
-        primaryDark: PALETTE.honeyGlow,
-        primaryLight: '#E69100',
+        primary: '#FFC555',                 // #FFB937 éclairci → Meilleur ratio sur dark
+        primaryDark: PALETTE.honeyGlow,     // #FFB937
+        primaryLight: '#FFC555',            // Variant clair pour dark mode
 
-        secondary: '#9D7FFF',               // hivePurple éclairci → Ratio 7.5:1
-        secondaryDark: PALETTE.hivePurple,
-        secondaryLight: '#6B44FF',
+        secondary: '#9D7FFF',               // #7F5BFF éclairci → Ratio 7.5:1
+        secondaryDark: PALETTE.hivePurple,  // #7F5BFF
+        secondaryLight: '#7049E6',
 
         accent: '#00E5A0',                  // mintFresh éclairci → Ratio 9:1
         accentDark: PALETTE.mintFresh,
@@ -167,7 +167,7 @@ export const THEME_V2 = {
 
         success: '#00E5A0',                 // Ratio 9:1 ✅
         error: '#FF6B6B',                   // Ratio 5.8:1
-        warning: '#FFB84D',
+        warning: '#FFC555',                 // Identique primary dark
         info: '#64B5F6',                    // Ratio 7.2:1
 
         border: PALETTE.gray[600],
@@ -176,15 +176,15 @@ export const THEME_V2 = {
 
         input: PALETTE.darkCard,
         inputBorder: PALETTE.gray[500],
-        inputBorderFocus: '#FFB84D',
+        inputBorderFocus: '#FFC555',
 
         tabBar: PALETTE.darkCard,
         header: PALETTE.darkCard,
         overlay: PALETTE.overlay,
 
-        hover: 'rgba(255, 184, 77, 0.08)',
-        pressed: 'rgba(255, 184, 77, 0.12)',
-        selected: 'rgba(255, 184, 77, 0.16)',
+        hover: 'rgba(255, 197, 85, 0.08)',
+        pressed: 'rgba(255, 197, 85, 0.12)',
+        selected: 'rgba(255, 197, 85, 0.16)',
     },
 };
 
@@ -331,14 +331,14 @@ export const BREAKPOINTS = {
 // ============================================
 
 export const COLORS_V2 = {
-    // 🔥 COULEURS PRIMAIRES HAUTE VISIBILITÉ
-    primary: '#D18100',           // Assombri pour meilleur contraste
-    primaryDark: '#B87100',       // Pour texte/icônes
-    primaryLight: PALETTE.honeyGlow,
+    // 🔥 COULEURS PRIMAIRES HAUTE VISIBILITÉ - IDENTITÉ VISUELLE WISHHIVE
+    primary: PALETTE.honeyGlow,   // #FFB937 - Couleur exacte de l'identité
+    primaryDark: '#E69A1F',       // Variant foncé si nécessaire  
+    primaryLight: '#FFC555',      // Variant clair
 
-    secondary: '#5932D9',         // Assombri
-    secondaryDark: '#4A28B8',
-    secondaryLight: PALETTE.hivePurple,
+    secondary: '#7049E6',         // #7F5BFF assombri
+    secondaryDark: '#5C3ACC',
+    secondaryLight: PALETTE.hivePurple, // #7F5BFF
 
     accent: '#008C63',            // Assombri
     accentDark: '#007650',
@@ -359,29 +359,29 @@ export const COLORS_V2 = {
 
     // ✅ SEMANTIC COLORS
     success: '#007650',           // Ratio 7.3:1
-    warning: '#D18100',           // Identique primary
+    warning: PALETTE.honeyGlow,   // #FFB937 - Identique primary
     error: '#D32F2F',             // Ratio 6.5:1
     info: '#1976D2',              // Ratio 5.8:1
 
     // 🆕 ICÔNES & INTERACTIONS
     iconDefault: '#52525B',       // Icônes neutres (ratio 7.1:1)
     iconSubtle: '#71717A',        // Icônes secondaires
-    iconActive: '#D18100',        // Icônes actives
+    iconActive: PALETTE.honeyGlow, // #FFB937 - Icônes actives
     iconDisabled: '#C7C7CC',      // Icônes disabled
 
     // 🎨 BORDERS
     border: PALETTE.gray[300],
     borderLight: PALETTE.gray[200],
     borderStrong: PALETTE.gray[400],
-    borderFocus: '#D18100',
+    borderFocus: PALETTE.honeyGlow, // #FFB937
 
     // 🌈 BACKGROUNDS
     bgPrimary: PALETTE.cloudWhite,
     bgSecondary: PALETTE.white,
     bgTertiary: PALETTE.gray[50],
-    bgHover: 'rgba(209, 129, 0, 0.08)',
-    bgPressed: 'rgba(209, 129, 0, 0.12)',
-    bgSelected: 'rgba(209, 129, 0, 0.16)',
+    bgHover: 'rgba(255, 185, 55, 0.08)',   // #FFB937 à 8%
+    bgPressed: 'rgba(255, 185, 55, 0.12)', // #FFB937 à 12%
+    bgSelected: 'rgba(255, 185, 55, 0.16)', // #FFB937 à 16%
 };
 
 // Export defaults pour migration progressive

@@ -89,14 +89,38 @@ export interface WishlistTheme {
     cardStyle?: CardStyleSettings;
 }
 
+/**
+ * 🎨 THÈME PAR DÉFAUT WISHHIVE - REFONTE PREMIUM
+ * 
+ * Règles strictes :
+ * - Fond UNI et DOUX (teinte claire)
+ * - Aucun motif complexe
+ * - Priorité absolue à la lisibilité
+ * - Design simple, professionnel, friendly
+ */
 export const DEFAULT_THEME: WishlistTheme = {
-    template: 'minimal',
-    primaryColor: '#1F2937',
-    secondaryColor: '#F3F4F6',
-    accentColor: '#6B7280',
-    emoji: '🌙',
-    gradient: false,
-    style: 'minimal',
+    template: 'hive',
+    primaryColor: '#FFB937',      // 🟡 Honey Glow - Identité WishHive
+    secondaryColor: '#7F5BFF',    // 🟣 Hive Purple - Identité WishHive
+    accentColor: '#00B37E',       // 🟢 Success
+    emoji: '🐝',
+    gradient: false,              // ❌ Pas de gradient par défaut
+    style: 'minimal',             // ✅ Style minimaliste et pro
+    pattern: null,                // ❌ Aucun motif
+    background: {
+        type: 'solid',
+        solidColor: '#FFFBF5',    // ✅ Blanc cassé très doux (teinte miel subtile)
+    },
+    cardStyle: {
+        shape: 'rounded',
+        borderRadius: 12,         // ✅ Arrondi doux (12px)
+        borderWidth: 0,           // ❌ Pas de bordure (plus propre)
+        shadow: true,
+        shadowIntensity: 'light', // ✅ Ombre très subtile
+        effect: 'none',           // ❌ Aucun effet spécial
+        backgroundOpacity: 1.0,
+        backgroundColor: '#FFFFFF', // ✅ Cartes blanches pures
+    },
 };
 
 export const WISHLIST_TEMPLATES: WishlistTheme[] = [

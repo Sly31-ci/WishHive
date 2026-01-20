@@ -36,10 +36,14 @@ interface WishlistCardProps {
 export const WishlistCard = React.memo(({ wishlist, onPress, onLongPress, onDelete, showDelete, onReact, currentUserReaction }: WishlistCardProps) => {
     const { theme: appTheme } = useTheme();
 
-    // Parse theme safely
-    const wishlistTheme: WishlistTheme = wishlist.theme && typeof wishlist.theme === 'object'
-        ? (wishlist.theme as unknown as WishlistTheme)
-        : DEFAULT_THEME;
+    // Parse theme safely - use DEFAULT_THEME if theme is empty or missing required fields
+    const wishlistTheme: WishlistTheme =
+        wishlist.theme &&
+            typeof wishlist.theme === 'object' &&
+            Object.keys(wishlist.theme).length > 0 &&
+            (wishlist.theme as any).primaryColor // Vérifier qu'il a au moins primaryColor
+            ? (wishlist.theme as unknown as WishlistTheme)
+            : DEFAULT_THEME;
 
     const totalItems = (wishlist as any).total_items || 0;
     const purchasedItems = (wishlist as any).purchased_items || 0;
