@@ -2,7 +2,8 @@ import React, { useState, useRef } from 'react';
 import { View, StyleSheet, FlatList, ScrollView, RefreshControl } from 'react-native'; // FlashList later for perf
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
-import { FlashList } from '@shopify/flash-list';
+import { FlatList as FlashList } from 'react-native';
+// import { FlashList } from '@shopify/flash-list';
 import {
     Bell,
     Search,

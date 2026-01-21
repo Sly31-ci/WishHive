@@ -9,7 +9,8 @@
 
 import React from 'react';
 import { View, StyleSheet } from 'react-native';
-import { FlashList } from '@shopify/flash-list';
+import { FlatList as FlashList } from 'react-native';
+// import { FlashList } from '@shopify/flash-list';
 import StoryCircle from './StoryCircle';
 import { spacing, light } from '@/theme/v2';
 
