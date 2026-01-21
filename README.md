@@ -8,38 +8,43 @@ Become the reference social app for creating, sharing, and purchasing wishlists 
 
 **Tagline**: "Wish. Share. Gift."
 
-## Features
+## ✨ Features
 
 ### Core Features
-- Create and organize wishlists by event type
-- Add products with photos, links, prices, and variations
-- Share wishlists via links, QR codes, or social media
+- **Wishlists**: Create and organize wishlists by event type (birthday, wedding, Christmas, etc.)
+- **Product Management**: Add products with photos, links, prices, and variations
+- **Smart Sharing**: Share wishlists via links, QR codes, or social media with rich previews
 - **Cagnotte (Group Gifting)**: Collective funding for expensive gifts
-- **Real-time Chat**: Dedicated chat rooms for circles and shared wishlists
-- **SEO & Social Previews**: Rich OG meta-tags for beautiful social sharing
-- Purchase verification system to prevent spoiling
-- Anonymous viewing and messaging options
-- **Live Interactions V2** : Discussion live, réponses ciblées, mentions @ et réactions emojis.
-- **Real-time Notifications** : Instant alerts for views, messages, mentions, and replies.
-- Marketplace with seller integration
-- Gamification with points, badges, and levels
+- **Real-time Chat**: Dedicated chat rooms for wishlists with mentions and replies
+- **Wishlist Interactions**: Comments and reactions on wishlists and items
+- **Live Notifications**: Instant alerts for views, messages, mentions, and replies
+- **Purchase Verification**: Prevent spoiling with proof-of-purchase system
+- **Anonymous Mode**: View and message anonymously
+- **Marketplace**: Discover products from verified sellers
+
+### Social Features
+- **Reactions**: Express yourself with emojis on wishlists and items
+- **Comments**: Leave messages and feedback on wishlists
+- **Follows**: Follow friends and favorite sellers
+- **Referral System**: Invite friends and earn rewards
+- **Chat Messages**: Direct messaging with mentions and threading
 
 ### Gamification
-- Earn points for creating wishlists, gifting, and social interactions
-- Unlock badges for achievements
-- Level up to access exclusive features
-- Leaderboards for friendly competition
+- **Points System**: Earn points for creating wishlists, gifting, and social interactions
+- **Badges**: Unlock achievements (Starter, Gifter, Social Butterfly, Seller Pro, Trendsetter)
+- **Levels**: Progress through levels to access exclusive features
+- **Transactions**: Track your points history and rewards
 
 ### Security & Privacy
-- Row Level Security on all database tables
-- Multiple privacy levels: public, private, code-only
-- Anonymous interactions support
-- Verified purchase system
+- **Row Level Security**: All database tables protected with RLS policies
+- **Privacy Levels**: Public, private, or code-only wishlists
+- **Anonymous Support**: Browse and interact without revealing identity
+- **Verified Purchases**: OCR and admin review for purchase verification
 
-## Tech Stack
+## 🛠 Tech Stack
 
 - **Frontend**: React Native with Expo
-- **Backend**: Supabase (PostgreSQL + Auth + Realtime)
+- **Backend**: Supabase Local (PostgreSQL + Auth + Realtime + Storage)
 - **Language**: TypeScript
 - **Navigation**: Expo Router
 - **Animations**: React Native Reanimated
@@ -47,18 +52,18 @@ Become the reference social app for creating, sharing, and purchasing wishlists 
 - **Analytics**: Mixpanel & Sentry
 - **Haptics**: Expo Haptics Integration
 
-## Setup Instructions
+## 🚀 Setup Instructions
 
 ### Prerequisites
 - Node.js 18+ installed
+- Docker Desktop installed (for Supabase Local)
 - Expo CLI installed (`npm install -g expo-cli`)
-- Supabase account (free tier available)
 
 ### 1. Clone the Repository
 
 ```bash
 git clone <repository-url>
-cd project
+cd WishHive
 ```
 
 ### 2. Install Dependencies
@@ -67,35 +72,56 @@ cd project
 npm install
 ```
 
-### 3. Configure Supabase
+### 3. Setup Supabase Local
 
-1. Create a new project at [supabase.com](https://supabase.com)
-2. Run the database migrations:
-   - Go to SQL Editor in your Supabase dashboard
-   - Copy the contents of the migration files from the database setup
-   - Execute the migrations in order
+#### Start Supabase Local
+```bash
+cd ~/projects/supabase-local/supabase/docker
+docker compose up -d
+```
 
-3. Copy your Supabase credentials:
-   - Go to Project Settings > API
-   - Copy the Project URL and anon/public key
+#### Import Database Schema
+```bash
+cd ~/Téléchargements/WishHive
+./scripts/import-schema.sh
+```
+
+This will create all 18 tables:
+- profiles, badges, public_themes
+- sellers, products
+- wishlists, wishlist_items, wishlist_interactions
+- orders, purchase_verifications
+- follows, reactions
+- transactions, user_badges, referrals
+- notifications, chat_messages, chat_reactions
+
+#### Access Supabase Studio
+Open http://localhost:3000 in your browser to manage your local database.
 
 ### 4. Set Environment Variables
 
-Create a `.env` file in the root directory:
+Your `.env` file should already be configured for local development:
 
-```bash
-cp .env.example .env
-```
-
-Update the `.env` file with your Supabase credentials:
-
-```
-EXPO_PUBLIC_SUPABASE_URL=your_supabase_project_url
-EXPO_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
+```env
+EXPO_PUBLIC_SUPABASE_URL=http://localhost:8000
+EXPO_PUBLIC_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+EXPO_PUBLIC_DEV_MODE=true
 ```
 
 ### 5. Start the Development Server
 
+The easiest way to start the project (Database + App) is to use the automated script:
+
+```bash
+./start-dev.sh
+```
+
+This script will:
+1. Start Supabase Local (Docker) if it's not running
+2. Display access URLs for Supabase Studio
+3. Start the Expo development server
+
+Alternatively, you can run them manually:
 ```bash
 npm run dev
 ```
@@ -106,10 +132,10 @@ This will start the Expo development server. You can then:
 - Press `i` for iOS simulator (Mac only)
 - Press `a` for Android emulator
 
-## Project Structure
+## 📁 Project Structure
 
 ```
-project/
+WishHive/
 ├── app/                    # App screens and navigation
 │   ├── (auth)/            # Authentication screens
 │   ├── (tabs)/            # Main tab navigation screens
@@ -118,83 +144,123 @@ project/
 ├── components/            # Reusable UI components
 ├── constants/             # Theme and constants
 ├── contexts/              # React contexts (Auth)
-├── docs/                  # Project documentation and web assets
-│   ├── project_history/   # Archivage des analyses et rapports
-│   └── w/                 # Web viewer assets
+├── docs/                  # Project documentation
 ├── hooks/                 # Custom React hooks
-├── lib/                   # Utilities (Supabase client)
-├── scripts/               # Utility scripts and migrations
-├── supabase/              # Supabase configuration and SQL
+├── lib/                   # Utilities (Supabase client, services)
+├── scripts/               # Migration and utility scripts
+│   ├── import-schema.sh           # Import database schema
+│   ├── migrate-supabase-data.js   # Migrate data from Cloud to Local
+│   └── fix-constraints-triggers.sql # Database fixes
+├── schema_*.sql           # Database schema files
 ├── types/                 # TypeScript type definitions
 └── utils/                 # General utility functions
 ```
 
-## Database Schema
+## 🗄 Database Schema
 
-The app uses the following main tables:
+The app uses 18 main tables organized by feature:
 
-- **profiles**: User profiles with gamification data
-- **wishlists**: User-created wish collections
-- **wishlist_items**: Products in wishlists
-- **products**: Marketplace product catalog
-- **sellers**: Registered vendors
-- **orders**: Purchase tracking
-- **badges**: Achievement definitions
+### Core Tables
+- **profiles**: User profiles with gamification data (points, level, referral codes)
+- **badges**: Achievement definitions (Starter, Gifter, Social Butterfly, etc.)
+- **public_themes**: Shared wishlist themes
+
+### Marketplace
+- **sellers**: Registered vendors with KYC verification
+- **products**: Product catalog with images, prices, and variations
+
+### Wishlists
+- **wishlists**: User-created wish collections with privacy settings
+- **wishlist_items**: Products in wishlists (marketplace or custom)
+- **wishlist_interactions**: Comments and reactions on wishlists
+
+### Orders
+- **orders**: Purchase tracking with delivery options
+- **purchase_verifications**: Proof-of-purchase with OCR support
+
+### Social Features
+- **follows**: User and seller connections
+- **reactions**: Emoji reactions on wishlists and products
+
+### Gamification
+- **transactions**: Points history and rewards ledger
 - **user_badges**: Earned achievements
-- **reactions**: Social engagement
-- **follows**: Social connections
-- **transactions**: Points and rewards ledger
+- **referrals**: Referral system tracking
 
-All tables have Row Level Security enabled to protect user data.
+### Communication
+- **notifications**: Real-time alerts for views, messages, mentions
+- **chat_messages**: Direct and group messages with mentions
+- **chat_reactions**: Emoji reactions to messages
 
-## Building for Production
+All tables have **Row Level Security** enabled to protect user data.
+
+## 🔧 Database Management
+
+### View Local Database
+```bash
+# Access Supabase Studio
+open http://localhost:3000
+
+# Or connect via psql
+psql postgresql://postgres:bDeXdxrmmJ+18a8qzVmZ2YEBDV1ioAGL@localhost:5432/postgres
+```
+
+### Restore Triggers (After Migration)
+```bash
+cat schema_functions.sql | docker exec -i supabase-db psql -U postgres -d postgres
+```
+
+### Test Connection
+```bash
+node test-supabase.js
+```
+
+## 📦 Building for Production
 
 ### Web
-
 ```bash
 npm run build:web
 ```
 
-This creates an optimized build in the `dist/` directory.
-
 ### iOS (requires Mac)
-
 1. Install EAS CLI: `npm install -g eas-cli`
 2. Configure: `eas build:configure`
 3. Build: `eas build --platform ios`
 
 ### Android
-
 1. Install EAS CLI: `npm install -g eas-cli`
 2. Configure: `eas build:configure`
 3. Build: `eas build --platform android`
 
-## Key Workflows
+## 🎯 Key Workflows
 
 ### User (Creator)
 1. Sign up and complete onboarding
 2. Create a wishlist with title, type, and privacy settings
 3. Add products from marketplace or custom items
 4. **Collaborate**: Chat with friends or set up a Group Gift (Cagnotte)
-5. Share wishlist via link/QR code
+5. Share wishlist via link/QR code with rich social previews
 6. Monitor views, reactions, and purchases with **Live Notifications**
-7. Earn rewards and unlock badges
+7. Respond to comments and messages with mentions
+8. Earn rewards and unlock badges
 
 ### Buyer
-1. Find wishlist via shared link
-2. Browse items and select gifts
-3. Choose delivery options
-4. Complete purchase with verification
-5. Earn points and badges for gifting
+1. Find wishlist via shared link or QR code
+2. Browse items and react with emojis
+3. Leave comments and questions
+4. Select gifts and choose delivery options
+5. Complete purchase with verification
+6. Earn points and badges for gifting
 
 ### Seller
 1. Register shop with KYC verification
-2. Create product listings
+2. Create product listings with images and variations
 3. Manage orders and confirm shipments
-4. View analytics and conversion rates
-5. Run promotions and boost products
+4. Verify purchases and provide support
+5. View analytics and conversion rates
+6. Run promotions and boost products
 
-## Color Palette
+## 🎨 Color Palette
 
 - **Primary**: #E69100 (HoneyGlow - Joy & CTA)
 - **Secondary**: #6B44FF (HivePurple - Modern Identity)
@@ -202,18 +268,26 @@ This creates an optimized build in the `dist/` directory.
 - **Dark**: #1E1C2E (CharcoalDeep)
 - **Light**: #F7F8FA (CloudWhite)
 
-## Contributing
+## 📚 Documentation
+
+- **Migration Guide**: `GUIDE_MIGRATION_CLOUD_TO_LOCAL.md`
+- **Supabase Setup**: `SUPABASE_LOCAL_SETUP.md`
+- **Quick Start**: `QUICKSTART_SUPABASE.md`
+- **Architecture**: `ARCHITECTURE.md`
+- **Roadmap**: `ROADMAP.md`
+
+## 🤝 Contributing
 
 This is a personal project. For major changes or feature requests, please open an issue first.
 
-## License
+## 📄 License
 
 Proprietary - All rights reserved
 
-## Support
+## 💬 Support
 
 For questions or issues, please contact the development team.
 
 ---
 
-**WishHive** - Making wishes come true, one gift at a time!
+**WishHive** - Making wishes come true, one gift at a time! 🎁✨

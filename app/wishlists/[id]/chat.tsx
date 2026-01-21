@@ -80,8 +80,8 @@ export default function WishlistChatScreen() {
                         .from('chat_messages') as any)
                         .select(`
                             *,
-                            sender:profiles(id, username, avatar_url),
-                            parent:parent_id(id, content, sender:profiles(username))
+                            sender:profiles!chat_messages_sender_id_fkey(id, username, avatar_url),
+                            parent:parent_id(id, content, sender:profiles!chat_messages_sender_id_fkey(username))
                         `)
                         .eq('id', payload.new.id)
                         .single();
@@ -153,8 +153,8 @@ export default function WishlistChatScreen() {
                 .from('chat_messages') as any)
                 .select(`
                     *,
-                    sender:profiles(id, username, avatar_url),
-                    parent:parent_id(id, content, sender:profiles(username)),
+                    sender:profiles!chat_messages_sender_id_fkey(id, username, avatar_url),
+                    parent:parent_id(id, content, sender:profiles!chat_messages_sender_id_fkey(username)),
                     reactions:chat_reactions(emoji, user_id)
                 `)
                 .eq('wishlist_id', id)

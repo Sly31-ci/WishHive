@@ -127,7 +127,10 @@ export default function HomeScreen() {
         .order('view_count', { ascending: false })
         .limit(6);
 
-      if (error) throw error;
+      if (error) {
+        console.error('Supabase error details:', JSON.stringify(error, null, 2));
+        throw error;
+      }
 
       // Transform data to include stats
       const wishlistsWithStats = (data || []).map(w => {
@@ -152,8 +155,11 @@ export default function HomeScreen() {
       });
 
       setTrendingWishlists(wishlistsWithStats);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error loading trending wishlists:', error);
+      console.error('Error message:', error?.message);
+      console.error('Error code:', error?.code);
+      console.error('Error details:', error?.details);
     } finally {
       setLoading(false);
       setRefreshing(false);

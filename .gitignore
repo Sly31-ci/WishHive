@@ -64,3 +64,4 @@ pocketbase-backup.json
 
 # Scripts de nettoyage
 clean-project.sh
+TEST_CREDENTIALS.md
