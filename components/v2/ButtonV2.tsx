@@ -1,21 +1,23 @@
 /**
- * 🎯 ButtonV2 - Bouton optimisé pour super-apps mobiles
- * - Hauteur minimale 56px (touch-friendly)
- * - Variants simplifiés
- * - Animations natives
- * - Feedback haptique
+ * 🎯 ButtonV2 - Bouton Premium avec Design System V2
+ * 
+ * Features:
+ * - Gradients premium
+ * - Glassmorphism
+ * - Animations fluides (Reanimated)
+ * - Haptic feedback
+ * - Touch-friendly (min 44px)
+ * - Variants: primary, secondary, outline, ghost, danger
+ * - Sizes: sm, md, lg, hero
  */
 
 import React from 'react';
 import {
-    TouchableOpacity,
+    Pressable,
     Text,
-    StyleSheet,
     ActivityIndicator,
     ViewStyle,
     TextStyle,
-    View,
-    Pressable,
 } from 'react-native';
 import Animated, {
     useSharedValue,
@@ -23,7 +25,8 @@ import Animated, {
     withSpring,
     withTiming,
 } from 'react-native-reanimated';
-import { COLORS_V2, FONT_SIZES_V2, BORDER_RADIUS_V2, SHADOWS_V2, SPACING_V2, ANIMATIONS } from '@/constants/theme-v2';
+import LinearGradient from 'react-native-linear-gradient';
+import { ThemeV2, brand, light, shadowsLight, spacing, radius, textStyles, durations } from '@/theme/v2';
 
 type ButtonVariant = 'primary' | 'secondary' | 'outline' | 'ghost' | 'danger';
 type ButtonSize = 'sm' | 'md' | 'lg' | 'hero';
@@ -38,6 +41,7 @@ interface ButtonV2Props {
     icon?: React.ReactNode;
     iconPosition?: 'left' | 'right';
     fullWidth?: boolean;
+    gradient?: boolean; // Use gradient background
     style?: ViewStyle;
     textStyle?: TextStyle;
 }
@@ -54,6 +58,7 @@ export default function ButtonV2({
     icon,
     iconPosition = 'left',
     fullWidth = false,
+    gradient = true,
     style,
     textStyle,
 }: ButtonV2Props) {
@@ -66,8 +71,8 @@ export default function ButtonV2({
     });
 
     const handlePressIn = () => {
-        scale.value = withTiming(ANIMATIONS.scale.tap, {
-            duration: ANIMATIONS.duration.fast,
+        scale.value = withTiming(0.96, {
+            duration: durations.instant,
         });
     };
 
@@ -84,118 +89,114 @@ export default function ButtonV2({
         }
     };
 
-    // Styles dynamiques basés sur variant
-    const getButtonStyle = (): ViewStyle => {
-        const baseStyle: ViewStyle = {
-            borderRadius: BORDER_RADIUS_V2.lg,
-            alignItems: 'center',
-            justifyContent: 'center',
-            flexDirection: 'row',
-            gap: SPACING_V2.sm,
-        };
-
-        // Size
-        const sizeStyles: Record<ButtonSize, ViewStyle> = {
+    // Button styles based on size
+    const getSizeStyle = (): ViewStyle => {
+        const sizes = {
             sm: {
-                paddingVertical: SPACING_V2.sm,
-                paddingHorizontal: SPACING_V2.lg,
+                paddingVertical: spacing.sm,
+                paddingHorizontal: spacing.lg,
                 minHeight: 44,
             },
             md: {
-                paddingVertical: SPACING_V2.md,
-                paddingHorizontal: SPACING_V2.xl,
+                paddingVertical: spacing.md,
+                paddingHorizontal: spacing.xl,
                 minHeight: 56,
             },
             lg: {
-                paddingVertical: SPACING_V2.lg,
-                paddingHorizontal: SPACING_V2.xl,
+                paddingVertical: spacing.lg,
+                paddingHorizontal: spacing.xxl,
                 minHeight: 64,
             },
             hero: {
-                paddingVertical: SPACING_V2.xl,
-                paddingHorizontal: SPACING_V2.xxl,
+                paddingVertical: spacing.xl,
+                paddingHorizontal: spacing.xxxl,
                 minHeight: 72,
             },
         };
+        return sizes[size];
+    };
 
-        // Variant
-        const variantStyles: Record<ButtonVariant, ViewStyle> = {
-            primary: {
-                backgroundColor: COLORS_V2.primary,
-                ...SHADOWS_V2.md,
-            },
-            secondary: {
-                backgroundColor: COLORS_V2.secondary,
-                ...SHADOWS_V2.md,
-            },
+    // Button styles based on variant
+    const getVariantStyle = (): ViewStyle => {
+        if (disabled || loading) {
+            return {
+                backgroundColor: light.border.light,
+                opacity: 0.6,
+            };
+        }
+
+        const variants: Record<ButtonVariant, ViewStyle> = {
+            primary: gradient
+                ? {} // Gradient handled separately
+                : {
+                    backgroundColor: brand.honeyGlow,
+                    ...shadowsLight.primary,
+                },
+            secondary: gradient
+                ? {}
+                : {
+                    backgroundColor: brand.hivePurple,
+                    ...shadowsLight.secondary,
+                },
             outline: {
                 backgroundColor: 'transparent',
                 borderWidth: 2,
-                borderColor: COLORS_V2.primary,
+                borderColor: brand.honeyGlow,
             },
             ghost: {
-                backgroundColor: COLORS_V2.gray[100],
+                backgroundColor: light.state.hover,
             },
             danger: {
-                backgroundColor: COLORS_V2.error,
-                ...SHADOWS_V2.md,
+                backgroundColor: light.semantic.error,
+                ...shadowsLight.md,
             },
         };
 
-        // Disabled
-        const disabledStyle: ViewStyle = disabled || loading
-            ? {
-                backgroundColor: COLORS_V2.gray[200],
-                borderColor: COLORS_V2.gray[200],
-                opacity: 0.6,
-            }
-            : {};
-
-        return {
-            ...baseStyle,
-            ...sizeStyles[size],
-            ...variantStyles[variant],
-            ...disabledStyle,
-            ...(fullWidth && { width: '100%' }),
-        };
+        return variants[variant];
     };
 
     // Text styles
     const getTextStyle = (): TextStyle => {
-        const sizeStyles: Record<ButtonSize, TextStyle> = {
-            sm: { fontSize: FONT_SIZES_V2.sm },
-            md: { fontSize: FONT_SIZES_V2.md },
-            lg: { fontSize: FONT_SIZES_V2.lg },
-            hero: { fontSize: FONT_SIZES_V2.xl },
+        const sizeStyles = {
+            sm: { fontSize: 14 },
+            md: { fontSize: 16 },
+            lg: { fontSize: 18 },
+            hero: { fontSize: 20 },
         };
 
         const variantStyles: Record<ButtonVariant, TextStyle> = {
             primary: { color: '#FFFFFF' },
             secondary: { color: '#FFFFFF' },
-            outline: { color: COLORS_V2.primary },
-            ghost: { color: COLORS_V2.dark },
+            outline: { color: brand.honeyGlow },
+            ghost: { color: light.text.primary },
             danger: { color: '#FFFFFF' },
         };
 
         return {
             fontWeight: '600',
             ...sizeStyles[size],
-            ...variantStyles[variant],
-            ...(disabled && { color: COLORS_V2.gray[400] }),
+            ...(disabled || loading ? { color: light.text.disabled } : variantStyles[variant]),
         };
     };
 
-    return (
-        <AnimatedPressable
-            onPress={handlePress}
-            onPressIn={handlePressIn}
-            onPressOut={handlePressOut}
-            disabled={disabled || loading}
-            style={[getButtonStyle(), animatedStyle, style]}
-        >
+    // Should use gradient?
+    const useGradient = gradient && !disabled && !loading && (variant === 'primary' || variant === 'secondary');
+
+    const baseStyle: ViewStyle = {
+        borderRadius: radius.lg,
+        alignItems: 'center',
+        justifyContent: 'center',
+        flexDirection: 'row',
+        gap: spacing.sm,
+        overflow: 'hidden',
+        ...(fullWidth && { width: '100%' }),
+    };
+
+    const buttonContent = (
+        <>
             {loading ? (
                 <ActivityIndicator
-                    color={variant === 'outline' || variant === 'ghost' ? COLORS_V2.primary : '#FFFFFF'}
+                    color={variant === 'outline' || variant === 'ghost' ? brand.honeyGlow : '#FFFFFF'}
                     size="small"
                 />
             ) : (
@@ -205,10 +206,48 @@ export default function ButtonV2({
                     {icon && iconPosition === 'right' && icon}
                 </>
             )}
+        </>
+    );
+
+    if (useGradient) {
+        const gradientColors = variant === 'primary'
+            ? [brand.honeyGlow, brand.honeyDark]
+            : [brand.hivePurple, brand.purpleDark];
+
+        return (
+            <AnimatedPressable
+                onPress={handlePress}
+                onPressIn={handlePressIn}
+                onPressOut={handlePressOut}
+                disabled={disabled || loading}
+                style={[baseStyle, getSizeStyle(), animatedStyle, style]}
+            >
+                <LinearGradient
+                    colors={gradientColors}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 1, y: 1 }}
+                    style={{
+                        position: 'absolute',
+                        left: 0,
+                        right: 0,
+                        top: 0,
+                        bottom: 0,
+                    }}
+                />
+                {buttonContent}
+            </AnimatedPressable>
+        );
+    }
+
+    return (
+        <AnimatedPressable
+            onPress={handlePress}
+            onPressIn={handlePressIn}
+            onPressOut={handlePressOut}
+            disabled={disabled || loading}
+            style={[baseStyle, getSizeStyle(), getVariantStyle(), animatedStyle, style]}
+        >
+            {buttonContent}
         </AnimatedPressable>
     );
 }
-
-const styles = StyleSheet.create({
-    // Styles statiques si nécessaire
-});
