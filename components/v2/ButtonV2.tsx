@@ -18,6 +18,7 @@ import {
     ActivityIndicator,
     ViewStyle,
     TextStyle,
+    StyleSheet,
 } from 'react-native';
 import Animated, {
     useSharedValue,
@@ -25,7 +26,7 @@ import Animated, {
     withSpring,
     withTiming,
 } from 'react-native-reanimated';
-import LinearGradient from 'react-native-linear-gradient';
+import { LinearGradient } from 'expo-linear-gradient';
 import { ThemeV2, brand, light, shadowsLight, spacing, radius, textStyles, durations } from '@/theme/v2';
 
 type ButtonVariant = 'primary' | 'secondary' | 'outline' | 'ghost' | 'danger';
@@ -58,7 +59,7 @@ export default function ButtonV2({
     icon,
     iconPosition = 'left',
     fullWidth = false,
-    gradient = true,
+    gradient = false,
     style,
     textStyle,
 }: ButtonV2Props) {
@@ -223,16 +224,10 @@ export default function ButtonV2({
                 style={[baseStyle, getSizeStyle(), animatedStyle, style]}
             >
                 <LinearGradient
-                    colors={gradientColors}
+                    colors={gradientColors as [string, string, ...string[]]}
                     start={{ x: 0, y: 0 }}
-                    end={{ x: 1, y: 1 }}
-                    style={{
-                        position: 'absolute',
-                        left: 0,
-                        right: 0,
-                        top: 0,
-                        bottom: 0,
-                    }}
+                    end={{ x: 1, y: 0 }}
+                    style={[StyleSheet.absoluteFill, { borderRadius: radius.md }]}
                 />
                 {buttonContent}
             </AnimatedPressable>

@@ -1,3 +1,4 @@
+import { StatusBar } from 'expo-status-bar';
 import React, { useEffect, useState } from 'react';
 import {
   View,
@@ -190,15 +191,14 @@ export default function MarketplaceScreen() {
 
   return (
     <View style={styles.container}>
-      {/* Header with subtitle (Figma style) */}
+      <StatusBar style="light" backgroundColor="#7F5BFF" translucent={false} />
+
+      {/* V2 Header Style (Purple) */}
       <View style={styles.header}>
-        <View style={styles.headerTextContainer}>
-          <Text style={styles.headerTitle}>Marketplace</Text>
-          <Text style={styles.headerSubtitle}>Make Wishes Real</Text>
-        </View>
+        <Text style={styles.headerTitle}>Marketplace</Text>
       </View>
 
-      {/* Search Bar - Always visible (Figma style) */}
+      {/* V1.5 Content Style */}
       <View style={styles.searchContainer}>
         <View style={styles.searchBox}>
           <Search size={20} color={COLORS.gray[500]} />
@@ -212,44 +212,9 @@ export default function MarketplaceScreen() {
         </View>
       </View>
 
-      {/* Filters with "All" option (Figma style) */}
-      <View style={styles.filterContainer}>
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={styles.filterContent}
-        >
-          <FilterChip
-            label="All"
-            active={sortBy === 'all'}
-            onPress={() => setSortBy('all')}
-          />
-          <FilterChip
-            label="Popular"
-            active={sortBy === 'popular'}
-            onPress={() => setSortBy('popular')}
-          />
-          <FilterChip
-            label="Newest"
-            active={sortBy === 'newest'}
-            onPress={() => setSortBy('newest')}
-          />
-          <FilterChip
-            label="Trending"
-            active={sortBy === 'trending'}
-            onPress={() => setSortBy('trending')}
-          />
-        </ScrollView>
-      </View>
-
-      {/* Products Grid */}
       <FlatList
         data={displayedProducts}
-        renderItem={({ item, index }) => (
-          <Animated.View entering={FadeInDown.delay(index * 50).springify()}>
-            <ProductCard item={item} />
-          </Animated.View>
-        )}
+        renderItem={({ item }) => <ProductCard item={item} />}
         keyExtractor={(item) => item.id}
         numColumns={2}
         contentContainerStyle={styles.productGrid}
@@ -259,20 +224,13 @@ export default function MarketplaceScreen() {
             refreshing={refreshing}
             onRefresh={onRefresh}
             tintColor={COLORS.primary}
-            colors={[COLORS.primary]}
           />
         }
-
         ListEmptyComponent={
           !loading ? (
             <View style={styles.emptyContainer}>
               <Store size={64} color={COLORS.gray[400]} />
               <Text style={styles.emptyTitle}>No products found</Text>
-              <Text style={styles.emptyText}>
-                {searchQuery
-                  ? 'Try a different search term'
-                  : 'Check back soon for new products!'}
-              </Text>
             </View>
           ) : null
         }
@@ -288,29 +246,18 @@ const styles = StyleSheet.create({
   },
   header: {
     paddingHorizontal: SPACING.lg,
-    paddingTop: SPACING.xxl,
+    paddingTop: SPACING.xxl + 24, // Match Wishlists header height
     paddingBottom: SPACING.lg,
-    backgroundColor: COLORS.white,
-    borderBottomWidth: 1,
-    borderBottomColor: COLORS.gray[100],
-  },
-  headerTextContainer: {
-    gap: SPACING.xs / 2,
+    backgroundColor: '#7F5BFF', // Hive Purple
+    justifyContent: 'center',
   },
   headerTitle: {
     fontSize: FONT_SIZES.xxl,
     fontWeight: '700',
-    color: COLORS.dark,
-  },
-  headerSubtitle: {
-    fontSize: FONT_SIZES.sm,
-    fontWeight: '400',
-    color: COLORS.gray[600],
-    marginTop: 2,
+    color: 'white',
   },
   searchContainer: {
-    paddingHorizontal: SPACING.lg,
-    paddingVertical: SPACING.md,
+    padding: SPACING.lg,
     backgroundColor: COLORS.white,
     borderBottomWidth: 1,
     borderBottomColor: COLORS.gray[100],
@@ -318,46 +265,37 @@ const styles = StyleSheet.create({
   searchBox: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: COLORS.gray[50],
-    borderRadius: BORDER_RADIUS.lg,
+    backgroundColor: COLORS.gray[50], // Standard input bg
+    borderRadius: BORDER_RADIUS.md, // Standard radius
     paddingHorizontal: SPACING.md,
+    height: 44, // Standard height
     gap: SPACING.sm,
-    height: 48,
   },
   searchInput: {
     flex: 1,
     fontSize: FONT_SIZES.md,
     color: COLORS.dark,
   },
-
-  filterContainer: {
-    backgroundColor: COLORS.white,
-    paddingVertical: SPACING.md,
-    borderBottomWidth: 1,
-    borderBottomColor: COLORS.gray[100],
-  },
-  filterContent: {
-    paddingHorizontal: SPACING.lg,
-    gap: SPACING.sm,
-  },
   productGrid: {
     padding: SPACING.lg,
   },
   productRow: {
-    gap: SPACING.md,
+    justifyContent: 'space-between',
     marginBottom: SPACING.md,
   },
   productCard: {
     width: CARD_WIDTH,
-    flex: 1,
+    backgroundColor: COLORS.white,
+    borderRadius: BORDER_RADIUS.md,
+    overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: COLORS.gray[200],
+    paddingBottom: SPACING.sm,
   },
   imageContainer: {
     width: '100%',
     aspectRatio: 1,
-    borderRadius: BORDER_RADIUS.md,
-    overflow: 'hidden',
-    marginBottom: SPACING.sm,
-    position: 'relative',
+    backgroundColor: COLORS.gray[100],
   },
   productImage: {
     width: '100%',
@@ -374,64 +312,46 @@ const styles = StyleSheet.create({
     position: 'absolute',
     top: 8,
     right: 8,
-    backgroundColor: 'rgba(0, 0, 0, 0.4)',
+    backgroundColor: 'rgba(255, 255, 255, 0.8)',
     borderRadius: BORDER_RADIUS.full,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-    paddingHorizontal: 8,
-    paddingVertical: 6,
-    zIndex: 10,
+    padding: 6,
   },
   heartIconTopActive: {
-    backgroundColor: COLORS.error,
+    backgroundColor: COLORS.white,
   },
   heartCounter: {
-    fontSize: 11,
-    fontWeight: '700',
-    color: COLORS.white,
+    display: 'none', // Hide counter in V1.5 style usually
   },
   productTitle: {
     fontSize: FONT_SIZES.sm,
     fontWeight: '600',
     color: COLORS.dark,
-    marginBottom: SPACING.xs,
-    lineHeight: 18,
+    marginHorizontal: SPACING.sm,
+    marginTop: SPACING.sm,
+    marginBottom: 4,
   },
   ratingContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 2,
-    marginBottom: SPACING.xs,
+    display: 'none', // Hide rating in V1.5 style
   },
   star: {
-    fontSize: 12,
-    lineHeight: 14,
+    display: 'none',
   },
   productPrice: {
     fontSize: FONT_SIZES.md,
     fontWeight: '700',
     color: COLORS.primary,
+    marginHorizontal: SPACING.sm,
   },
   emptyContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
     paddingVertical: SPACING.xxl,
-    paddingHorizontal: SPACING.lg,
   },
   emptyTitle: {
     fontSize: FONT_SIZES.xl,
     fontWeight: '700',
-    color: COLORS.dark,
-    marginTop: SPACING.lg,
-    marginBottom: SPACING.xs,
-  },
-  emptyText: {
-    fontSize: FONT_SIZES.md,
-    color: COLORS.gray[600],
-    textAlign: 'center',
-    lineHeight: 22,
+    color: COLORS.gray[500],
+    marginTop: SPACING.md,
   },
 });
-

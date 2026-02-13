@@ -1,838 +1,268 @@
-/**
- * 📝 Wishlist Detail Screen - Version Complète
- * Conserve TOUTES les fonctionnalités V1 avec le design moderne V2
- * 
- * Fonctionnalités :
- * - ✅ Customization (theme/couleurs)
- * - ✅ Partage (ShareWishlistButton)
- * - ✅ Réorganisation (drag & drop)
- * - ✅ Delete wishlist
- * - ✅ Delete items via button
- * - ✅ Group gifts (cagnotte)
- * - ✅ Priority badges
- * - ✅ Purchased status
- */
-
-import React, { useEffect, useState } from 'react';
-import {
-    View,
-    Text,
-    StyleSheet,
-    TouchableOpacity,
-    Platform,
-    Alert,
-    FlatList,
-    ActivityIndicator,
-} from 'react-native';
-import DraggableFlatList, { RenderItemParams, ScaleDecorator } from 'react-native-draggable-flatlist';
-import { Image } from 'expo-image';
-import { useLocalSearchParams, router, Stack } from 'expo-router';
-import {
-    ArrowLeft,
-    Share2,
-    Trash2,
-    Gift,
-    CheckCircle,
-    Clock,
-    Plus,
-    MessageSquare,
-    ChevronUp,
-    ChevronDown,
-    MoreVertical,
-    ArrowUpDown,
-    Palette,
-} from 'lucide-react-native';
-import { WishlistThemeSelector } from '@/components/WishlistThemeSelector';
-import { InteractionsModal } from '@/components/InteractionsModal';
-import { AnonymousInteraction } from '@/components/AnonymousInteraction';
-import ShareWishlistButton from '@/components/ShareWishlistButton';
-import { WishlistTheme, DEFAULT_THEME } from '@/constants/wishlistThemes';
+import React, { useRef } from 'react';
+import { View, StyleSheet, Image, Dimensions, ScrollView, Animated as RNAnimated, Pressable, FlatList } from 'react-native';
+import { useLocalSearchParams, useRouter, Stack } from 'expo-router';
+import { BlurView } from 'expo-blur';
 import { LinearGradient } from 'expo-linear-gradient';
-import { useAuth } from '@/contexts/AuthContext';
-import { supabase } from '@/lib/supabase';
-import { Card } from '@/components/Card';
-import { COLORS, SPACING, FONT_SIZES, BORDER_RADIUS } from '@/constants/theme';
-import { Database } from '@/types/database';
-import * as Haptics from 'expo-haptics';
-import { wishlistEvents, EVENTS } from '@/lib/events';
-import { ConfirmDialog } from '@/components/ConfirmDialog';
-import { ReorganizeToolbar } from '@/components/ReorganizeToolbar';
-import { getPriorityLabel, getPriorityColor, getPriorityEmoji } from '@/constants/priorities';
-import * as Linking from 'expo-linking';
-import { cache } from '@/lib/cache';
+import { ChevronLeft, Share2, MoreHorizontal, Plus, Heart, MessageCircle } from 'lucide-react-native';
+import Animated, {
+    useAnimatedScrollHandler,
+    useAnimatedStyle,
+    useSharedValue,
+    interpolate,
+    Extrapolation
+} from 'react-native-reanimated';
 
-type Wishlist = Database['public']['Tables']['wishlists']['Row'];
-type WishlistItem = Database['public']['Tables']['wishlist_items']['Row'] & {
-    product?: Database['public']['Tables']['products']['Row'] | null;
-    group_gift?: Database['public']['Tables']['group_gifts']['Row'] | null;
-};
+import { ThemeV2, brand, light, spacing, glass, shadowsLight as shadows, gray } from '@/theme/v2';
+import TextV2 from '@/components/v2/TextV2';
+import ButtonV2 from '@/components/v2/ButtonV2';
+import AvatarV2 from '@/components/v2/AvatarV2';
+import BadgeV2 from '@/components/v2/BadgeV2';
 
-import { PRIORITY_OPTIONS } from '@/constants/priorities';
-import { StatusBadge } from '@/components/StatusBadge';
-import { WishlistItemRow } from '@/components/WishlistItemRow';
-import { EmptyState } from '@/components/EmptyState';
-import Button from '@/components/Button';
-import { Heart, MessageCircle } from 'lucide-react-native';
-import Animated, { FadeInUp, Layout } from 'react-native-reanimated';
+import { MOCK_FEED, MOCK_WISHLIST_ITEMS, MOCK_STORIES } from '@/constants/mocks';
 
-export default function WishlistDetailScreen() {
-    const { id } = useLocalSearchParams<{ id: string }>();
-    const { user } = useAuth();
-    const [wishlist, setWishlist] = useState<Wishlist | null>(null);
-    const [items, setItems] = useState<WishlistItem[]>([]);
-    const [loading, setLoading] = useState(true);
-    const [isOwner, setIsOwner] = useState(false);
+const { width } = Dimensions.get('window');
+const HERO_HEIGHT = 350;
 
-    // Reordering State
-    const [isReordering, setIsReordering] = useState(false);
-    const [originalItems, setOriginalItems] = useState<WishlistItem[]>([]);
-    const [savingOrder, setSavingOrder] = useState(false);
-    const [interactions, setInteractions] = useState<any[]>([]);
-    const [showInteractionsModal, setShowInteractionsModal] = useState(false);
+export default function WishlistDetail() {
+    const { id } = useLocalSearchParams();
+    const router = useRouter();
+    const scrollY = useSharedValue(0);
 
-    // Interaction State
-    const [interactionsSummary, setInteractionsSummary] = useState<Record<string, number>>({});
-    const [interactionModalVisible, setInteractionModalVisible] = useState(false);
-    const [interactionType, setInteractionType] = useState<'reaction' | 'comment'>('reaction');
+    // Find mock data
+    const wishlist = MOCK_FEED.find(w => w.id === id) || MOCK_FEED[0];
+    const items = MOCK_WISHLIST_ITEMS; // Just use the same mock items for all for now
 
-    // Customization State
-    const [showThemeSelector, setShowThemeSelector] = useState(false);
+    const onScroll = useAnimatedScrollHandler({
+        onScroll: (event) => {
+            scrollY.value = event.contentOffset.y;
+        },
+    });
 
-    // Pagination State
-    const [pagination, setPagination] = useState({ page: 0, hasMore: true, loadingMore: false });
-    const PAGE_SIZE = 15;
-
-    const currentTheme =
-        wishlist?.theme &&
-            typeof wishlist.theme === 'object' &&
-            Object.keys(wishlist.theme).length > 0 &&
-            (wishlist.theme as any).primaryColor
-            ? (wishlist.theme as unknown as WishlistTheme)
-            : DEFAULT_THEME;
-
-    const handleSaveTheme = async (newTheme: WishlistTheme) => {
-        try {
-            const { error } = await supabase
-                .from('wishlists')
-                .update({ theme: newTheme })
-                .eq('id', id);
-
-            if (error) throw error;
-
-            setWishlist(prev => prev ? { ...prev, theme: newTheme } : null);
-            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-        } catch (error) {
-            console.error('Error saving theme:', error);
-            Alert.alert('Error', 'Failed to save theme');
-        }
-    };
-
-    useEffect(() => {
-        if (id) {
-            loadCachedDetails();
-            loadWishlistDetails();
-
-            // Real-time reactions and comments
-            const channel = supabase
-                .channel(`wishlist_live_${id}`)
-                .on(
-                    'postgres_changes',
-                    {
-                        event: 'INSERT',
-                        schema: 'public',
-                        table: 'wishlist_interactions',
-                        filter: `wishlist_id=eq.${id}`,
-                    },
-                    (payload) => {
-                        const newInteraction = payload.new;
-
-                        // Update interactions list
-                        setInteractions(prev => [newInteraction, ...prev]);
-
-                        // Update summary if reaction
-                        if (newInteraction.interaction_type === 'reaction') {
-                            setInteractionsSummary(prev => ({
-                                ...prev,
-                                [newInteraction.content]: (prev[newInteraction.content] || 0) + 1
-                            }));
-                        } else if (newInteraction.interaction_type === 'comment') {
-                            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-                        }
-                    }
-                )
-                .subscribe();
-
-            return () => {
-                supabase.removeChannel(channel);
-            };
-        }
-    }, [id]);
-
-    const loadCachedDetails = async () => {
-        if (!id) return;
-        const cachedWishlist = await cache.get<Wishlist>(`wishlist_${id}`);
-        const cachedItems = await cache.get<WishlistItem[]>(`wishlist_items_${id}`);
-
-        if (cachedWishlist) {
-            setWishlist(cachedWishlist);
-            setIsOwner(user?.id === cachedWishlist.owner_id);
-        }
-        if (cachedItems && cachedItems.length > 0) {
-            // Deduplicate cache data
-            const unique = Array.from(new Map(cachedItems.map(item => [item.id, item])).values());
-            setItems(unique);
-            setLoading(false);
-        }
-    };
-
-    useEffect(() => {
-        const handleItemAdded = (data: { wishlistId: string; item: any }) => {
-            if (data.wishlistId === id) {
-                loadWishlistDetails();
-                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-            }
+    const headerStyle = useAnimatedStyle(() => {
+        return {
+            height: interpolate(
+                scrollY.value,
+                [-100, 0, HERO_HEIGHT],
+                [HERO_HEIGHT + 100, HERO_HEIGHT, 100],
+                Extrapolation.CLAMP
+            ),
+            transform: [
+                {
+                    scale: interpolate(
+                        scrollY.value,
+                        [-100, 0],
+                        [1.2, 1],
+                        Extrapolation.CLAMP
+                    ),
+                },
+            ],
         };
+    });
 
-        wishlistEvents.on(EVENTS.ITEM_ADDED, handleItemAdded);
-        return () => { wishlistEvents.off(EVENTS.ITEM_ADDED, handleItemAdded); };
-    }, [id]);
-
-    const loadWishlistDetails = async (isFirstLoad = true) => {
-        if (isFirstLoad && !savingOrder) {
-            setLoading(true);
-            setPagination({ page: 0, hasMore: true, loadingMore: false });
-        } else if (!isFirstLoad) {
-            setPagination(prev => ({ ...prev, loadingMore: true }));
-        }
-
-        try {
-            if (isFirstLoad) {
-                const { data: wishlistData, error: wishlistError } = await supabase
-                    .from('wishlists')
-                    .select('*, owner_profile:profiles(username)')
-                    .eq('id', id as string)
-                    .single();
-
-                if (wishlistError) throw wishlistError;
-                setWishlist(wishlistData);
-                setIsOwner(user?.id === wishlistData.owner_id);
-
-                // Fetch interactions summary etc
-                const { data: interData } = await supabase
-                    .from('wishlist_interactions')
-                    .select('*')
-                    .eq('wishlist_id', id as string)
-                    .order('created_at', { ascending: false });
-
-                if (interData) {
-                    setInteractions(interData);
-                    // Generate summary for header
-                    const summary = interData
-                        .filter(i => i.interaction_type === 'reaction')
-                        .reduce((acc: any, curr) => {
-                            acc[curr.content] = (acc[curr.content] || 0) + 1;
-                            return acc;
-                        }, {});
-                    setInteractionsSummary(summary);
-                }
-            }
-
-            const start = isFirstLoad ? 0 : pagination.page * PAGE_SIZE;
-            const end = start + PAGE_SIZE - 1;
-
-            const { data: itemsData, error: itemsError } = await supabase
-                .from('wishlist_items')
-                .select('*, product:products(*)')
-                .eq('wishlist_id', id as string)
-                .order('priority', { ascending: false })
-                .range(start, end);
-
-            if (itemsError) throw itemsError;
-
-            let newItems: WishlistItem[] = [];
-
-            if (itemsData && itemsData.length > 0) {
-                const itemIds = itemsData.map(i => i.id);
-                const { data: giftsData } = await supabase
-                    .from('group_gifts')
-                    .select('*')
-                    .in('item_id', itemIds);
-
-                const giftsMap = new Map();
-                if (giftsData) {
-                    giftsData.forEach(gift => {
-                        if (!giftsMap.has(gift.item_id)) {
-                            giftsMap.set(gift.item_id, gift);
-                        }
-                    });
-                }
-
-                newItems = itemsData.map(item => ({
-                    ...item,
-                    group_gift: giftsMap.get(item.id) || null
-                }));
-            }
-
-            if (isFirstLoad) {
-                setItems(newItems);
-                setPagination({
-                    page: 1,
-                    hasMore: newItems.length === PAGE_SIZE,
-                    loadingMore: false
-                });
-
-                // Update cache with fresh data
-                cache.set(`wishlist_items_${id}`, newItems);
-            } else {
-                setItems(prev => {
-                    const existingIds = new Set(prev.map(item => item.id));
-                    const uniqueNew = newItems.filter(item => !existingIds.has(item.id));
-                    const updated = [...prev, ...uniqueNew];
-
-                    // Update cache with merged data
-                    cache.set(`wishlist_items_${id}`, updated);
-
-                    return updated;
-                });
-
-                setPagination(prev => ({
-                    page: prev.page + 1,
-                    hasMore: newItems.length === PAGE_SIZE,
-                    loadingMore: false
-                }));
-            }
-        } catch (error) {
-            console.error('Error loading wishlist:', error);
-            Alert.alert('Error', 'Failed to load wishlist details');
-        } finally {
-            setLoading(false);
-            setPagination(prev => ({ ...prev, loadingMore: false }));
-
-            if (wishlist) {
-                cache.set(`wishlist_${id}`, wishlist);
-            }
-        }
-    };
-
-    const handleLoadMore = () => {
-        if (pagination.hasMore && !pagination.loadingMore && !loading && !isReordering) {
-            loadWishlistDetails(false);
-        }
-    };
-
-    const toggleReorder = () => {
-        if (isReordering) {
-            setIsReordering(false);
-            setItems(originalItems);
-        } else {
-            setOriginalItems([...items]);
-            setIsReordering(true);
-            Haptics.selectionAsync();
-        }
-    };
-
-    const handleMoveItem = (index: number, direction: 'up' | 'down') => {
-        const newItems = [...items];
-        const targetIndex = direction === 'up' ? index - 1 : index + 1;
-
-        if (targetIndex >= 0 && targetIndex < items.length) {
-            const [movedItem] = newItems.splice(index, 1);
-            newItems.splice(targetIndex, 0, movedItem);
-            setItems(newItems);
-            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-        }
-    };
-
-    const changePriority = (item: WishlistItem) => {
-        if (!isOwner || isReordering) return;
-
-        Alert.alert(
-            'Changer la priorité',
-            'Sélectionnez le niveau de priorité pour ce souhait :',
-            PRIORITY_OPTIONS.map(opt => ({
-                text: opt.label,
-                onPress: () => handleUpdatePriority(item.id, opt.value)
-            })).concat([{ text: 'Annuler', style: 'cancel' } as any])
-        );
-    };
-
-    const handleUpdatePriority = async (itemId: string, newPriority: number) => {
-        try {
-            const { error } = await supabase
-                .from('wishlist_items')
-                .update({ priority: newPriority })
-                .eq('id', itemId);
-
-            if (error) throw error;
-
-            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-            loadWishlistDetails(); // Re-fetch to get correctly sorted list
-        } catch (error) {
-            console.error(error);
-            Alert.alert('Erreur', 'Impossible de modifier la priorité.');
-        }
-    };
-
-    const handleTogglePurchase = async (item: WishlistItem) => {
-        try {
-            const newStatus = !item.is_purchased;
-            const { error } = await supabase
-                .from('wishlist_items')
-                .update({
-                    is_purchased: newStatus,
-                    purchased_at: newStatus ? new Date().toISOString() : null
-                })
-                .eq('id', item.id);
-
-            if (error) throw error;
-
-            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-
-            // Optimistic update
-            setItems(prev => prev.map(i => i.id === item.id ? { ...i, is_purchased: newStatus } : i));
-
-        } catch (error) {
-            console.error('Error toggling purchase:', error);
-            Alert.alert('Erreur', 'Impossible de modifier le statut.');
-        }
-    };
-
-    const handleSaveOrder = async () => {
-        setSavingOrder(true);
-
-        try {
-            const updates = items.map((item, index) => ({
-                id: item.id,
-                priority: Math.min(5, Math.max(1, Math.floor(((items.length - 1 - index) / Math.max(1, items.length - 1)) * 4) + 1)),
-                wishlist_id: id as string,
-            }));
-
-            const { error } = await supabase
-                .from('wishlist_items')
-                .upsert(updates);
-
-            if (error) throw error;
-
-            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-            setIsReordering(false);
-            loadWishlistDetails(true);
-        } catch (error) {
-            console.error(error);
-            Alert.alert('Error', "Impossible d'enregistrer l'ordre.");
-        } finally {
-            setSavingOrder(false);
-        }
-    };
-
-    const [deleteConfirmVisible, setDeleteConfirmVisible] = useState(false);
-    const [itemToDelete, setItemToDelete] = useState<string | null>(null);
-
-    const handleDeleteItem = (itemId: string) => {
-        setItemToDelete(itemId);
-        setDeleteConfirmVisible(true);
-    };
-
-    const confirmDelete = async () => {
-        if (!itemToDelete) return;
-        try {
-            const { error } = await supabase
-                .from('wishlist_items')
-                .delete()
-                .eq('id', itemToDelete);
-
-            if (error) throw error;
-
-            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-            loadWishlistDetails();
-        } catch {
-            Alert.alert('Error', 'Failed to delete item');
-        } finally {
-            setDeleteConfirmVisible(false);
-            setItemToDelete(null);
-        }
-    };
-
-    const [wishlistDeleteDialogVisible, setWishlistDeleteDialogVisible] = useState(false);
-
-    const handleOpenItemUrl = async (item: any) => {
-        const url = item.custom_url || item.product?.external_url;
-        if (url) {
-            try {
-                const canOpen = await Linking.canOpenURL(url);
-                if (canOpen) {
-                    await Linking.openURL(url);
-                } else {
-                    if (item.product_id) {
-                        router.push(`/product/${item.product_id}`);
-                    } else {
-                        Alert.alert("Lien non supporté", "Cet article n'a pas de lien d'achat valide.");
-                    }
-                }
-            } catch (error) {
-                console.error('Error opening URL:', error);
-                if (item.product_id) {
-                    router.push(`/product/${item.product_id}`);
-                }
-            }
-        } else if (item.product_id) {
-            router.push(`/product/${item.product_id}`);
-        } else {
-            Alert.alert("Info", "Cet article n'a pas de lien d'achat renseigné.");
-        }
-    };
-
-    const handleDeleteWishlist = async () => {
-        try {
-            await supabase.from('wishlist_items').delete().eq('wishlist_id', id);
-            await supabase.from('wishlists').delete().eq('id', id);
-
-            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-            setTimeout(() => router.replace('/(tabs)/wishlists'), 300);
-        } catch {
-            Alert.alert('Erreur', 'Impossible de supprimer cette wishlist.');
-        } finally {
-            setWishlistDeleteDialogVisible(false);
-        }
-    };
-
-
-    const renderItem = ({ item, index }: { item: WishlistItem; index: number }) => {
-        return (
-            <View style={[
-                { paddingHorizontal: SPACING.lg },
-            ]}>
-                <WishlistItemRow
-                    title={item.custom_title || item.product?.title || 'Untitled Item'}
-                    price={item.custom_price || item.product?.price}
-                    currency={item.product?.currency}
-                    imageUrl={item.custom_images?.[0] || item.product?.images?.[0]}
-                    checked={item.is_purchased}
-                    onToggle={() => handleTogglePurchase(item)}
-                    onDelete={() => handleDeleteItem(item.id)}
-                    isOwner={isOwner}
-                    index={index}
-                    priorityColor={getPriorityColor(item.priority)}
-                    priorityEmoji={getPriorityEmoji(item.priority)}
-                    onEdit={() => router.push(`/wishlists/${id}/edit-item/${item.id}` as any)}
-                    groupGift={item.group_gift}
-                    isReordering={isReordering}
-                    isActive={false}
-                    onPress={() => handleOpenItemUrl(item)}
-                />
-            </View>
-        );
-    };
-
-    const handleInteractionSubmit = async (data: { type: 'reaction' | 'comment'; content: string; authorName: string }) => {
-        if (!id) return;
-
-        try {
-            const { error } = await supabase
-                .from('wishlist_interactions')
-                .insert({
-                    wishlist_id: id as string,
-                    interaction_type: data.type,
-                    content: data.content,
-                    author_name: data.authorName,
-                });
-
-            if (error) throw error;
-            Alert.alert('Merci !', 'Votre interaction a été envoyée.');
-            loadWishlistDetails(false); // Refresh stats
-
-        } catch (error) {
-            console.error('Error sending interaction:', error);
-            Alert.alert('Erreur', 'Impossible d\'envoyer votre réaction.');
-        }
-    };
-
-    const openGuestInteraction = (type: 'reaction' | 'comment') => {
-        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-        setInteractionType(type);
-        setInteractionModalVisible(true);
-    };
-
-    const renderHeader = () => {
-        if (!wishlist) return null;
-
-        const HeaderWrapper = ({ children }: { children: React.ReactNode }) => {
-            const style = [
-                styles.headerContent,
-                { backgroundColor: currentTheme.gradient ? 'transparent' : currentTheme.primaryColor },
-                isReordering && { borderBottomWidth: 4, borderBottomColor: COLORS.primary }
-            ];
-
-            if (currentTheme.gradient) {
-                return (
-                    <LinearGradient
-                        colors={[currentTheme.primaryColor, currentTheme.secondaryColor]}
-                        start={{ x: 0, y: 0 }}
-                        end={{ x: 1, y: 1 }}
-                        style={style}
-                    >
-                        {children}
-                    </LinearGradient>
-                );
-            }
-
-            return <View style={style}>{children}</View>;
+    const headerBlurStyle = useAnimatedStyle(() => {
+        return {
+            opacity: interpolate(
+                scrollY.value,
+                [0, HERO_HEIGHT - 100],
+                [0, 1],
+                Extrapolation.CLAMP
+            ),
         };
+    });
 
-        const textColor = currentTheme.template === 'minimal' ? COLORS.dark : COLORS.white;
-        const subTextColor = currentTheme.template === 'minimal' ? COLORS.gray[600] : 'rgba(255,255,255,0.8)';
-
-        const completedItems = items.filter(item => item.is_purchased).length;
-        const totalItems = items.length;
-        const progress = totalItems > 0 ? (completedItems / totalItems) * 100 : 0;
-
+    const renderItem = ({ item, index }: { item: any, index: number }) => {
         return (
-            <HeaderWrapper>
-                <View style={styles.headerActions}>
-                    <TouchableOpacity style={styles.headerButton} onPress={() => router.back()}>
-                        <ArrowLeft size={24} color={textColor} />
-                    </TouchableOpacity>
-
-                    <View style={{ flex: 1 }} />
-
-                    <View style={styles.actionGroup}>
-                        {wishlist && (
-                            <TouchableOpacity
-                                style={styles.headerButton}
-                                onPress={() => router.push(`/wishlists/${id}/chat` as any)}
-                            >
-                                <MessageSquare size={22} color={textColor} />
-                            </TouchableOpacity>
-                        )}
-                        {wishlist && (
-                            <ShareWishlistButton
-                                wishlistId={wishlist.id}
-                                wishlistTitle={wishlist.title}
-                                variant="icon"
+            <Pressable
+                style={[styles.itemCard, index % 2 === 0 ? { marginRight: 8 } : { marginLeft: 8 }]}
+                onPress={() => console.log('Item press', item.id)}
+            >
+                <View style={styles.itemImageContainer}>
+                    <Image source={{ uri: item.image }} style={styles.itemImage} resizeMode="cover" />
+                    <View style={styles.itemBadgeContainer}>
+                        {item.status !== 'open' && (
+                            <BadgeV2
+                                label={item.status}
+                                // @ts-ignore
+                                variant={item.status === 'purchased' ? 'success' : 'warning'}
+                                size="sm"
                             />
                         )}
-
-                        {isOwner && (
-                            <TouchableOpacity
-                                style={styles.headerButton}
-                                onPress={() => {
-                                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                                    Alert.alert(
-                                        'Actions',
-                                        'Choisissez une action',
-                                        [
-                                            {
-                                                text: isReordering ? '✓ Terminer la réorganisation' : '↕️ Réorganiser',
-                                                onPress: toggleReorder
-                                            },
-                                            {
-                                                text: '🎨 Personnaliser le thème',
-                                                onPress: () => setShowThemeSelector(true)
-                                            },
-                                            {
-                                                text: `📬 Interactions${interactions.length > 0 ? ` (${interactions.length})` : ''}`,
-                                                onPress: () => setShowInteractionsModal(true)
-                                            },
-                                            {
-                                                text: '🗑️ Supprimer la wishlist',
-                                                onPress: () => setWishlistDeleteDialogVisible(true),
-                                                style: 'destructive'
-                                            },
-                                            {
-                                                text: 'Annuler',
-                                                style: 'cancel'
-                                            }
-                                        ]
-                                    );
-                                }}
-                            >
-                                <MoreVertical size={22} color={textColor} />
-                                {(interactions.length > 0 || isReordering) && (
-                                    <View style={styles.unreadBadge} />
-                                )}
-                            </TouchableOpacity>
-                        )}
-
-                        {!isOwner && (
-                            <>
-                                <TouchableOpacity
-                                    style={styles.headerButton}
-                                    onPress={() => openGuestInteraction('comment')}
-                                >
-                                    <MessageCircle size={22} color={textColor} />
-                                </TouchableOpacity>
-                                <TouchableOpacity
-                                    style={[styles.headerButton, { backgroundColor: COLORS.error + '20' }]}
-                                    onPress={() => openGuestInteraction('reaction')}
-                                >
-                                    <Heart size={22} color={COLORS.error} fill={COLORS.error} />
-                                </TouchableOpacity>
-                            </>
-                        )}
                     </View>
                 </View>
+                <View style={styles.itemContent}>
+                    <TextV2 variant="bodySM" numberOfLines={2} style={styles.itemTitle}>{item.name}</TextV2>
+                    <TextV2 variant="h4" color="primary">${item.price}</TextV2>
 
-                <View style={styles.cleanHeaderContent}>
-                    <View style={styles.emojiContainer}>
-                        <Text style={styles.bigEmoji}>{currentTheme.emoji}</Text>
-                    </View>
-                    <View style={styles.titleInfo}>
-                        <Text style={[styles.cleanTitle, { color: textColor }]}>
-                            {wishlist?.title}
-                        </Text>
-                        <View style={styles.creatorRow}>
-                            <Text style={[styles.creatorLabel, { color: subTextColor }]}>Par </Text>
-                            <Text style={[styles.creatorName, { color: textColor }]}>
-                                {(wishlist as any).owner_profile?.username || 'Utilisateur'}
-                            </Text>
-                        </View>
-                        {wishlist?.description && (
-                            <Text style={[styles.cleanDescription, { color: subTextColor, marginTop: 4 }]} numberOfLines={2}>
-                                {wishlist.description}
-                            </Text>
-                        )}
-
-                        {Object.keys(interactionsSummary).length > 0 && (
-                            <View style={styles.headerReactions}>
-                                {Object.entries(interactionsSummary).map(([emoji, count]) => (
-                                    <View key={emoji} style={styles.headerReactionBadge}>
-                                        <Text style={styles.headerReactionEmoji}>{emoji}</Text>
-                                        <Text style={styles.headerReactionCount}>{count}</Text>
-                                    </View>
-                                ))}
+                    {item.fundedAmount && (
+                        <View style={styles.fundingContainer}>
+                            <View style={styles.fundingBarBg}>
+                                <View
+                                    style={[
+                                        styles.fundingBarFill,
+                                        { width: `${(item.fundedAmount / item.price) * 100}%` }
+                                    ]}
+                                />
                             </View>
-                        )}
-                    </View>
+                            <TextV2 variant="caption" color="secondary">
+                                {Math.round((item.fundedAmount / item.price) * 100)}% funded
+                            </TextV2>
+                        </View>
+                    )}
                 </View>
-
-                {/* Progress Card Section */}
-                <View style={[styles.progressCard, { backgroundColor: currentTheme.template === 'minimal' ? COLORS.gray[50] : 'rgba(255,255,255,0.15)' }]}>
-                    <View style={styles.progressHeader}>
-                        <Text style={[styles.progressLabel, { color: subTextColor }]}>Progress</Text>
-                        <StatusBadge
-                            label={`${completedItems}/${totalItems} items`}
-                            variant={progress === 100 ? "success" : "purple"}
-                        />
-                    </View>
-                    <View style={[styles.cleanProgressBarContainer, { backgroundColor: currentTheme.template === 'minimal' ? COLORS.white : 'rgba(255,255,255,0.2)' }]}>
-                        <View
-                            style={[
-                                styles.cleanProgressBarFill,
-                                {
-                                    width: `${progress}%`,
-                                    backgroundColor: currentTheme.template === 'minimal' ? currentTheme.primaryColor : COLORS.white,
-                                }
-                            ]}
-                        />
-                    </View>
-                </View>
-            </HeaderWrapper>
+            </Pressable>
         );
     };
 
     const ListHeader = () => (
-        <View style={styles.listHeader}>
-            {renderHeader()}
+        <View style={styles.contentContainer}>
+            {/* Info Section */}
+            <View style={styles.infoSection}>
+                <View style={styles.titleRow}>
+                    <TextV2 variant="h1" style={styles.title}>{wishlist.title}</TextV2>
+                </View>
+
+                <View style={styles.authorRow}>
+                    <AvatarV2
+                        source={{ uri: wishlist.user.avatar }}
+                        size="md"
+                        name={wishlist.user.name}
+                    />
+                    <View style={styles.authorText}>
+                        <TextV2 variant="bodySM" color="secondary">Created by</TextV2>
+                        <TextV2 variant="body" weight="600">{wishlist.user.name}</TextV2>
+                    </View>
+                    <ButtonV2
+                        title="Follow"
+                        variant="secondary"
+                        size="sm"
+                        style={{ marginLeft: 'auto' }}
+                        onPress={() => console.log('Follow')}
+                        gradient={false}
+                    />
+                </View>
+
+                <TextV2 variant="body" color="secondary" style={styles.description}>
+                    {wishlist.description}
+                </TextV2>
+
+                {/* Stats Row */}
+                <View style={styles.statsRow}>
+                    <View style={styles.statItem}>
+                        <TextV2 variant="h3">{wishlist.stats.itemsCount}</TextV2>
+                        <TextV2 variant="caption" color="secondary">Items</TextV2>
+                    </View>
+                    <View style={styles.divider} />
+                    <View style={styles.statItem}>
+                        <TextV2 variant="h3">{wishlist.stats.likes}</TextV2>
+                        <TextV2 variant="caption" color="secondary">Likes</TextV2>
+                    </View>
+                    <View style={styles.divider} />
+                    <View style={styles.statItem}>
+                        <TextV2 variant="h3">{wishlist.stats.fundedPercentage}%</TextV2>
+                        <TextV2 variant="caption" color="secondary">Funded</TextV2>
+                    </View>
+                </View>
+
+                {/* Contributors / Shared With */}
+                <View style={styles.contributorsSection}>
+                    <TextV2 variant="h4" style={{ marginBottom: 12 }}>Contributors</TextV2>
+                    <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginHorizontal: -24, paddingHorizontal: 24 }}>
+                        {MOCK_STORIES.map((user, i) => (
+                            <View key={user.id} style={{ marginRight: -12 }}>
+                                <AvatarV2
+                                    source={{ uri: user.userAvatar }}
+                                    size="md"
+                                    style={{ borderWidth: 2, borderColor: light.background.primary }}
+                                />
+                            </View>
+                        ))}
+                        <View style={[styles.moreContributors, { zIndex: -1 }]}>
+                            <TextV2 variant="caption" color="primary">+12</TextV2>
+                        </View>
+                    </ScrollView>
+                </View>
+            </View>
+
+            {/* Filter / Sort Row placeholder */}
+            <View style={styles.filterRow}>
+                <TextV2 variant="h4">Wishlist Items</TextV2>
+                <ButtonV2
+                    title="Filter"
+                    variant="ghost"
+                    size="sm"
+                    icon={<MoreHorizontal size={16} color={light.text.secondary} />}
+                    onPress={() => console.log('Filter')}
+                    gradient={false}
+                />
+            </View>
         </View>
     );
-
-    const renderEmpty = () => {
-        if (loading) return null;
-
-        return (
-            <EmptyState
-                emoji="🎁"
-                title="No items yet"
-                description="Start adding items to your wishlist to share it with friends!"
-                actionLabel={isOwner ? "Add Item" : undefined}
-                onAction={isOwner ? () => router.push(`/wishlists/${id}/add-item`) : undefined}
-            />
-        );
-    };
 
     return (
         <View style={styles.container}>
             <Stack.Screen options={{ headerShown: false }} />
 
-            <FlatList
+            {/* Animated Hero Background */}
+            <Animated.View style={[styles.heroContainer, headerStyle]}>
+                <Image
+                    source={{ uri: wishlist.coverImage }}
+                    style={styles.heroImage}
+                    resizeMode="cover"
+                />
+                <LinearGradient
+                    colors={['rgba(0,0,0,0.3)', 'transparent', 'rgba(255,255,255,1)']}
+                    style={styles.gradientOverlay}
+                    locations={[0, 0.5, 1]}
+                />
+            </Animated.View>
+
+            {/* Top Navigation Bar */}
+            <View style={styles.topBar}>
+                <BlurView intensity={80} tint="light" style={styles.navButtonBlur}>
+                    <Pressable style={styles.navButton} onPress={() => router.back()}>
+                        <ChevronLeft color={brand.honeyGlow} size={24} />
+                    </Pressable>
+                </BlurView>
+
+                <View style={styles.rightActions}>
+                    <BlurView intensity={80} tint="light" style={[styles.navButtonBlur, { marginRight: 8 }]}>
+                        <Pressable style={styles.navButton}>
+                            <Share2 color={brand.honeyGlow} size={20} />
+                        </Pressable>
+                    </BlurView>
+                    <BlurView intensity={80} tint="light" style={styles.navButtonBlur}>
+                        <Pressable style={styles.navButton}>
+                            <MoreHorizontal color={brand.honeyGlow} size={20} />
+                        </Pressable>
+                    </BlurView>
+                </View>
+            </View>
+
+            {/* Main Content */}
+            <Animated.FlatList
                 data={items}
                 renderItem={renderItem}
-                keyExtractor={(item) => item.id}
+                keyExtractor={item => item.id}
+                numColumns={2}
+                contentContainerStyle={styles.listContent}
                 ListHeaderComponent={ListHeader}
-                ListEmptyComponent={renderEmpty}
-                contentContainerStyle={{ paddingBottom: 100 }}
-                onEndReached={handleLoadMore}
-                onEndReachedThreshold={0.5}
-                ListFooterComponent={() =>
-                    pagination.loadingMore ? (
-                        <ActivityIndicator style={{ marginVertical: 20 }} color={COLORS.primary} />
-                    ) : null
-                }
+                onScroll={onScroll}
+                scrollEventThrottle={16}
+                showsVerticalScrollIndicator={false}
+                columnWrapperStyle={{ justifyContent: 'space-between' }}
             />
 
-            {isOwner && (
-                <TouchableOpacity
+            {/* Floating Action Button */}
+            <View style={styles.fabContainer}>
+                <ButtonV2
+                    title="Add Item"
+                    icon={<Plus color="white" size={24} />}
+                    gradient
                     style={styles.fab}
-                    onPress={() => router.push(`/wishlists/${id}/add-item`)}
-                >
-                    <Plus size={28} color="#FFFFFF" />
-                </TouchableOpacity>
-            )}
-
-            {isReordering && (
-                <ReorganizeToolbar
-                    onCancel={toggleReorder}
-                    onSave={handleSaveOrder}
-                    loading={savingOrder}
-                    hasChanges={true}
+                    textStyle={{ fontSize: 16, fontWeight: '600' }}
+                    onPress={() => console.log('Add Item')}
                 />
-            )}
-
-            <WishlistThemeSelector
-                visible={showThemeSelector}
-                onClose={() => setShowThemeSelector(false)}
-                currentTheme={currentTheme}
-                wishlistTitle={wishlist?.title || 'Wishlist'}
-                onSave={handleSaveTheme}
-            />
-
-            <ConfirmDialog
-                visible={deleteConfirmVisible}
-                title="Retirer cet item ?"
-                message="Cet item sera retiré de ta wishlist. Tu pourras toujours le rajouter plus tard ! 💫"
-                confirmText="Oui, retirer"
-                cancelText="Non, garder"
-                type="warning"
-                emoji="✨"
-                onConfirm={confirmDelete}
-                onCancel={() => setDeleteConfirmVisible(false)}
-            />
-
-            <ConfirmDialog
-                visible={wishlistDeleteDialogVisible}
-                title="Supprimer cette wishlist ?"
-                message="Cette action est irréversible. Tous les items de cette wishlist seront définitivement supprimés. 😢"
-                confirmText="Oui, supprimer"
-                cancelText="Non, garder"
-                type="danger"
-                emoji="🗑️"
-                onConfirm={handleDeleteWishlist}
-                onCancel={() => setWishlistDeleteDialogVisible(false)}
-            />
-
-            <InteractionsModal
-                visible={showInteractionsModal}
-                onClose={() => setShowInteractionsModal(false)}
-                interactions={interactions}
-                wishlistThemeColor={currentTheme.primaryColor}
-            />
-
-            <AnonymousInteraction
-                visible={interactionModalVisible}
-                onClose={() => setInteractionModalVisible(false)}
-                onSubmit={handleInteractionSubmit}
-                initialType={interactionType}
-                wishlistThemeColor={currentTheme.primaryColor}
-            />
+            </View>
         </View>
     );
 }
@@ -840,174 +270,175 @@ export default function WishlistDetailScreen() {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: COLORS.light,
+        backgroundColor: light.background.primary,
     },
-    headerButton: {
+    heroContainer: {
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        right: 0,
+        zIndex: 0,
+    },
+    heroImage: {
+        width: '100%',
+        height: '100%',
+    },
+    gradientOverlay: {
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+    },
+    topBar: {
+        position: 'absolute',
+        top: 50,
+        left: 24,
+        right: 24,
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        zIndex: 100,
+    },
+    navButtonBlur: {
+        borderRadius: 20,
+        overflow: 'hidden',
+    },
+    navButton: {
+        width: 40,
+        height: 40,
+        justifyContent: 'center',
+        alignItems: 'center',
+        backgroundColor: 'rgba(255,255,255,0.2)',
+    },
+    rightActions: {
+        flexDirection: 'row',
+    },
+    listContent: {
+        paddingTop: HERO_HEIGHT - 40, // Overlap slightly
+        paddingBottom: 100,
+        paddingHorizontal: 24,
+    },
+    contentContainer: {
+        marginBottom: 24,
+    },
+    infoSection: {
+        marginBottom: 24,
+    },
+    title: {
+        marginBottom: 16,
+        fontSize: 32,
+    },
+    titleRow: {
+        marginBottom: 16,
+    },
+    authorRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        marginBottom: 16,
+    },
+    authorText: {
+        marginLeft: 12,
+    },
+    description: {
+        marginBottom: 24,
+        lineHeight: 24,
+    },
+    statsRow: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        backgroundColor: light.background.secondary, // Light gray bg
+        padding: 16,
+        borderRadius: 16,
+        marginBottom: 24,
+    },
+    statItem: {
+        alignItems: 'center',
+        flex: 1,
+    },
+    divider: {
+        width: 1,
+        height: 24,
+        backgroundColor: gray[200],
+    },
+    contributorsSection: {
+        marginBottom: 24,
+    },
+    moreContributors: {
         width: 40,
         height: 40,
         borderRadius: 20,
-        backgroundColor: 'rgba(255,255,255,0.2)',
+        backgroundColor: light.background.secondary,
         justifyContent: 'center',
         alignItems: 'center',
+        marginLeft: -12,
+        borderWidth: 2,
+        borderColor: light.background.primary,
     },
-    actionGroup: {
-        flexDirection: 'row',
-        gap: SPACING.sm,
-        alignItems: 'center',
-    },
-    headerActions: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        paddingHorizontal: SPACING.lg,
-        paddingTop: 60,
-        paddingBottom: SPACING.md,
-    },
-    headerContent: {
-        paddingBottom: SPACING.xl,
-    },
-    cleanHeaderContent: {
-        flexDirection: 'row',
-        paddingHorizontal: SPACING.xl,
-        paddingVertical: SPACING.xl,
-        alignItems: 'center',
-        gap: SPACING.lg,
-    },
-    emojiContainer: {
-        width: 80,
-        height: 80,
-        borderRadius: BORDER_RADIUS.xxl,
-        backgroundColor: 'rgba(255,255,255,0.2)',
-        justifyContent: 'center',
-        alignItems: 'center',
-    },
-    bigEmoji: {
-        fontSize: 48,
-    },
-    titleInfo: {
-        flex: 1,
-    },
-    cleanTitle: {
-        fontSize: FONT_SIZES.xxxl,
-        fontWeight: '800',
-        marginBottom: 4,
-    },
-    cleanDescription: {
-        fontSize: FONT_SIZES.md,
-        opacity: 0.9,
-    },
-    progressCard: {
-        marginHorizontal: SPACING.lg,
-        padding: SPACING.lg,
-        borderRadius: BORDER_RADIUS.xxl,
-        marginBottom: SPACING.xl,
-    },
-    progressHeader: {
+    filterRow: {
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'center',
-        marginBottom: 12,
+        marginBottom: 16,
     },
-    progressLabel: {
-        fontSize: FONT_SIZES.sm,
-        fontWeight: '600',
-    },
-    progressValue: {
-        fontSize: FONT_SIZES.sm,
-        fontWeight: '700',
-    },
-    cleanProgressBarContainer: {
-        height: 10,
-        borderRadius: 5,
+    itemCard: {
+        flex: 0.48, // 2 columns approx
+        backgroundColor: light.background.primary,
+        borderRadius: 16,
+        marginBottom: 16,
+        ...shadows.sm,
         overflow: 'hidden',
-    },
-    cleanProgressBarFill: {
-        height: '100%',
-        borderRadius: 5,
-    },
-    listHeader: {
-        backgroundColor: 'transparent',
-    },
-    itemsToolbar: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        paddingHorizontal: SPACING.xl,
-        paddingVertical: SPACING.md,
-        backgroundColor: COLORS.light,
-        borderTopLeftRadius: BORDER_RADIUS.xxl,
-        borderTopRightRadius: BORDER_RADIUS.xxl,
-        marginTop: -BORDER_RADIUS.xxl,
-    },
-    itemsTitle: {
-        fontSize: FONT_SIZES.lg,
-        fontWeight: '700',
-        color: COLORS.dark,
-    },
-    activeButton: {
-        backgroundColor: COLORS.primary + '20',
-        borderColor: COLORS.primary,
         borderWidth: 1,
+        borderColor: gray[100],
     },
-    fab: {
-        position: 'absolute',
-        bottom: SPACING.xl,
-        right: SPACING.lg,
-        width: 64,
-        height: 64,
-        borderRadius: 32,
-        backgroundColor: COLORS.primary,
-        justifyContent: 'center',
-        alignItems: 'center',
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.3,
-        shadowRadius: 8,
-        elevation: 8,
+    itemImageContainer: {
+        height: 140,
+        position: 'relative',
     },
-    creatorRow: {
-        flexDirection: 'row',
-        alignItems: 'center',
+    itemImage: {
+        width: '100%',
+        height: '100%',
     },
-    creatorLabel: {
-        fontSize: FONT_SIZES.sm,
-        fontWeight: '500',
-    },
-    creatorName: {
-        fontSize: FONT_SIZES.sm,
-        fontWeight: '700',
-    },
-    headerReactions: {
-        flexDirection: 'row',
-        flexWrap: 'wrap',
-        gap: 6,
-        marginTop: 10,
-    },
-    headerReactionBadge: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: 4,
-        backgroundColor: 'rgba(255,255,255,0.2)',
-        paddingHorizontal: 8,
-        paddingVertical: 4,
-        borderRadius: 12,
-    },
-    headerReactionEmoji: {
-        fontSize: 14,
-    },
-    headerReactionCount: {
-        fontSize: 12,
-        fontWeight: '700',
-        color: COLORS.white,
-    },
-    unreadBadge: {
+    itemBadgeContainer: {
         position: 'absolute',
         top: 8,
         right: 8,
-        width: 8,
-        height: 8,
-        borderRadius: 4,
-        backgroundColor: COLORS.error,
-        borderWidth: 1,
-        borderColor: COLORS.white,
     },
+    itemContent: {
+        padding: 12,
+    },
+    itemTitle: {
+        marginBottom: 4,
+        height: 40,
+    },
+    fundingContainer: {
+        marginTop: 8,
+    },
+    fundingBarBg: {
+        height: 4,
+        backgroundColor: gray[200],
+        borderRadius: 2,
+        marginBottom: 4,
+        overflow: 'hidden',
+    },
+    fundingBarFill: {
+        height: '100%',
+        backgroundColor: brand.honeyGlow,
+    },
+    fabContainer: {
+        position: 'absolute',
+        bottom: 30, // Above tab bar if present, or just bottom
+        left: 0,
+        right: 0,
+        alignItems: 'center',
+        zIndex: 100,
+    },
+    fab: {
+        width: 160,
+        shadowColor: brand.honeyGlow,
+        shadowOffset: { width: 0, height: 8 },
+        shadowOpacity: 0.3,
+        shadowRadius: 12,
+        elevation: 8,
+    }
 });

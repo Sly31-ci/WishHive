@@ -7,6 +7,7 @@
  * - Animations fluides
  */
 
+import { StatusBar } from 'expo-status-bar';
 import React, { useEffect, useState } from 'react';
 import {
     View,
@@ -18,18 +19,7 @@ import {
     Alert,
 } from 'react-native';
 import { router } from 'expo-router';
-import {
-    LogOut,
-    Settings,
-    Award,
-    TrendingUp,
-    Sparkles,
-    User as UserIcon,
-    Package,
-    Camera,
-    ChevronRight,
-    Store,
-} from 'lucide-react-native';
+import { Plus, Calendar, Eye, Trash2, Camera, Settings, Store, Package, LogOut, ChevronRight, User as UserIcon, Heart, Sparkles, Trophy, TrendingUp, Award } from 'lucide-react-native';
 import { SvgUri } from 'react-native-svg';
 import Animated, { FadeInDown, FadeIn } from 'react-native-reanimated';
 import { SimpleAvatarPicker } from '@/components/SimpleAvatarPicker';
@@ -171,201 +161,135 @@ export default function ProfileScreen() {
     };
 
     return (
-        <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
-            {/* Header avec Avatar Géant */}
-            <Animated.View entering={FadeIn.duration(400)} style={styles.header}>
-                <TouchableOpacity
-                    style={styles.avatarContainer}
-                    onPress={() => setShowAvatarPicker(true)}
-                    activeOpacity={0.8}
-                >
-                    {profile?.avatar_url ? (
-                        (profile.avatar_url as string).includes('dicebear.com') ? (
-                            <View style={[styles.avatar, { overflow: 'hidden' }]}>
-                                <SvgUri uri={profile.avatar_url as string} width="100%" height="100%" />
-                            </View>
-                        ) : (
-                            <Image
-                                source={{ uri: profile.avatar_url }}
-                                style={styles.avatar}
-                            />
-                        )
-                    ) : (
-                        <View style={styles.avatarPlaceholder}>
-                            <UserIcon size={56} color={COLORS.white} />
-                        </View>
-                    )}
-                    <View style={styles.editBadge}>
-                        <Camera size={16} color={COLORS.white} />
-                    </View>
-                </TouchableOpacity>
+        <View style={styles.container}>
+            <StatusBar style="light" backgroundColor="#7F5BFF" translucent={false} />
 
-                {isEditing ? (
-                    <Animated.View entering={FadeIn.duration(200)} style={styles.editForm}>
-                        <Input
-                            label="Username"
-                            value={editUsername}
-                            onChangeText={setEditUsername}
-                            placeholder="Your username"
-                            containerStyle={styles.editInput}
-                        />
-                        <Input
-                            label="Bio"
-                            value={editBio}
-                            onChangeText={setEditBio}
-                            placeholder="Tell us about yourself..."
-                            multiline
-                            numberOfLines={2}
-                            containerStyle={styles.editInput}
-                        />
-                        <View style={styles.editActions}>
-                            <Button
-                                title="Cancel"
-                                onPress={() => setIsEditing(false)}
-                                variant="ghost"
-                                size="sm"
-                            />
-                            <Button
-                                title="Save"
-                                onPress={handleSaveProfile}
-                                loading={saving}
-                                size="sm"
-                            />
-                        </View>
-                    </Animated.View>
-                ) : (
-                    <Animated.View entering={FadeInDown.delay(100).springify()} style={styles.userInfo}>
-                        <Text style={styles.username}>@{profile?.username}</Text>
-                        {profile?.bio && <Text style={styles.bio}>{profile.bio}</Text>}
-                        <TouchableOpacity onPress={handleStartEditing} style={styles.editProfileButton}>
-                            <Text style={styles.editProfileText}>Edit Profile</Text>
+            {/* Header with improved height for overlap */}
+            <View style={styles.header}>
+                <Text style={styles.headerTitle}>Profile</Text>
+            </View>
+
+            <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
+                {/* Floating Profile Card */}
+                <View style={styles.profileCard}>
+                    <View style={styles.profileHeader}>
+                        <TouchableOpacity onPress={() => setShowAvatarPicker(true)}>
+                            {profile?.avatar_url ? (
+                                <Image
+                                    source={{ uri: profile.avatar_url }}
+                                    style={styles.avatar}
+                                />
+                            ) : (
+                                <View style={styles.avatarPlaceholder}>
+                                    <UserIcon size={40} color={COLORS.white} />
+                                </View>
+                            )}
+                            <View style={styles.editBadge}>
+                                <Camera size={12} color={COLORS.white} />
+                            </View>
                         </TouchableOpacity>
-                    </Animated.View>
-                )}
 
-                {/* Stats Inline - Sur une seule ligne */}
-                <Animated.View entering={FadeInDown.delay(200).springify()} style={styles.statsContainer}>
-                    <View style={styles.statItem}>
-                        <View style={styles.statIconContainer}>
-                            <Sparkles size={20} color={COLORS.primary} />
+                        <View style={styles.profileInfo}>
+                            <Text style={styles.username}>@{profile?.username}</Text>
+                            <Text style={styles.userEmail}>{user?.email}</Text>
                         </View>
-                        <Text style={styles.statValue}>{profile?.points || 0}</Text>
-                        <Text style={styles.statLabel}>Points</Text>
                     </View>
 
-                    <View style={styles.statDivider} />
-
-                    <View style={styles.statItem}>
-                        <View style={styles.statIconContainer}>
-                            <TrendingUp size={20} color={COLORS.success} />
+                    <View style={styles.statsRow}>
+                        <View style={styles.statItem}>
+                            <Text style={styles.statValue}>{profile?.points || 0}</Text>
+                            <Text style={styles.statLabel}>Points</Text>
                         </View>
-                        <Text style={styles.statValue}>Level {profile?.level || 1}</Text>
-                        <Text style={styles.statLabel}>Current</Text>
-                    </View>
-
-                    <View style={styles.statDivider} />
-
-                    <View style={styles.statItem}>
-                        <View style={styles.statIconContainer}>
-                            <Award size={20} color={COLORS.accent} />
+                        <View style={styles.statDivider} />
+                        <View style={styles.statItem}>
+                            <Text style={styles.statValue}>{profile?.level || 1}</Text>
+                            <Text style={styles.statLabel}>Level</Text>
                         </View>
-                        <Text style={styles.statValue}>{badges.length}</Text>
-                        <Text style={styles.statLabel}>Badges</Text>
+                        <View style={styles.statDivider} />
+                        <View style={styles.statItem}>
+                            <Text style={styles.statValue}>{badges.length}</Text>
+                            <Text style={styles.statLabel}>Badges</Text>
+                        </View>
                     </View>
-                </Animated.View>
-            </Animated.View>
+                </View>
 
-            <View style={styles.content}>
-                {/* Badges Section - Ultra Simplifié (3 max, horizontal) */}
-                {badges.length > 0 && (
-                    <Animated.View entering={FadeInDown.delay(300).springify()}>
-                        <Card style={styles.section} padding="lg">
-                            <View style={styles.sectionHeader}>
-                                <Award size={18} color={COLORS.primary} />
-                                <Text style={styles.sectionTitle}>Latest Achievements</Text>
-                            </View>
-
-                            <View style={styles.badgesRow}>
-                                {badges.map((userBadge, index) => (
-                                    <Animated.View
-                                        key={userBadge.id}
-                                        entering={FadeInDown.delay(350 + index * 50).springify()}
-                                        style={styles.badgeItem}
-                                    >
-                                        <View
-                                            style={[
-                                                styles.badgeIcon,
-                                                {
-                                                    backgroundColor: tierColors[userBadge.badges.tier] + '20',
-                                                },
-                                            ]}
-                                        >
-                                            <Award
-                                                size={20}
-                                                color={tierColors[userBadge.badges.tier]}
-                                            />
-                                        </View>
-                                        <Text style={styles.badgeName} numberOfLines={1}>
-                                            {userBadge.badges.name}
-                                        </Text>
-                                    </Animated.View>
-                                ))}
-                            </View>
-                        </Card>
-                    </Animated.View>
-                )}
-
-                {/* Menu simplifié */}
-                <Animated.View entering={FadeInDown.delay(400).springify()}>
-                    <Card style={styles.section} padding="md">
+                {/* Menu Groups */}
+                <View style={styles.sectionContainer}>
+                    <Text style={styles.sectionTitle}>MY ACTIVITY</Text>
+                    <View style={styles.menuCard}>
                         <TouchableOpacity
                             style={styles.menuItem}
-                            onPress={() => router.push('/settings')}
+                            onPress={() => router.push('/wishlists')}
                         >
                             <View style={styles.menuLeft}>
-                                <Settings size={22} color={COLORS.dark} />
-                                <Text style={styles.menuText}>Settings</Text>
+                                <View style={[styles.iconBox, { backgroundColor: '#FFF0F0' }]}>
+                                    <Heart size={20} color={COLORS.primary} />
+                                </View>
+                                <Text style={styles.menuText}>My Wishlists</Text>
                             </View>
                             <ChevronRight size={20} color={COLORS.gray[400]} />
                         </TouchableOpacity>
 
-                        <TouchableOpacity
-                            style={styles.menuItem}
-                            onPress={() => router.push('/seller-dashboard')}
-                        >
-                            <View style={styles.menuLeft}>
-                                <Store size={22} color={COLORS.dark} />
-                                <Text style={styles.menuText}>Seller Dashboard</Text>
-                            </View>
-                            <ChevronRight size={20} color={COLORS.gray[400]} />
-                        </TouchableOpacity>
+                        <View style={styles.divider} />
 
                         <TouchableOpacity
                             style={styles.menuItem}
                             onPress={() => router.push('/orders')}
                         >
                             <View style={styles.menuLeft}>
-                                <Package size={22} color={COLORS.dark} />
+                                <View style={[styles.iconBox, { backgroundColor: '#F0F9FF' }]}>
+                                    <Package size={20} color={COLORS.info || '#00B0FF'} />
+                                </View>
                                 <Text style={styles.menuText}>My Orders</Text>
                             </View>
                             <ChevronRight size={20} color={COLORS.gray[400]} />
                         </TouchableOpacity>
+                    </View>
+                </View>
 
+                <View style={styles.sectionContainer}>
+                    <Text style={styles.sectionTitle}>ACCOUNT</Text>
+                    <View style={styles.menuCard}>
                         <TouchableOpacity
-                            style={[styles.menuItem, styles.menuItemLast]}
-                            onPress={handleSignOut}
+                            style={styles.menuItem}
+                            onPress={() => router.push('/seller-dashboard')}
                         >
                             <View style={styles.menuLeft}>
-                                <LogOut size={22} color={COLORS.error} />
-                                <Text style={[styles.menuText, styles.menuTextDanger]}>
-                                    Sign Out
-                                </Text>
+                                <View style={[styles.iconBox, { backgroundColor: '#F0FFF4' }]}>
+                                    <Store size={20} color={COLORS.success || '#00C853'} />
+                                </View>
+                                <Text style={styles.menuText}>Seller Dashboard</Text>
                             </View>
                             <ChevronRight size={20} color={COLORS.gray[400]} />
                         </TouchableOpacity>
-                    </Card>
-                </Animated.View>
-            </View>
+
+                        <View style={styles.divider} />
+
+                        <TouchableOpacity
+                            style={styles.menuItem}
+                            onPress={() => router.push('/settings')}
+                        >
+                            <View style={styles.menuLeft}>
+                                <View style={[styles.iconBox, { backgroundColor: '#F3F4F6' }]}>
+                                    <Settings size={20} color={COLORS.dark} />
+                                </View>
+                                <Text style={styles.menuText}>Settings</Text>
+                            </View>
+                            <ChevronRight size={20} color={COLORS.gray[400]} />
+                        </TouchableOpacity>
+                    </View>
+                </View>
+
+                <TouchableOpacity
+                    style={styles.signOutButton}
+                    onPress={handleSignOut}
+                >
+                    <LogOut size={20} color={COLORS.error} />
+                    <Text style={styles.signOutText}>Sign Out</Text>
+                </TouchableOpacity>
+
+                <View style={{ height: 40 }} />
+            </ScrollView>
 
             <SimpleAvatarPicker
                 visible={showAvatarPicker}
@@ -373,38 +297,59 @@ export default function ProfileScreen() {
                 onClose={() => setShowAvatarPicker(false)}
                 onSelect={handleAvatarUpdate}
             />
-        </ScrollView>
+        </View>
     );
 }
 
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: COLORS.light,
+        backgroundColor: COLORS.background || '#F7F8FA', // Slightly gray background for card contrast
     },
     header: {
-        backgroundColor: COLORS.white,
-        paddingTop: SPACING.xxl,
-        paddingBottom: SPACING.xl,
         paddingHorizontal: SPACING.lg,
-        alignItems: 'center',
-        borderBottomWidth: 1,
-        borderBottomColor: COLORS.gray[100],
+        paddingTop: SPACING.xxl + 24,
+        paddingBottom: 60, // Extra space for overlap
+        backgroundColor: '#7F5BFF',
     },
-    avatarContainer: {
+    headerTitle: {
+        fontSize: FONT_SIZES.xxl,
+        fontWeight: '700',
+        color: 'white',
+    },
+    scrollView: {
+        flex: 1,
+    },
+    scrollContent: {
+        paddingHorizontal: SPACING.lg,
+        paddingBottom: SPACING.xxl,
+    },
+    profileCard: {
+        backgroundColor: COLORS.white,
+        borderRadius: BORDER_RADIUS.lg,
+        padding: SPACING.lg,
+        marginTop: -40, // Overlap header
+        marginBottom: SPACING.xl,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.1,
+        shadowRadius: 8,
+        elevation: 4,
+    },
+    profileHeader: {
+        flexDirection: 'row',
+        alignItems: 'center',
         marginBottom: SPACING.lg,
     },
     avatar: {
-        width: 120,
-        height: 120,
-        borderRadius: 60,
-        borderWidth: 4,
-        borderColor: COLORS.primary,
+        width: 72,
+        height: 72,
+        borderRadius: 36,
     },
     avatarPlaceholder: {
-        width: 120,
-        height: 120,
-        borderRadius: 60,
+        width: 72,
+        height: 72,
+        borderRadius: 36,
         backgroundColor: COLORS.primary,
         justifyContent: 'center',
         alignItems: 'center',
@@ -414,151 +359,114 @@ const styles = StyleSheet.create({
         bottom: 0,
         right: 0,
         backgroundColor: COLORS.primary,
-        padding: 8,
+        padding: 6,
         borderRadius: BORDER_RADIUS.full,
-        borderWidth: 3,
+        borderWidth: 2,
         borderColor: COLORS.white,
     },
-    userInfo: {
-        alignItems: 'center',
-        width: '100%',
+    profileInfo: {
+        marginLeft: SPACING.md,
+        flex: 1,
     },
     username: {
-        fontSize: FONT_SIZES.xxl,
-        fontWeight: '700',
-        color: COLORS.dark,
-        marginBottom: SPACING.xs,
-    },
-    bio: {
-        fontSize: FONT_SIZES.md,
-        color: COLORS.gray[600],
-        textAlign: 'center',
-        marginBottom: SPACING.md,
-        lineHeight: 22,
-    },
-    editProfileButton: {
-        paddingVertical: SPACING.sm,
-        paddingHorizontal: SPACING.lg,
-        borderRadius: BORDER_RADIUS.full,
-        backgroundColor: COLORS.gray[100],
-        marginTop: SPACING.xs,
-    },
-    editProfileText: {
-        fontSize: FONT_SIZES.sm,
-        color: COLORS.gray[600],
-        fontWeight: '600',
-    },
-    editForm: {
-        width: '100%',
-    },
-    editInput: {
-        marginBottom: SPACING.md,
-    },
-    editActions: {
-        flexDirection: 'row',
-        justifyContent: 'center',
-        gap: SPACING.md,
-        marginTop: SPACING.sm,
-    },
-    statsContainer: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'center',
-        gap: SPACING.lg,
-        marginTop: SPACING.lg,
-        paddingTop: SPACING.lg,
-        borderTopWidth: 1,
-        borderTopColor: COLORS.gray[100],
-        width: '100%',
-    },
-    statItem: {
-        alignItems: 'center',
-        minWidth: 80,
-    },
-    statIconContainer: {
-        marginBottom: SPACING.xs,
-    },
-    statValue: {
         fontSize: FONT_SIZES.xl,
         fontWeight: '700',
         color: COLORS.dark,
-        marginBottom: SPACING.xxs,
+    },
+    userEmail: {
+        fontSize: FONT_SIZES.sm,
+        color: COLORS.gray[500],
+        marginTop: 2,
+    },
+    statsRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        paddingTop: SPACING.md,
+        borderTopWidth: 1,
+        borderTopColor: COLORS.gray[100],
+    },
+    statItem: {
+        alignItems: 'center',
+        flex: 1,
+    },
+    statValue: {
+        fontSize: FONT_SIZES.lg,
+        fontWeight: '700',
+        color: COLORS.dark,
     },
     statLabel: {
         fontSize: FONT_SIZES.xs,
         color: COLORS.gray[500],
         textTransform: 'uppercase',
-        letterSpacing: 0.5,
+        marginTop: 2,
     },
     statDivider: {
         width: 1,
-        height: 32,
+        height: 24,
         backgroundColor: COLORS.gray[200],
     },
-    content: {
-        padding: SPACING.lg,
-    },
-    section: {
+    sectionContainer: {
         marginBottom: SPACING.lg,
     },
-    sectionHeader: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: SPACING.sm,
-        marginBottom: SPACING.md,
-    },
     sectionTitle: {
-        fontSize: FONT_SIZES.md,
-        fontWeight: '600',
-        color: COLORS.dark,
-    },
-    badgesRow: {
-        flexDirection: 'row',
-        gap: SPACING.md,
-        flexWrap: 'wrap',
-    },
-    badgeItem: {
-        alignItems: 'center',
-        gap: SPACING.xs,
-        flex: 1,
-        minWidth: 80,
-        maxWidth: 100,
-    },
-    badgeIcon: {
-        width: 48,
-        height: 48,
-        borderRadius: BORDER_RADIUS.full,
-        justifyContent: 'center',
-        alignItems: 'center',
-    },
-    badgeName: {
         fontSize: FONT_SIZES.xs,
-        fontWeight: '600',
-        color: COLORS.dark,
-        textAlign: 'center',
+        fontWeight: '700',
+        color: COLORS.gray[500],
+        marginBottom: SPACING.xs,
+        marginLeft: SPACING.xs,
+        letterSpacing: 1,
+    },
+    menuCard: {
+        backgroundColor: COLORS.white,
+        borderRadius: BORDER_RADIUS.md,
+        overflow: 'hidden',
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.05,
+        shadowRadius: 4,
+        elevation: 2,
     },
     menuItem: {
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'space-between',
-        paddingVertical: SPACING.md,
-        borderBottomWidth: 1,
-        borderBottomColor: COLORS.gray[100],
-    },
-    menuItemLast: {
-        borderBottomWidth: 0,
+        padding: SPACING.md,
+        backgroundColor: COLORS.white,
     },
     menuLeft: {
         flexDirection: 'row',
         alignItems: 'center',
         gap: SPACING.md,
     },
+    iconBox: {
+        width: 36,
+        height: 36,
+        borderRadius: 18,
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
     menuText: {
         fontSize: FONT_SIZES.md,
         color: COLORS.dark,
         fontWeight: '500',
     },
-    menuTextDanger: {
+    divider: {
+        height: 1,
+        backgroundColor: COLORS.gray[50],
+        marginLeft: 56, // Align with text
+    },
+    signOutButton: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: SPACING.sm,
+        padding: SPACING.md,
+        marginTop: SPACING.sm,
+    },
+    signOutText: {
+        fontSize: FONT_SIZES.md,
         color: COLORS.error,
+        fontWeight: '600',
     },
 });

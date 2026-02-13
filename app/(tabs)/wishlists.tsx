@@ -1,3 +1,4 @@
+import { StatusBar } from 'expo-status-bar';
 import React, { useEffect, useState } from 'react';
 import {
   View,
@@ -260,6 +261,7 @@ export default function WishlistsScreen() {
   if (loading) {
     return (
       <View style={styles.container}>
+        <StatusBar style="light" backgroundColor="#7F5BFF" translucent={false} />
         <View style={styles.header}>
           <Text style={styles.headerTitle}>My Wishlists</Text>
           <TouchableOpacity
@@ -276,6 +278,7 @@ export default function WishlistsScreen() {
 
   return (
     <View style={styles.container}>
+      <StatusBar style="light" backgroundColor="#7F5BFF" translucent={false} />
       <View style={styles.header}>
         <Text style={styles.headerTitle}>My Wishlists</Text>
         <TouchableOpacity
@@ -357,15 +360,14 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     padding: SPACING.lg,
-    paddingTop: SPACING.xxl,
-    backgroundColor: COLORS.white,
-    borderBottomWidth: 1,
-    borderBottomColor: COLORS.gray[200],
+    paddingTop: SPACING.xxl + 24, // Increased spacing to account for status bar and header height match
+    backgroundColor: '#7F5BFF',
+    borderBottomWidth: 0,
   },
   headerTitle: {
     fontSize: FONT_SIZES.xxl,
     fontWeight: '700',
-    color: COLORS.dark,
+    color: 'white',
   },
   createButton: {
     width: 48,

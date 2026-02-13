@@ -1,8 +1,9 @@
 import React, { useState, useRef } from 'react';
 import { View, StyleSheet, FlatList, ScrollView, RefreshControl } from 'react-native'; // FlashList later for perf
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
 import { FlatList as FlashList } from 'react-native';
+import { useRouter } from 'expo-router';
 // import { FlashList } from '@shopify/flash-list';
 import {
     Bell,
@@ -10,19 +11,20 @@ import {
     Sparkles
 } from 'lucide-react-native';
 
-import { ThemeV2, brand, light, spacing, glass } from '@/theme/v2';
+import { ThemeV2, brand, light, spacing, glass, gray } from '@/theme/v2';
 import TextV2 from '@/components/v2/TextV2';
 import ButtonV2 from '@/components/v2/ButtonV2';
 import TabBarIcon from '@/components/v2/navigation/TabBarIcon';
 
-import StoriesRail from '@/components/v2/feed/StoriesRail';
+// import StoriesRail from '@/components/v2/feed/StoriesRail';
 import FeedCardV2, { FeedItem } from '@/components/v2/feed/FeedCardV2';
 
-import { MOCK_STORIES, MOCK_FEED } from '@/constants/mocks';
+import { MOCK_FEED } from '@/constants/mocks';
 
 export default function HomeV2() {
+    const router = useRouter();
     const [refreshing, setRefreshing] = useState(false);
-    const [activeTab, setActiveTab] = useState<'foryou' | 'following'>('foryou');
+    const insets = useSafeAreaInsets();
 
     const onRefresh = React.useCallback(() => {
         setRefreshing(true);
@@ -32,51 +34,23 @@ export default function HomeV2() {
     }, []);
 
     const renderHeader = () => (
-        <View>
-            <StoriesRail
-                stories={MOCK_STORIES}
-                onStoryPress={(id) => console.log('Story press', id)}
-                onAddStory={() => console.log('Add story')}
-            />
-            {/* Filter Chips could go here */}
-        </View>
+        <View style={{ height: 16 }} />
     );
 
     return (
-        <SafeAreaView style={styles.container} edges={['top']}>
-            <StatusBar style="dark" />
+        <View style={styles.container}>
+            <StatusBar style="light" backgroundColor="#7F5BFF" translucent={false} />
 
             {/* Top Bar Floating */}
-            <View style={styles.topBar}>
+            <View style={[styles.topBar, { paddingTop: 80 }]}>
                 <View style={styles.logoContainer}>
-                    <TextV2 variant="h3" gradient style={{ fontSize: 24 }}>WishHive</TextV2>
-                </View>
-
-                {/* Feed Toggle */}
-                <View style={styles.tabToggle}>
-                    <TextV2
-                        variant="h4"
-                        color={activeTab === 'foryou' ? 'primary' : 'tertiary'}
-                        onPress={() => setActiveTab('foryou')}
-                        style={{ marginRight: 16 }}
-                    >
-                        For You
-                    </TextV2>
-                    <View style={styles.divider} />
-                    <TextV2
-                        variant="h4"
-                        color={activeTab === 'following' ? 'primary' : 'tertiary'}
-                        onPress={() => setActiveTab('following')}
-                        style={{ marginLeft: 16 }}
-                    >
-                        Following
-                    </TextV2>
+                    <TextV2 variant="h3" style={{ fontSize: 24, color: '#FFB937' }}>WishHive</TextV2>
                 </View>
 
                 {/* Actions Right */}
                 <View style={styles.topActions}>
-                    <Search color={light.text.primary} size={24} style={{ marginRight: 16 }} />
-                    <Bell color={light.text.primary} size={24} />
+                    <Search color="white" size={24} style={{ marginRight: 16 }} />
+                    <Bell color="white" size={24} />
                     <View style={styles.badge} />
                 </View>
             </View>
@@ -87,13 +61,13 @@ export default function HomeV2() {
                 renderItem={({ item }) => (
                     <FeedCardV2
                         item={item}
-                        onPress={() => console.log('Press card', item.id)}
+                        onPress={() => router.push(`/wishlists/${item.id}`)}
                         onLike={() => console.log('Like', item.id)}
                         onComment={() => console.log('Comment', item.id)}
                         onShare={() => console.log('Share', item.id)}
                     />
                 )}
-                estimatedItemSize={450}
+                // estimatedItemSize={450} // Removed for FlatList
                 ListHeaderComponent={renderHeader}
                 showsVerticalScrollIndicator={false}
                 contentContainerStyle={{ paddingBottom: 100 }} // Space for TabBar
@@ -102,7 +76,7 @@ export default function HomeV2() {
                 }
             />
 
-        </SafeAreaView>
+        </View>
     );
 }
 
@@ -115,24 +89,13 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'space-between',
-        paddingHorizontal: spacing.lg,
-        paddingVertical: spacing.sm,
-        backgroundColor: light.background.primary,
+        paddingHorizontal: 16,
+        paddingVertical: 12,
+        backgroundColor: '#7F5BFF',
         zIndex: 10,
     },
     logoContainer: {
         flex: 1,
-    },
-    tabToggle: {
-        flex: 2,
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'center',
-    },
-    divider: {
-        width: 1,
-        height: 16,
-        backgroundColor: light.border.default,
     },
     topActions: {
         flex: 1,
@@ -148,7 +111,7 @@ const styles = StyleSheet.create({
         height: 10,
         borderRadius: 5,
         backgroundColor: brand.honeyGlow,
-        borderWidth: 1.5,
-        borderColor: light.background.primary,
+        borderWidth: 2,
+        borderColor: '#fff',
     }
 });

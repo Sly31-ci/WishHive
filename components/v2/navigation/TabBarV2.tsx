@@ -1,16 +1,7 @@
-/**
- * 🗺️ TabBarV2 - Barre de Navigation Premium
- * 
- * Features:
- * - Glassmorphism background
- * - Forme arrondie flottante (floating tab bar)
- * - Espace pour le FAB central
- * - Ombres douces
- */
-
 import React from 'react';
 import { View, StyleSheet, Platform, Dimensions, Pressable } from 'react-native';
 import { BottomTabBarProps } from '@react-navigation/bottom-tabs';
+import { router } from 'expo-router';
 import { BlurView } from 'expo-blur';
 import { light, shadowsLight, radius, spacing } from '@/theme/v2';
 import TabBarIcon from './TabBarIcon';
@@ -30,7 +21,7 @@ export default function TabBarV2({ state, descriptors, navigation }: BottomTabBa
     return (
         <View style={styles.container}>
             {/* Le FAB est rendu en dehors du flux normal de la row des tabs */}
-            <CustomFAB onPress={() => navigation.navigate('add')} />
+            <CustomFAB onPress={() => router.push('/wishlists/create')} />
 
             <View style={styles.tabBarBackground}>
                 {/* Glassmorphism Effect */}

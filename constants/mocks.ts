@@ -99,3 +99,64 @@ export const MOCK_NOTIFICATIONS = [
     { id: '2', type: 'comment', user: 'Sarah Jenkins', content: 'commented: "Love this!"', time: '15m' },
     { id: '3', type: 'follow', user: 'Jessica & Tom', content: 'started following you', time: '1h' },
 ];
+
+export const MOCK_WISHLIST_ITEMS = [
+    {
+        id: '1',
+        name: 'Sony WH-1000XM5',
+        price: 349.99,
+        image: 'https://images.unsplash.com/photo-1618366712010-f4ae9c647dcb?q=80&w=1000&auto=format&fit=crop',
+        priority: 'high', // high, medium, low
+        status: 'open',
+        url: 'https://amazon.com/...',
+        shared_with: []
+    },
+    {
+        id: '2',
+        name: 'Herman Miller Aeron',
+        price: 1250.00,
+        image: 'https://images.unsplash.com/photo-1505843490538-5133c6c7d0e1?q=80&w=1000&auto=format&fit=crop',
+        priority: 'high',
+        status: 'partial', // partially funded
+        fundedAmount: 450,
+        shared_with: []
+    },
+    {
+        id: '3',
+        name: 'Mechanical Keyboard',
+        price: 159.00,
+        image: 'https://images.unsplash.com/photo-1595225476474-87563907a212?q=80&w=1000&auto=format&fit=crop',
+        priority: 'medium',
+        status: 'reserved',
+        reservedBy: { name: 'Sarah', avatar: 'https://i.pravatar.cc/150?u=a042581f4e29026024d' },
+        shared_with: []
+    },
+    {
+        id: '4',
+        name: '4K Monitor',
+        price: 499.00,
+        image: 'https://images.unsplash.com/photo-1527443224154-c4a3942d3acf?q=80&w=1000&auto=format&fit=crop',
+        priority: 'medium',
+        status: 'open',
+        shared_with: []
+    },
+    {
+        id: '5',
+        name: 'Desk Lamp',
+        price: 45.00,
+        image: 'https://images.unsplash.com/photo-1534073828943-f801091a7d58?q=80&w=1000&auto=format&fit=crop',
+        priority: 'low',
+        status: 'open',
+        shared_with: []
+    },
+    {
+        id: '6',
+        name: 'Ergonomic Mouse',
+        price: 89.00,
+        image: 'https://images.unsplash.com/photo-1527864550417-7fd91fc51a46?q=80&w=1000&auto=format&fit=crop',
+        priority: 'low',
+        status: 'purchased',
+        purchasedBy: { name: 'Mike', avatar: 'https://i.pravatar.cc/150?u=a042581f4e29026704d' },
+        shared_with: []
+    },
+];
