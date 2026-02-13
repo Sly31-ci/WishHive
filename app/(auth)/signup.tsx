@@ -26,22 +26,28 @@ export default function SignupScreen() {
   const [error, setError] = useState('');
 
   const handleSignup = async () => {
-    if (!username || !email || !password) {
-      setError('Remplis tous les champs, petite abeille ! 🐝');
+    if (!username.trim() || !email.trim() || !password) {
+      setError('Remplis tous les champs pour créer ton compte.');
+      return;
+    }
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email.trim())) {
+      setError('Entre une adresse email valide.');
       return;
     }
 
     if (password.length < 6) {
-      setError('Ton mot de passe doit faire au moins 6 caractères. 🔒');
+      setError('Ton mot de passe doit contenir au moins 6 caractères.');
       return;
     }
 
     try {
       setLoading(true);
       setError('');
-      const response = await signUp(email, password, username);
+      const response = await signUp(email.trim(), password, username.trim());
 
-      // If email confirmation is enabled, session will be null
+      // Si la confirmation email est activée, la session sera null
       if (!response.data.session) {
         setSuccess(true);
       } else {
@@ -59,9 +65,9 @@ export default function SignupScreen() {
       <View style={styles.container}>
         <View style={styles.scrollContent}>
           <View style={styles.header}>
-            <Text style={styles.logo}>Vérifie tes emails ! 📧</Text>
+            <Text style={styles.logo}>Vérifie tes emails 📧</Text>
             <Text style={styles.tagline}>
-              Un lien magique t'attend pour activer ta ruche. Une fois cliqué, tu pourras te connecter ! 🍯
+              Nous t&apos;avons envoyé un lien pour activer ton compte. Clique dessus puis reviens te connecter.
             </Text>
           </View>
           <Button
@@ -85,13 +91,13 @@ export default function SignupScreen() {
       >
         <View style={styles.header}>
           <Text style={styles.logo}>WishHive</Text>
-          <Text style={styles.tagline}>Join the Wishing Community</Text>
+          <Text style={styles.tagline}>Crée ton compte et ta première wishlist.</Text>
         </View>
 
         <View style={styles.form}>
           <Input
-            label="Username"
-            placeholder="johndoe"
+            label="Nom d'utilisateur"
+            placeholder="ex: johndoe"
             value={username}
             onChangeText={setUsername}
             autoCapitalize="none"
@@ -100,7 +106,7 @@ export default function SignupScreen() {
 
           <Input
             label="Email"
-            placeholder="your@email.com"
+            placeholder="toi@email.com"
             value={email}
             onChangeText={setEmail}
             autoCapitalize="none"
@@ -109,7 +115,7 @@ export default function SignupScreen() {
           />
 
           <Input
-            label="Password"
+            label="Mot de passe"
             placeholder="••••••••"
             value={password}
             onChangeText={setPassword}
@@ -120,16 +126,16 @@ export default function SignupScreen() {
           {error ? <Text style={styles.error}>{error}</Text> : null}
 
           <Button
-            title="Create Account"
+            title="Créer mon compte"
             onPress={handleSignup}
             loading={loading}
             style={styles.button}
           />
 
           <View style={styles.footer}>
-            <Text style={styles.footerText}>Already have an account? </Text>
+            <Text style={styles.footerText}>Tu as déjà un compte ? </Text>
             <TouchableOpacity onPress={() => router.push('/(auth)/login')}>
-              <Text style={styles.link}>Sign In</Text>
+              <Text style={styles.link}>Se connecter</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -161,6 +167,7 @@ const styles = StyleSheet.create({
   tagline: {
     fontSize: FONT_SIZES.lg,
     color: COLORS.gray[600],
+    textAlign: 'center',
   },
   form: {
     width: '100%',
@@ -171,6 +178,7 @@ const styles = StyleSheet.create({
   error: {
     color: COLORS.error,
     fontSize: FONT_SIZES.sm,
+    marginTop: SPACING.sm,
     marginBottom: SPACING.sm,
     textAlign: 'center',
   },

@@ -2,8 +2,8 @@
 
 Ce document trace la feuille de route du développement de WishHive, de la conception initiale au lancement et aux évolutions futures.
 
-**Dernière mise à jour** : Janvier 2025
-**Statut Global** : 🚀 Phase 5 complétée ! Préparation pour la Phase 6.
+**Dernière mise à jour** : Février 2026
+**Statut Global** : 🚀 Infrastructure locale stable ! Lancement de la Refonte V2.
 
 ---
 
@@ -44,11 +44,13 @@ Ce document trace la feuille de route du développement de WishHive, de la conce
 
 ---
 
-## 🟡 Phase 6 : Économie & Marketplace (En Cours)
-- [ ] **Paiements Réels** : Intégration Stripe (Checkout & Connect)
-- [ ] **Gestion des adresses** : Carnet d'adresses sécurisé pour livraison
-- [ ] **Dashboard Vendeur Pro** : Gestion des stocks et analytics avancés
-- [ ] **Cagnotte V2** : Interface de contribution simplifiée
+## 🟡 Phase 6 : Infrastructure & Refonte V2 (En Cours)
+- [x] **Environnement Local** : Supabase Local (Docker) & Migration Cloud → Local
+- [x] **Dockerisation** : Containerisation complète de l'application Expo
+- [ ] **Design System V2** : Implémentation de la nouvelle identité visuelle "Hive Purple"
+- [ ] **Magic Add V2** : Optimisation de l'ajout d'items par URL (Simplification extrême)
+- [ ] **Social System V2** : Finalisation des notifications et du chat live
+- [ ] **Group Gifting (Cagnotte)** : Refonte de l'interface de contribution
 
 ---
 
@@ -65,12 +67,13 @@ Ce document trace la feuille de route du développement de WishHive, de la conce
 
 | Module | Statut | Note |
 |--------|--------|------|
+| **Infrastructure** | ✅ 100% | Docker + Supabase Local + CI Ready |
 | **Wishlist Creation** | ✅ 100% | Native UI + Custom Types |
 | **Web Viewer** | ✅ 100% | Live sur GitHub Pages |
 | **Deep Linking** | ✅ 100% | Universal & App Links |
-| **Authentication** | ✅ 100% | Supabase Email + Mock Dev |
-| **Marketplace** | 🟡 60% | Browsing OK, Checkout en cours |
-| **Gamification** | ✅ 90% | Points/Badges OK |
+| **Social (Chat/Notifs)**| 🟡 85% | Schémas OK, UI à polir |
+| **Marketplace** | 🟡 50% | Browsing OK, Checkout reporté post-V2 |
+| **Gamification** | ✅ 100% | Points/Badges/Transactions migrés |
 
 ---
 

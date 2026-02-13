@@ -1,94 +1,62 @@
--- Missing tables for complete migration (FIXED to match Cloud schema)
+-- Missing tables for complete migration (MAPPED FROM CLOUD SCHEMA)
 
--- Drop existing tables to recreate with correct schema
 DROP TABLE IF EXISTS chat_reactions CASCADE;
 DROP TABLE IF EXISTS chat_messages CASCADE;
 DROP TABLE IF EXISTS wishlist_interactions CASCADE;
+DROP TABLE IF EXISTS notifications CASCADE;
 
--- 1. wishlist_interactions (comments/reactions on wishlists)
+-- 1. wishlist_interactions
 CREATE TABLE wishlist_interactions (
   id uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
   wishlist_id uuid REFERENCES wishlists(id) ON DELETE CASCADE NOT NULL,
-  author_id uuid REFERENCES profiles(id) ON DELETE CASCADE, -- FIXED: was 'user_id'
+  item_id uuid DEFAULT NULL, -- Optional relation to a specific item
   interaction_type text NOT NULL,
   content text,
+  author_name text,
+  author_id uuid REFERENCES profiles(id) ON DELETE SET NULL,
   is_anonymous boolean DEFAULT false NOT NULL,
   created_at timestamptz DEFAULT now() NOT NULL,
   CONSTRAINT interaction_type_check CHECK (interaction_type IN ('comment', 'reaction'))
 );
 
 ALTER TABLE wishlist_interactions ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Public select" ON wishlist_interactions FOR SELECT USING (true);
+CREATE POLICY "Auth insert" ON wishlist_interactions FOR INSERT TO authenticated WITH CHECK (true);
 
-CREATE POLICY "Users can view interactions on accessible wishlists"
-  ON wishlist_interactions FOR SELECT
-  USING (
-    wishlist_id IN (
-      SELECT id FROM wishlists WHERE privacy = 'public'
-    )
-    OR wishlist_id IN (
-      SELECT id FROM wishlists WHERE owner_id = auth.uid()
-    )
-  );
-
-CREATE POLICY "Users can create interactions"
-  ON wishlist_interactions FOR INSERT
-  TO authenticated
-  WITH CHECK (true);
-
-CREATE INDEX idx_wishlist_interactions_wishlist ON wishlist_interactions(wishlist_id);
-CREATE INDEX idx_wishlist_interactions_author ON wishlist_interactions(author_id);
-
--- 2. chat_messages (direct messages between users)
+-- 2. chat_messages (Wishlist-based chat)
 CREATE TABLE chat_messages (
   id uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
+  wishlist_id uuid REFERENCES wishlists(id) ON DELETE CASCADE NOT NULL,
   sender_id uuid REFERENCES profiles(id) ON DELETE CASCADE NOT NULL,
-  receiver_id uuid REFERENCES profiles(id) ON DELETE CASCADE NOT NULL,
-  content text NOT NULL, -- FIXED: was 'message'
+  content text NOT NULL,
+  parent_id uuid REFERENCES chat_messages(id) ON DELETE CASCADE,
+  mentions jsonb DEFAULT '[]'::jsonb,
   read boolean DEFAULT false NOT NULL,
   created_at timestamptz DEFAULT now() NOT NULL
 );
 
 ALTER TABLE chat_messages ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Public select chat" ON chat_messages FOR SELECT USING (true);
+CREATE POLICY "Auth insert chat" ON chat_messages FOR INSERT TO authenticated WITH CHECK (true);
 
-CREATE POLICY "Users can view own messages"
-  ON chat_messages FOR SELECT
-  TO authenticated
-  USING (sender_id = auth.uid() OR receiver_id = auth.uid());
-
-CREATE POLICY "Users can send messages"
-  ON chat_messages FOR INSERT
-  TO authenticated
-  WITH CHECK (sender_id = auth.uid());
-
-CREATE INDEX idx_chat_messages_sender ON chat_messages(sender_id);
-CREATE INDEX idx_chat_messages_receiver ON chat_messages(receiver_id);
-CREATE INDEX idx_chat_messages_unread ON chat_messages(receiver_id) WHERE read = false;
-
--- 3. chat_reactions (reactions to chat messages)
-CREATE TABLE chat_reactions (
+-- 3. notifications
+CREATE TABLE notifications (
   id uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
-  message_id uuid REFERENCES chat_messages(id) ON DELETE CASCADE NOT NULL,
   user_id uuid REFERENCES profiles(id) ON DELETE CASCADE NOT NULL,
-  emoji text NOT NULL,
+  type text NOT NULL,
+  title text NOT NULL,
+  message text NOT NULL,
+  data jsonb DEFAULT '{}'::jsonb,
+  read boolean DEFAULT false NOT NULL,
   created_at timestamptz DEFAULT now() NOT NULL,
-  UNIQUE(message_id, user_id, emoji)
+  CONSTRAINT notifications_type_check CHECK (type IN ('follow', 'like', 'gift', 'system', 'message', 'view'))
 );
 
-ALTER TABLE chat_reactions ENABLE ROW LEVEL SECURITY;
+ALTER TABLE notifications ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Users can view own notifications" ON notifications FOR SELECT TO authenticated USING (user_id = auth.uid());
+CREATE POLICY "System can insert" ON notifications FOR INSERT TO authenticated WITH CHECK (true);
+CREATE POLICY "Users can update own" ON notifications FOR UPDATE TO authenticated USING (user_id = auth.uid());
 
-CREATE POLICY "Users can view reactions on accessible messages"
-  ON chat_reactions FOR SELECT
-  TO authenticated
-  USING (
-    message_id IN (
-      SELECT id FROM chat_messages 
-      WHERE sender_id = auth.uid() OR receiver_id = auth.uid()
-    )
-  );
-
-CREATE POLICY "Users can add reactions"
-  ON chat_reactions FOR INSERT
-  TO authenticated
-  WITH CHECK (user_id = auth.uid());
-
-CREATE INDEX idx_chat_reactions_message ON chat_reactions(message_id);
+CREATE INDEX idx_wishlist_interactions_wishlist ON wishlist_interactions(wishlist_id);
+CREATE INDEX idx_chat_messages_wishlist ON chat_messages(wishlist_id);
+CREATE INDEX idx_notifications_user_unread ON notifications(user_id) WHERE read = false;

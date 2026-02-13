@@ -27,7 +27,7 @@ export default function ResetPasswordScreen() {
         if (!password || !confirmPassword) {
             showToast({
                 type: 'warning',
-                message: '📝 Please fill in both password fields',
+                message: 'Remplis les deux champs mot de passe.',
             });
             return;
         }
@@ -35,7 +35,7 @@ export default function ResetPasswordScreen() {
         if (password.length < 6) {
             showToast({
                 type: 'warning',
-                message: '🔒 Password must be at least 6 characters',
+                message: 'Le mot de passe doit contenir au moins 6 caractères.',
             });
             return;
         }
@@ -43,7 +43,7 @@ export default function ResetPasswordScreen() {
         if (password !== confirmPassword) {
             showToast({
                 type: 'error',
-                message: '❌ Passwords do not match',
+                message: 'Les mots de passe ne correspondent pas.',
             });
             return;
         }
@@ -59,14 +59,14 @@ export default function ResetPasswordScreen() {
 
             showToast({
                 type: 'success',
-                message: '✅ Password updated successfully!',
+                message: 'Ton mot de passe a bien été mis à jour.',
             });
 
             router.replace('/(tabs)');
         } catch (err: any) {
             showToast({
                 type: 'error',
-                message: err.message || 'Failed to update password. Please try again.',
+                message: err.message || 'Impossible de mettre à jour le mot de passe. Réessaie plus tard.',
             });
         } finally {
             setLoading(false);
@@ -78,8 +78,8 @@ export default function ResetPasswordScreen() {
             <Stack.Screen
                 options={{
                     headerShown: true,
-                    headerTitle: 'Pick a New Password',
-                    headerBackVisible: false, // Prevent going back to forgot password
+                    headerTitle: 'Nouveau mot de passe',
+                    headerBackVisible: false,
                 }}
             />
             <KeyboardAvoidingView
@@ -95,13 +95,13 @@ export default function ResetPasswordScreen() {
                             <ShieldCheck size={48} color={COLORS.primary} />
                         </View>
 
-                        <Text style={styles.title}>Secure your account</Text>
+                        <Text style={styles.title}>Sécurise ton compte</Text>
                         <Text style={styles.subtitle}>
-                            Enter a new secure password for your WishHive account.
+                            Choisis un nouveau mot de passe pour ton compte WishHive.
                         </Text>
 
                         <Input
-                            label="New Password"
+                            label="Nouveau mot de passe"
                             placeholder="••••••••"
                             value={password}
                             onChangeText={setPassword}
@@ -110,7 +110,7 @@ export default function ResetPasswordScreen() {
                         />
 
                         <Input
-                            label="Confirm New Password"
+                            label="Confirme le mot de passe"
                             placeholder="••••••••"
                             value={confirmPassword}
                             onChangeText={setConfirmPassword}
@@ -119,7 +119,7 @@ export default function ResetPasswordScreen() {
                         />
 
                         <Button
-                            title="Update Password"
+                            title="Mettre à jour le mot de passe"
                             onPress={handleUpdatePassword}
                             loading={loading}
                             style={styles.button}
@@ -129,7 +129,7 @@ export default function ResetPasswordScreen() {
                             onPress={() => router.replace('/(auth)/login')}
                             style={styles.cancelLink}
                         >
-                            <Text style={styles.cancelLinkText}>Cancel and return to login</Text>
+                            <Text style={styles.cancelLinkText}>Annuler et revenir à la connexion</Text>
                         </TouchableOpacity>
                     </Card>
                 </ScrollView>

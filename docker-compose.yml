@@ -1,0 +1,21 @@
+services:
+  app:
+    build: .
+    container_name: wishhive-app
+    volumes:
+      - .:/app
+      - /app/node_modules
+    ports:
+      - "8081:8081"
+    environment:
+      - EXPO_DEVTOOLS_LISTEN_ADDRESS=0.0.0.0
+      - REACT_NATIVE_PACKAGER_HOSTNAME=192.168.1.11
+    networks:
+      - supabase_default
+    stdin_open: true
+    tty: true
+    command: npx expo start --host lan
+
+networks:
+  supabase_default:
+    external: true

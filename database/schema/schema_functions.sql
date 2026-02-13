@@ -55,16 +55,16 @@ CREATE OR REPLACE FUNCTION award_points(
 RETURNS void AS $$
 BEGIN
   -- Insert transaction record
-  INSERT INTO transactions (user_id, type, amount, source, reference_id, description)
+  INSERT INTO public.transactions (user_id, type, amount, source, reference_id, description)
   VALUES (p_user_id, 'earn', p_amount, p_source, p_reference_id, p_description);
   
   -- Update user points
-  UPDATE profiles
+  UPDATE public.profiles
   SET points = points + p_amount
   WHERE id = p_user_id;
   
   -- Check if level up is needed (every 100 points = 1 level)
-  UPDATE profiles
+  UPDATE public.profiles
   SET level = (points / 100) + 1
   WHERE id = p_user_id;
 END;
@@ -116,9 +116,12 @@ BEGIN
         JOIN sellers s ON o.seller_id = s.id
         WHERE s.user_id = p_user_id AND o.status = 'delivered';
         IF v_count >= (v_criteria->>'count')::integer THEN
-          INSERT INTO user_badges (user_id, badge_id) VALUES (p_user_id, v_badge.id);
+          INSERT INTO public.user_badges (user_id, badge_id) VALUES (p_user_id, v_badge.id);
           PERFORM award_points(p_user_id, v_badge.points_reward, 'badge_earned', v_badge.id, 'Earned badge: ' || v_badge.name);
         END IF;
+      ELSE
+        -- Unknown action, ignore
+        NULL;
     END CASE;
   END LOOP;
 END;
@@ -138,7 +141,7 @@ $$ LANGUAGE plpgsql SECURITY DEFINER;
 CREATE OR REPLACE FUNCTION handle_new_profile()
 RETURNS TRIGGER AS $$
 BEGIN
-  INSERT INTO profiles (id, username, avatar_url)
+  INSERT INTO public.profiles (id, username, avatar_url)
   VALUES (
     NEW.id,
     COALESCE(NEW.raw_user_meta_data->>'username', 'user_' || substring(NEW.id::text from 1 for 8)),

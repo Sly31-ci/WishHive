@@ -21,7 +21,7 @@ Thank you for your interest in contributing to WishHive! This document provides 
 
 ## Development Setup
 
-See [GUIDE_DEMARRAGE.md](./GUIDE_DEMARRAGE.md) for detailed setup instructions.
+See [README.md](./README.md) for detailed setup instructions using Docker.
 
 ## Code Style
 
@@ -83,9 +83,9 @@ Example: `feat: add wishlist sharing via QR code`
 ## Database Changes
 
 If modifying the database schema:
-1. Create a new migration file in `supabase/migrations/`
-2. Follow naming: `YYYYMMDDHHMMSS_description.sql`
-3. Include both UP and DOWN migrations
+1. Identify the relevant module in `database/schema/` (e.g., `schema_core.sql`)
+2. Add your changes ensuring idempotency (`IF NOT EXISTS`, `CREATE OR REPLACE`)
+3. Document any new RLS policies
 4. Update TypeScript types in `types/database.ts`
 5. Document changes in ARCHITECTURE.md
 

@@ -10,10 +10,10 @@ async function testConnection() {
     console.log('URL:', supabaseUrl);
     console.log('');
 
-    // Test 1: Récupérer les utilisateurs
-    console.log('📋 Test 1: Récupération des utilisateurs');
+    // Test 1: Récupérer les profils
+    console.log('📋 Test 1: Récupération des profils');
     const { data: users, error: usersError } = await supabase
-        .from('users')
+        .from('profiles')
         .select('*');
 
     if (usersError) {
@@ -23,7 +23,7 @@ async function testConnection() {
     } else {
         console.log('✅ Succès! Utilisateurs trouvés:', users.length);
         if (users.length > 0) {
-            console.log('   Premier utilisateur:', users[0].username, '(' + users[0].email + ')');
+            console.log('   Premier profil:', users[0].username);
         }
     }
 
@@ -59,7 +59,7 @@ async function testConnection() {
     } else {
         console.log('✅ Succès! Items trouvés:', items.length);
         if (items.length > 0) {
-            console.log('   Premier item:', items[0].title, '-', items[0].price + '€');
+            console.log('   Premier item:', items[0].custom_title || 'Sans titre');
         }
     }
 

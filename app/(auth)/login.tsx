@@ -25,20 +25,30 @@ export default function LoginScreen() {
   const [loading, setLoading] = useState(false);
 
   const handleLogin = async () => {
-    if (!email || !password) {
+    if (!email.trim() || !password) {
       showToast({
         type: 'warning',
-        message: '📝 Please fill in all fields',
+        message: 'Remplis tous les champs pour te connecter.',
+      });
+      return;
+    }
+
+    // Validation simple d'email pour éviter les fautes grossières
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email.trim())) {
+      showToast({
+        type: 'warning',
+        message: 'Entre une adresse email valide.',
       });
       return;
     }
 
     try {
       setLoading(true);
-      await signIn(email, password);
+      await signIn(email.trim(), password);
       showToast({
         type: 'success',
-        message: '🎉 Welcome back!',
+        message: 'Heureux de te revoir ✨',
         duration: 2000,
       });
       router.replace('/(tabs)');
@@ -63,13 +73,13 @@ export default function LoginScreen() {
       >
         <View style={styles.header}>
           <Text style={styles.logo}>WishHive</Text>
-          <Text style={styles.tagline}>Make Wishes Real</Text>
+          <Text style={styles.tagline}>Connecte-toi pour gérer tes wishlists.</Text>
         </View>
 
         <View style={styles.form}>
           <Input
             label="Email"
-            placeholder="your@email.com"
+            placeholder="toi@email.com"
             value={email}
             onChangeText={setEmail}
             autoCapitalize="none"
@@ -78,7 +88,7 @@ export default function LoginScreen() {
           />
 
           <Input
-            label="Password"
+            label="Mot de passe"
             placeholder="••••••••"
             value={password}
             onChangeText={setPassword}
@@ -90,20 +100,20 @@ export default function LoginScreen() {
             onPress={() => router.push('/(auth)/forgot-password')}
             style={styles.forgotPassword}
           >
-            <Text style={styles.forgotPasswordText}>Forgot password?</Text>
+            <Text style={styles.forgotPasswordText}>Mot de passe oublié ?</Text>
           </TouchableOpacity>
 
           <Button
-            title="Sign In"
+            title="Se connecter"
             onPress={handleLogin}
             loading={loading}
             style={styles.button}
           />
 
           <View style={styles.footer}>
-            <Text style={styles.footerText}>Don't have an account? </Text>
+            <Text style={styles.footerText}>Pas encore de compte ? </Text>
             <TouchableOpacity onPress={() => router.push('/(auth)/signup')}>
-              <Text style={styles.link}>Sign Up</Text>
+              <Text style={styles.link}>Créer un compte</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -135,18 +145,13 @@ const styles = StyleSheet.create({
   tagline: {
     fontSize: FONT_SIZES.lg,
     color: COLORS.gray[600],
+    textAlign: 'center',
   },
   form: {
     width: '100%',
   },
   button: {
     marginTop: SPACING.md,
-  },
-  error: {
-    color: COLORS.error,
-    fontSize: FONT_SIZES.sm,
-    marginBottom: SPACING.sm,
-    textAlign: 'center',
   },
   footer: {
     flexDirection: 'row',

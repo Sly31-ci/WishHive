@@ -55,8 +55,8 @@ Become the reference social app for creating, sharing, and purchasing wishlists 
 ## 🚀 Setup Instructions
 
 ### Prerequisites
-- Node.js 18+ installed
-- Docker Desktop installed (for Supabase Local)
+- Node.js 20+ installed
+- Docker & Docker Compose installed
 - Expo CLI installed (`npm install -g expo-cli`)
 
 ### 1. Clone the Repository
@@ -98,62 +98,52 @@ This will create all 18 tables:
 #### Access Supabase Studio
 Open http://localhost:3000 in your browser to manage your local database.
 
-### 4. Set Environment Variables
-
-Your `.env` file should already be configured for local development:
-
-```env
-EXPO_PUBLIC_SUPABASE_URL=http://localhost:8000
-EXPO_PUBLIC_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
-EXPO_PUBLIC_DEV_MODE=true
-```
-
 ### 5. Start the Development Server
 
-The easiest way to start the project (Database + App) is to use the automated script:
+The easiest way to start the project (Database + App bundle) is Docker:
 
+#### Using Docker (Recommended)
+```bash
+./docker-run.sh
+```
+This script will build the app image, connect it to the Supabase network, and start the development server on port `8081`.
+
+#### Using Local Scripts
 ```bash
 ./start-dev.sh
 ```
-
 This script will:
 1. Start Supabase Local (Docker) if it's not running
 2. Display access URLs for Supabase Studio
-3. Start the Expo development server
+3. Start the Expo development server locally (`npm run dev`)
 
-Alternatively, you can run them manually:
+#### Manual Mode
 ```bash
 npm run dev
 ```
-
-This will start the Expo development server. You can then:
-- Press `w` to open in web browser
-- Scan QR code with Expo Go app on iOS/Android
-- Press `i` for iOS simulator (Mac only)
-- Press `a` for Android emulator
+Press `w` for web, `a` for Android, or `i` for iOS.
 
 ## 📁 Project Structure
 
 ```
 WishHive/
 ├── app/                    # App screens and navigation
-│   ├── (auth)/            # Authentication screens
-│   ├── (tabs)/            # Main tab navigation screens
-│   ├── wishlists/         # Wishlist management screens
-│   └── _layout.tsx        # Root layout with auth routing
 ├── components/            # Reusable UI components
 ├── constants/             # Theme and constants
 ├── contexts/              # React contexts (Auth)
+├── database/              # SQL schemas and DB management
+│   ├── schema/           # Modular SQL files
+│   └── seeds/            # Initial data
 ├── docs/                  # Project documentation
 ├── hooks/                 # Custom React hooks
 ├── lib/                   # Utilities (Supabase client, services)
 ├── scripts/               # Migration and utility scripts
-│   ├── import-schema.sh           # Import database schema
-│   ├── migrate-supabase-data.js   # Migrate data from Cloud to Local
-│   └── fix-constraints-triggers.sql # Database fixes
-├── schema_*.sql           # Database schema files
-├── types/                 # TypeScript type definitions
-└── utils/                 # General utility functions
+│   ├── import-schema.sh           # Import all database modules
+│   ├── migrate-supabase-data.js   # Cloud → Local Data Sync
+│   └── test-connections.js        # Diagnostic tool
+├── Dockerfile             # App container definition
+├── docker-compose.yml     # Orchestration
+└── docker-run.sh          # One-click Docker launch
 ```
 
 ## 🗄 Database Schema

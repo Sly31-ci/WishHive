@@ -2,7 +2,7 @@
 
 ## Vue d'ensemble
 
-WishHive est une application hybride composée d'une application mobile cross-platform (React Native/Expo) et d'un Web Viewer statique (GitHub Pages) pour le partage public des wishlists. Supabase sert de backend unifié.
+WishHive est une application hybride composée d'une application mobile cross-platform (React Native/Expo) et d'un Web Viewer statique (GitHub Pages). Le backend est basé sur Supabase, avec un environnement de développement local entièrement dockerisé.
 
 ## Stack Technique
 
@@ -20,12 +20,12 @@ WishHive est une application hybride composée d'une application mobile cross-pl
 - **Integration** : Supabase JS Client (Read-only via RLS)
 - **SEO** : Dynamic Meta Tags via JavaScript & GitHub Pages structure
 
-### Backend
-- **BaaS** : Supabase
-- **Database** : PostgreSQL (15+ tables)
-- **Authentication** : Supabase Auth (OTP, Email, Social)
-- **Storage** : Supabase Storage (Produits, Avatars)
-- **Real-time** : Supabase Realtime (Chat, Cagnotte, Live Interactions, Notifications)
+### Backend & Infrastructure
+- **BaaS** : Supabase (Cloud & Local via Docker)
+- **Database** : PostgreSQL (Architecture modulaire en schémas)
+- **Authentication** : Supabase Auth (JWT, OTP, Emails via Inbucket)
+- **Storage** : Supabase Storage (S3-compatible)
+- **Containerization** : Docker Compose (App + Backend Local)
 
 ### Sécurité
 - Row Level Security (RLS) sur TOUTES les tables (Public read-only pour wishlists publiques)
@@ -41,14 +41,14 @@ Les tables principales incluent : `profiles`, `wishlists`, `wishlist_items`, `pr
 ```
 project/
 ├── app/                    # Routes mobiles (Expo Router)
-├── components/            # Composants UI React Native
+├── components/            # Composants UI (Design System V2)
+├── database/              # SQL & Migrations
+│   └── schema/           # Schémas modulaires (core, chat, notifications...)
 ├── docs/                  # Documentation & Web Viewer
-│   ├── .well-known/      # AssetLinks (Android) & AASA (iOS)
-│   ├── project_history/   # Archives et rapports
-│   └── w/                 # Web Viewer Wishlist publique
-├── scripts/               # Scripts utilitaires & Migrations
-├── lib/                   # Logique métier & Client Supabase
-└── supabase/              # Configuration & SQL
+├── scripts/               # Scripts d'automatisation (Import, Migration, Tests)
+├── lib/                   # Services & Provider Supabase
+├── Dockerfile             # Configuration container Frontend
+└── docker-compose.yml     # Orchestration Infrastructure locale
 ```
 
 ## Deep Linking & Universal Links
@@ -80,6 +80,6 @@ Toute la donnée est protégée par des politiques RLS strictes :
 
 ---
 
-**Version** : 1.1.0  
-**Dernière mise à jour** : Décembre 2024 / Janvier 2025
+**Version** : 1.5.0  
+**Dernière mise à jour** : Février 2026
 

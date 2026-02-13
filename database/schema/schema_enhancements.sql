@@ -8,7 +8,13 @@
 -- Add columns to wishlists for sharing and QR
 ALTER TABLE wishlists
 ADD COLUMN IF NOT EXISTS qr_code_data text,
-ADD COLUMN IF NOT EXISTS share_count integer DEFAULT 0 NOT NULL;
+ADD COLUMN IF NOT EXISTS share_count integer DEFAULT 0 NOT NULL,
+ADD COLUMN IF NOT EXISTS slug text;
+
+-- Update type check constraint to be more flexible
+ALTER TABLE wishlists DROP CONSTRAINT IF EXISTS type_check;
+ALTER TABLE wishlists ADD CONSTRAINT type_check CHECK (true); -- Allow any type for now to match Cloud
+
 
 -- Add columns to purchase_verifications for OCR
 ALTER TABLE purchase_verifications
@@ -73,7 +79,7 @@ BEGIN
     code := upper(substring(md5(random()::text || clock_timestamp()::text) from 1 for 8));
     
     -- Check if code already exists
-    SELECT COUNT(*) > 0 INTO exists FROM profiles WHERE referral_code = code;
+    SELECT COUNT(*) > 0 INTO exists FROM public.profiles WHERE referral_code = code;
     
     -- Exit loop if unique
     EXIT WHEN NOT exists;
@@ -88,7 +94,7 @@ CREATE OR REPLACE FUNCTION auto_generate_referral_code()
 RETURNS trigger AS $$
 BEGIN
   IF NEW.referral_code IS NULL THEN
-    NEW.referral_code := generate_referral_code();
+    NEW.referral_code := public.generate_referral_code();
   END IF;
   RETURN NEW;
 END;

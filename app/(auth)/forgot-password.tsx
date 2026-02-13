@@ -15,7 +15,7 @@ import { useToast } from '@/contexts/ToastContext';
 import { Input } from '@/components/Input';
 import Button from '@/components/Button';
 import { Card } from '@/components/Card';
-import { COLORS, SPACING, FONT_SIZES, BORDER_RADIUS } from '@/constants/theme';
+import { COLORS, SPACING, FONT_SIZES } from '@/constants/theme';
 
 export default function ForgotPasswordScreen() {
     const { showToast } = useToast();
@@ -27,17 +27,16 @@ export default function ForgotPasswordScreen() {
         if (!email.trim()) {
             showToast({
                 type: 'warning',
-                message: '📧 Please enter your email address',
+                message: 'Renseigne ton adresse email.',
             });
             return;
         }
 
-        // Basic email validation
         const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
         if (!emailRegex.test(email.trim())) {
             showToast({
                 type: 'error',
-                message: '❌ Please enter a valid email address',
+                message: 'Entre une adresse email valide.',
             });
             return;
         }
@@ -54,13 +53,13 @@ export default function ForgotPasswordScreen() {
             setEmailSent(true);
             showToast({
                 type: 'success',
-                message: '✉️ Password reset email sent!',
+                message: 'Un email de réinitialisation vient de t’être envoyé.',
                 duration: 5000,
             });
         } catch (err: any) {
             const message = err.message?.includes('rate limit')
-                ? '⏳ Too many requests. Please wait a few minutes.'
-                : '😕 Failed to send reset email. Please try again.';
+                ? 'Tu as fait trop de demandes, réessaie dans quelques minutes.'
+                : 'Impossible d’envoyer l’email. Réessaie dans un instant.';
 
             showToast({
                 type: 'error',
@@ -77,7 +76,7 @@ export default function ForgotPasswordScreen() {
                 <Stack.Screen
                     options={{
                         headerShown: true,
-                        headerTitle: 'Check Your Email',
+                        headerTitle: 'Vérifie tes emails',
                         headerLeft: () => (
                             <TouchableOpacity onPress={() => router.back()}>
                                 <ArrowLeft size={24} color={COLORS.dark} />
@@ -90,16 +89,16 @@ export default function ForgotPasswordScreen() {
                         <View style={styles.successIcon}>
                             <Mail size={48} color={COLORS.success} />
                         </View>
-                        <Text style={styles.successTitle}>Check your inbox! 📬</Text>
+                        <Text style={styles.successTitle}>Lien envoyé 📬</Text>
                         <Text style={styles.successText}>
-                            We've sent a password reset link to{'\n'}
+                            Nous avons envoyé un lien de réinitialisation à{'\n'}
                             <Text style={styles.emailText}>{email}</Text>
                         </Text>
                         <Text style={styles.hintText}>
-                            Didn't receive it? Check your spam folder or try again in a few minutes.
+                            Si tu ne le vois pas, pense à vérifier tes spams ou réessaie dans quelques minutes.
                         </Text>
                         <Button
-                            title="Back to Login"
+                            title="Retour à la connexion"
                             onPress={() => router.replace('/(auth)/login')}
                             style={styles.button}
                         />
@@ -107,7 +106,7 @@ export default function ForgotPasswordScreen() {
                             onPress={() => setEmailSent(false)}
                             style={styles.resendLink}
                         >
-                            <Text style={styles.resendText}>Try a different email</Text>
+                            <Text style={styles.resendText}>Utiliser une autre adresse</Text>
                         </TouchableOpacity>
                     </Card>
                 </View>
@@ -120,7 +119,7 @@ export default function ForgotPasswordScreen() {
             <Stack.Screen
                 options={{
                     headerShown: true,
-                    headerTitle: 'Forgot Password',
+                    headerTitle: 'Mot de passe oublié',
                     headerLeft: () => (
                         <TouchableOpacity onPress={() => router.back()}>
                             <ArrowLeft size={24} color={COLORS.dark} />
@@ -141,14 +140,14 @@ export default function ForgotPasswordScreen() {
                             <Mail size={48} color={COLORS.primary} />
                         </View>
 
-                        <Text style={styles.title}>Reset your password</Text>
+                        <Text style={styles.title}>Réinitialise ton mot de passe</Text>
                         <Text style={styles.subtitle}>
-                            Enter your email address and we'll send you a link to reset your password.
+                            Entre l&apos;adresse email associée à ton compte. Nous t&apos;enverrons un lien pour choisir un nouveau mot de passe.
                         </Text>
 
                         <Input
                             label="Email"
-                            placeholder="you@example.com"
+                            placeholder="toi@example.com"
                             value={email}
                             onChangeText={setEmail}
                             autoCapitalize="none"
@@ -157,7 +156,7 @@ export default function ForgotPasswordScreen() {
                         />
 
                         <Button
-                            title="Send Reset Link"
+                            title="Envoyer le lien"
                             onPress={handleResetPassword}
                             loading={loading}
                             style={styles.button}
@@ -168,7 +167,7 @@ export default function ForgotPasswordScreen() {
                             onPress={() => router.back()}
                             style={styles.backLink}
                         >
-                            <Text style={styles.backLinkText}>← Back to login</Text>
+                            <Text style={styles.backLinkText}>← Retour à la connexion</Text>
                         </TouchableOpacity>
                     </Card>
                 </ScrollView>
@@ -203,7 +202,7 @@ const styles = StyleSheet.create({
         width: 80,
         height: 80,
         borderRadius: 40,
-        backgroundColor: COLORS.success + '20',
+        backgroundColor: `${COLORS.success}20`,
         justifyContent: 'center',
         alignItems: 'center',
         marginBottom: SPACING.lg,

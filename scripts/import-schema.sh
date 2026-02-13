@@ -6,16 +6,17 @@ echo "🚀 Starting Schema Import via Docker (Bypassing Pooler)..."
 
 # Function to run SQL via Docker
 run_sql() {
-    local file=$1
+    local filename=$1
+    local file="database/schema/$filename"
     if [ -f "$file" ]; then
         echo "📦 Importing $file..."
         # Pipe the file content to the docker container's psql
         cat "$file" | docker exec -i supabase-db psql -U postgres -d postgres
         
         if [ $? -eq 0 ]; then
-            echo "   ✅ $file imported successfully"
+            echo "   ✅ $filename imported successfully"
         else
-            echo "   ❌ Error importing $file"
+            echo "   ❌ Error importing $filename"
             exit 1
         fi
     else
@@ -31,6 +32,7 @@ run_sql "schema_functions.sql"
 
 # 3. Additional Modules
 MODULES=(
+    "schema_missing_tables.sql"
     "schema_storage.sql"
     "schema_notifications.sql"
     "schema_chat.sql"

@@ -43,6 +43,18 @@ echo "   - API URL:         http://localhost:8000"
 echo "============================================="
 echo ""
 
+# Quick connectivity check (helps diagnose "Network request failed" early)
+echo "🔎 Checking Supabase API connectivity..."
+API_CODE=$(timeout 2 curl -s -o /dev/null -w "%{http_code}" http://localhost:8000/ 2>/dev/null || echo "TIMEOUT")
+if [ "$API_CODE" = "TIMEOUT" ] || [ "$API_CODE" = "000" ]; then
+    echo "   ❌ Supabase API is NOT reachable on http://localhost:8000 (code: $API_CODE)"
+    echo "   👉 Run: ./diagnose-supabase.sh"
+    echo "   👉 If you use a real iPhone, set EXPO_PUBLIC_SUPABASE_URL to your PC IP in .env"
+else
+    echo "   ✅ Supabase API reachable (code: $API_CODE)"
+fi
+echo ""
+
 # 2. Start Expo Development Server
 echo "📱 Starting Expo Development Server..."
 echo "   (Press 'w' for web, 'a' for Android, 'i' for iOS)"
